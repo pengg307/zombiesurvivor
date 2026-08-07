@@ -1,0 +1,45 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Godot
+      uses: godotengine/godot-action/setup@v4
+      with:
+        version: '4.7.1.stable'
+        with-editor: false
+    
+    - name: Export Android APK
+      uses: godotengine/godot-action/export@v4
+      with:
+        godot-version: '4.7.1.stable'
+        export-preset: 'Android'
+        custom-template: ''
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ZombieSurvivor-Android
+        path: export_output/android/*.apk
+        retention-days: 30
+    
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: export_output/android/*.apk
+        generate-release-notes: true
+        prerelease: false
+        make_latest: true
