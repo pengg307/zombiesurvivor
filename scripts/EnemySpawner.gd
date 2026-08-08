@@ -74,7 +74,7 @@ func _spawn_matrix():
 	print("👾 生成5x5矩阵！")
 	
 	var total_zombies = SPAWN_MATRIX_SIZE * SPAWN_MATRIX_SIZE
-	print("📐 矩阵大小: " + str(SPAN_MATRIX_SIZE) + "x" + str(SPAN_MATRIX_SIZE) + "（共" + str(total_zombies) + "个僵尸）")
+	print("📐 矩阵大小: " + str(SPAWN_MATRIX_SIZE) + "x" + str(SPAWN_MATRIX_SIZE) + "（共" + str(total_zombies) + "个僵尸）")
 	
 	var start_x: float
 	var start_y: float = SPAWN_TOP_Y
@@ -83,17 +83,17 @@ func _spawn_matrix():
 	if spawn_side == 0:
 		start_x = SPAWN_LEFT_X
 		side = "左侧"
-		print("🎯 从左侧生成: x=" + str(int(start_x)) + " ~ " + str(int(start_x + (SPAN_MATRIX_SIZE-1) * SQUARE_SPACING)))
+		print("🎯 从左侧生成: x=" + str(int(start_x)) + " ~ " + str(int(start_x + (SPAWN_MATRIX_SIZE-1) * SQUARE_SPACING)))
 	else:
 		start_x = SPAWN_RIGHT_X
 		side = "右侧"
-		print("🎯 从右侧生成: x=" + str(int(start_x)) + " ~ " + str(int(start_x + (SPAN_MATRIX_SIZE-1) * SQUARE_SPACING)))
+		print("🎯 从右侧生成: x=" + str(int(start_x)) + " ~ " + str(int(start_x + (SPAWN_MATRIX_SIZE-1) * SQUARE_SPACING)))
 	
 	spawn_side = 1 - spawn_side
 	
 	var spawned_count = 0
-	for row in range(SPAN_MATRIX_SIZE):
-		for col in range(SPAN_MATRIX_SIZE):
+	for row in range(SPAWN_MATRIX_SIZE):
+		for col in range(SPAWN_MATRIX_SIZE):
 			var zombie_scene = load("res://scripts/Zombie.gd")
 			if zombie_scene:
 				var zombie_type = _get_random_type()
