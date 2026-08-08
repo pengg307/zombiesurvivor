@@ -26,6 +26,7 @@ var walk_timer = 0.0
 var current_frame = 0
 var hit_flash_timer = 0.0
 var has_reached_player = false
+var _boss_anim_timer = 0.0  # Boss animation timer
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -94,6 +95,8 @@ func _setup_boss_sprite():
 		sprite_node = sprite
 		print("🎨 Boss素材加载成功: boss.png")
 		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
+		# Boss animation setup
+		_boss_anim_timer = 0.0
 		return
 	
 	# 创建程序化Boss纹理 - 红色圆形带眼睛
@@ -174,6 +177,13 @@ func _physics_process(delta):
 		if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled:
 			current_frame = (current_frame + 1) % 4
 			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
+		
+		# Boss 动画效果（脉冲）
+		if (is_boss or zombie_type == "boss") and sprite_node:
+			_boss_anim_timer += delta
+			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)  # 脉动效果
+			var base_scale = Vector2(2.5, 2.5)
+			sprite_node.scale = base_scale * pulse
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()

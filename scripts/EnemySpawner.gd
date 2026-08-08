@@ -3,15 +3,15 @@ class_name EnemySpawner
 
 const SPAWN_INTERVAL = 2.5
 const BOSS_KILLS_REQUIRED = 5
-const SQUARE_SPACING = 60.0
+const SQUARE_SPACING = 80.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
 
-# 5x5矩阵生成
-const SPAWN_MATRIX_SIZE = 5
-const SPAWN_LEFT_X = -150.0
-const SPAWN_RIGHT_X = 150.0
-const SPAWN_TOP_Y = -200.0
+# 2x2 matrix spawn
+const SPAWN_MATRIX_SIZE = 2
+const SPAWN_LEFT_X = -80.0
+const SPAWN_RIGHT_X = 80.0
+const SPAWN_TOP_Y = -100.0
 
 var spawn_timer = Timer.new()
 var wave_active = false
