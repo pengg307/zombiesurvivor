@@ -96,17 +96,35 @@ func _setup_boss_sprite():
 		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
 		return
 	
-	# 使用大型红色方块作为Boss，确保可见
-	print("⚠️ Boss素材加载失败，使用红色方块")
-	var rect = ColorRect.new()
-	rect.size = Vector2(120, 120)  # 更大的方块
-	rect.color = Color(1, 0, 0)  # 纯红色，非常显眼
-	sprite.add_child(rect)
-	sprite.scale = Vector2(2.5, 2.5)  # 再放大
-	sprite.modulate = Color(1, 0.5, 0.5)  # 带点粉色，更醒目
+	# 创建程序化Boss纹理 - 红色圆形带眼睛
+	print("⚠️ Boss素材加载失败，使用程序化纹理")
+	var img = Image.create(128, 128, false, Image.FORMAT_RGBA8)
+	
+	# 填充红色背景
+	for x in range(128):
+		for y in range(128):
+			var dist = Vector2(x - 64, y - 64).length()
+			if dist < 60:
+				img.set_pixel(x, y, Color(1.0, 0.2, 0.2, 1.0))  # 红色
+			else:
+				img.set_pixel(x, y, Color(0.0, 0.0, 0.0, 0.0))  # 透明
+	
+	# 画眼睛
+	for angle in [PI * 0.3, PI * 0.7]:
+		var ex = int(64 + 25 * cos(angle))
+		var ey = int(64 + 25 * sin(angle))
+		for dx in range(-6, 6):
+			for dy in range(-6, 6):
+				if dx*dx + dy*dy < 25:
+					img.set_pixel(ex + dx, ey + dy, Color(1.0, 1.0, 0.0, 1.0))  # 黄色眼睛
+	
+	var tex = ImageTexture.create_from_image(img)
+	sprite.texture = tex
+	sprite.centered = true
+	sprite.scale = Vector2(2.5, 2.5)
 	add_child(sprite)
 	sprite_node = sprite
-	print("🎨 Boss使用红色方块 (120x120, 2.5x缩放)")
+	print("🎨 Boss使用程序化纹理 (红色圆形+黄色眼睛)")
 	print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
 
 func _setup_fallback_sprite():
