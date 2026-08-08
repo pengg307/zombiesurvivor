@@ -54,6 +54,7 @@ func _ready():
 		_setup_sprite()
 	
 	print("✅ Zombie创建: 类型=" + zombie_type + " 初始位置=中心(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ")")
+	print("👁️ 可见性: z_index=" + str(z_index) + " visible=" + str(visible))
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
@@ -77,6 +78,8 @@ func _setup_sprite():
 func _setup_boss_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
+	sprite.z_index = 50  # Boss should be on top
+	sprite.visible = true
 	
 	# 尝试加载boss素材
 	var texture_path = "res://assets/downloads/littleboss.png"
@@ -85,22 +88,25 @@ func _setup_boss_sprite():
 	if texture:
 		sprite.texture = texture
 		sprite.centered = true
-		sprite.scale = Vector2(2.0, 2.0)  # 更大更明显
+		sprite.scale = Vector2(2.5, 2.5)  # 更大更明显
 		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
 		print("🎨 Boss素材加载成功: littleboss.png")
+		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
 	else:
 		# 使用大型红色方块作为Boss，确保可见
 		print("⚠️ Boss素材加载失败，使用红色方块")
 		var rect = ColorRect.new()
-		rect.size = Vector2(100, 100)  # 更大
-		rect.color = Color(1, 0, 0)  # 纯红色，更明显
+		rect.size = Vector2(120, 120)  # 更大的方块
+		rect.color = Color(1, 0, 0)  # 纯红色，非常显眼
 		sprite.add_child(rect)
-		sprite.scale = Vector2(2.0, 2.0)  # 再放大
+		sprite.scale = Vector2(2.5, 2.5)  # 再放大
+		sprite.modulate = Color(1, 0.5, 0.5)  # 带点粉色，更醒目
 		add_child(sprite)
 		sprite_node = sprite
-		print("🎨 Boss使用红色方块 (100x100, 2x缩放)")
+		print("🎨 Boss使用红色方块 (120x120, 2.5x缩放)")
+		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
 
 func _setup_fallback_sprite():
 	var sprite = Sprite2D.new()
@@ -118,8 +124,8 @@ func _setup_collision():
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
 	if is_boss or zombie_type == "boss":
-		shape.radius = 50.0  # 更大的碰撞体
-		shape.height = 120.0
+		shape.radius = 60.0  # 更大的碰撞体
+		shape.height = 140.0
 	else:
 		shape.radius = 25.0
 		shape.height = 70.0
@@ -185,9 +191,9 @@ func take_damage(damage: float):
 	current_health -= damage
 	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(current_health))
 	
-	hit_flash_timer = 0.2
-	modulate = Color(1, 0.3, 0.3)
-	var timer = get_tree().create_timer(0.1)
+	hit_flash_timer = 0.3
+	modulate = Color(1, 0, 0)
+	var timer = get_tree().create_timer(0.15)
 	timer.timeout.connect(func():
 		modulate = Color(1, 1, 1)
 	)

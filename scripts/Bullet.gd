@@ -20,11 +20,11 @@ func _ready():
 	collision_mask = 1
 	body_entered.connect(_on_body_entered)
 	
-	# 绘制子弹
+	# 绘制子弹 - 更大的黄色矩形，确保可见
 	_setup_visuals()
 	
 	# 碰撞形状（与视觉对齐）
-	_setup_collision()
+	call_deferred("_setup_collision")
 	
 	# 死亡计时
 	get_tree().create_timer(LIFETIME).timeout.connect(queue_free)
@@ -32,36 +32,38 @@ func _ready():
 	print("🔫 子弹生成！位置:" + str(position) + " 方向:" + str(direction) + " 碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
 
 func _setup_visuals():
-	# 子弹主体（居中于节点）
+	# 子弹主体 - 大黄色矩形，非常显眼
 	var bullet = ColorRect.new()
 	bullet.name = "BulletSprite"
-	bullet.size = Vector2(8, 30)
-	bullet.color = Color(1, 1, 0.3)
+	bullet.size = Vector2(12, 40)  # 更大
+	bullet.color = Color(1, 1, 0)  # 纯黄色，更亮
 	bullet.position = Vector2(0, 0)  # 居中
 	add_child(bullet)
 	
-	# 弹头（在顶部）
+	# 弹头 - 橙色三角形
 	var tip = ColorRect.new()
 	tip.name = "Tip"
-	tip.size = Vector2(6, 12)
-	tip.color = Color(1, 0.6, 0.1)
-	tip.position = Vector2(0, -18)  # 顶部
+	tip.size = Vector2(10, 15)
+	tip.color = Color(1, 0.8, 0)
+	tip.position = Vector2(0, -25)  # 顶部
 	add_child(tip)
 	
-	# 火焰（在底部）
+	# 火焰 - 红色
 	var flame = ColorRect.new()
 	flame.name = "Flame"
-	flame.size = Vector2(5, 15)
-	flame.color = Color(1, 0.4, 0.0, 0.7)
-	flame.position = Vector2(0, 12)  # 底部
+	flame.size = Vector2(8, 20)
+	flame.color = Color(1, 0.3, 0)
+	flame.position = Vector2(0, 20)  # 底部
 	add_child(flame)
+	
+	print("🎨 子弹视觉创建成功: 12x40黄色矩形")
 
 func _setup_collision():
 	var collision = CollisionShape2D.new()
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
-	shape.radius = 6.0
-	shape.height = 28.0
+	shape.radius = 8.0  # 更大的碰撞体
+	shape.height = 35.0
 	collision.shape = shape
 	add_child(collision)
 	print("✅ 子弹碰撞体创建成功")
@@ -78,7 +80,7 @@ func _physics_process(delta):
 func _update_scale():
 	# 根据y位置调整大小（透视效果）
 	var depth_ratio = clamp((position.y - FAR_Y) / (NEAR_Y - FAR_Y), 0.0, 1.0)
-	var node_scale = 0.5 + depth_ratio * 0.5
+	var node_scale = 0.6 + depth_ratio * 0.4
 	scale = Vector2(node_scale, node_scale)
 
 func _on_body_entered(body: Node2D):
