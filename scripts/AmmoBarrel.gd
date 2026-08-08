@@ -15,11 +15,11 @@ var spawn_time = 0.0
 signal barrel_exploded
 
 func _ready():
-	# 修复：collision_layer=2, collision_mask=1 只检测player
-	# 但需要避免与zombie物理碰撞，所以使用ignore_layers
+	# 碰撞层设置: AmmoBarrel在layer 2
+	# 关键：collision_mask=1 会检测所有layer 1的物体(player和zombie)
+	# 但我们只在_on_body_entered中处理player碰撞
 	collision_layer = 2
 	collision_mask = 1
-	ignore_collision_layer(1)  # 忽略与layer 1 (zombie)的物理碰撞
 	_setup_barrel()
 	_setup_collision()
 	
@@ -92,9 +92,10 @@ func _physics_process(delta):
 		queue_free()
 
 func _on_body_entered(body: Node2D):
+	# 只处理player碰撞，忽略其他物体
 	if body.is_in_group("player"):
 		_collect_barrel(body)
-	# 不再检测zombie碰撞，让弹药桶穿过僵尸
+	# 不处理zombie碰撞，让弹药桶穿过僵尸
 
 func _collect_barrel(player: Node2D):
 	print("")
