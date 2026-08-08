@@ -3,17 +3,17 @@ class_name Zombie
 
 const BASE_HEALTH = 10.0
 const BASE_SPEED = 50.0
+const BOSS_HEALTH = 500.0
+const BOSS_SPEED = 30.0
 const DAMAGE = 10.0
 const EXPERIENCE_REWARD = 10
 const SCREEN_HEIGHT = 1280.0
-
-const BOSS_HEALTH = 500.0
-const BOSS_SPEED = 70.0
 
 signal boss_died
 signal zombie_reached_player
 
 @export var zombie_type: String = "basic"
+@export var is_boss: bool = false
 
 var current_health = BASE_HEALTH
 var base_speed = BASE_SPEED
@@ -28,7 +28,7 @@ var hit_flash_timer = 0.0
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
 	"fast": {"health": 8.0, "speed": 70.0, "color": Color(0.5, 0.3, 0.5)},
-	"boss": {"health": 500.0, "speed": 70.0, "color": Color(0.6, 0.2, 0.2)}
+	"boss": {"health": 500.0, "speed": 30.0, "color": Color(0.8, 0.2, 0.2)}
 }
 
 func _ready():
@@ -39,26 +39,26 @@ func _ready():
 	collision_layer = 1
 	collision_mask = 2
 	
-	if zombie_type == "boss":
+	if is_boss or zombie_type == "boss":
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
+		_setup_boss_sprite()
 	elif zombie_type == "fast":
 		base_speed = 70.0
+		_setup_sprite()
+	else:
+		_setup_sprite()
 	
 	_setup_collision()
-	_setup_sprite()
 	
-	print("✅ Zombie创建: 类型=" + zombie_type + 
-	      " 血量=" + str(current_health) + 
-	      " 速度=" + str(base_speed) +
-	      " 碰撞层=" + str(collision_layer) + 
-	      " 碰撞掩码=" + str(collision_mask))
+	print("✅ Zombie创建: 类型=" + zombie_type + " 血量=" + str(current_health) + " 速度=" + str(base_speed))
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	
-	var texture = load("res://assets/downloads/zombie_front_4frames_game.png")
+	var texture_path = "res://assets/downloads/zombie_front_4frames_game.png"
+	var texture = load(texture_path)
 	
 	if texture:
 		sprite.texture = texture
@@ -70,6 +70,27 @@ func _setup_sprite():
 		sprite_node = sprite
 		print("🎨 僵尸素材加载成功")
 	else:
+		_setup_fallback_sprite()
+
+func _setup_boss_sprite():
+	var sprite = Sprite2D.new()
+	sprite.name = "Sprite"
+	
+	# 使用littleboss.png作为Boss素材
+	var texture_path = "res://assets/downloads/littleboss.png"
+	var texture = load(texture_path)
+	
+	if texture:
+		sprite.texture = texture
+		sprite.centered = true
+		# Boss体型更大
+		sprite.scale = Vector2(1.5, 1.5)
+		sprite.position = Vector2(0, 0)
+		add_child(sprite)
+		sprite_node = sprite
+		print("🎨 Boss素材加载成功: littleboss.png")
+	else:
+		print("❌ Boss素材加载失败，使用备用样式")
 		_setup_fallback_sprite()
 
 func _setup_fallback_sprite():
@@ -87,8 +108,13 @@ func _setup_collision():
 	var collision = CollisionShape2D.new()
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
-	shape.radius = 25.0
-	shape.height = 70.0
+	if is_boss or zombie_type == "boss":
+		# Boss碰撞体更大
+		shape.radius = 40.0
+		shape.height = 100.0
+	else:
+		shape.radius = 25.0
+		shape.height = 70.0
 	collision.shape = shape
 	add_child(collision)
 	print("✅ 碰撞体创建成功")
@@ -114,9 +140,12 @@ func _physics_process(delta):
 	var move_dir = Vector2(dx, dy).normalized()
 	position += move_dir * base_speed * delta
 	
-	if frame_count % 5 == 0 and sprite_node and sprite_node.texture:
+	# Boss动画帧数不同（更慢）
+	var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
+	if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture:
 		current_frame = (current_frame + 1) % 4
-		sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
+		if sprite_node.region_enabled:
+			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 	
 	if hit_flash_timer > 0 and sprite_node:
 		sprite_node.modulate = Color(1, 0.3, 0.3)
@@ -129,7 +158,7 @@ func _physics_process(delta):
 		var screen_pos = _to_screen_position()
 		var player_pos = player.position if player else Vector2(360, 1100)
 		if player and screen_pos.distance_to(player_pos) < 60:
-			if zombie_type == "boss":
+			if is_boss or zombie_type == "boss":
 				emit_signal("boss_died")
 				player.emit_signal("game_won")
 			else:
@@ -161,7 +190,7 @@ func _die():
 		player.add_kill()
 		print("💀 Zombie死亡: 类型=" + zombie_type + " 玩家击杀数=" + str(player.kills))
 	
-	if zombie_type == "boss":
+	if is_boss or zombie_type == "boss":
 		emit_signal("boss_died")
 		if player:
 			player.emit_signal("game_won")

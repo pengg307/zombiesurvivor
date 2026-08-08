@@ -26,17 +26,14 @@ func _ready():
 	# 连接按钮
 	_connect_buttons()
 	
-	# 添加坐标参考线
-	_add_coordinate_markers()
+	# 添加底部状态栏
+	_add_bottom_status_bar()
 	
 	# 添加三发子弹状态显示
 	_add_triple_shot_display()
 	
 	# 添加手雷显示
 	_add_grenade_display()
-	
-	# 添加新的状态显示
-	_add_status_displays()
 	
 	print("✅ UIManager初始化完成")
 
@@ -47,7 +44,7 @@ func _process(_delta):
 		_update_kills()
 		_update_triple_shot()
 		_update_grenades()
-		_update_status()
+		_update_bottom_status()
 		_update_boss_progress()
 
 func set_player(player_node):
@@ -92,20 +89,28 @@ func _update_grenades():
 	if player and has_node("GrenadeDisplay"):
 		$GrenadeDisplay.text = "💣 手雷: %d" % player.grenades
 
-func _update_status():
-	if player:
-		if has_node("DamageDisplay"):
-			$DamageDisplay.text = "⚔️ 伤害: %.1f" % player.damage_per_shot
-		if has_node("SpeedDisplay"):
-			$SpeedDisplay.text = "💨 射速: %.2fs" % player.fire_rate
-		if has_node("BulletSpeedDisplay"):
-			$BulletSpeedDisplay.text = "🚀 子弹速度: %d" % player.bullet_speed
-		if player.ammo_boost_timer > 0:
-			if has_node("AmmoBoostDisplay"):
-				$AmmoBoostDisplay.text = "🛢️ 增益: %ds" % int(player.ammo_boost_timer)
-				$AmmoBoostDisplay.visible = true
-		if has_node("AmmoBoostDisplay"):
-			$AmmoBoostDisplay.visible = player.ammo_boost_timer > 0
+func _update_bottom_status():
+	# 底部状态栏实时更新
+	if has_node("BottomStatusBar"):
+		var status_text = ""
+		
+		# 伤害
+		if player:
+			status_text += "⚔️%.1f " % player.damage_per_shot
+		
+		# 射速
+		if player:
+			status_text += "💨%.2fs " % player.fire_rate
+		
+		# 子弹速度
+		if player:
+			status_text += "🚀%d " % player.bullet_speed
+		
+		# 增益状态
+		if player and player.ammo_boost_timer > 0:
+			status_text += "🛢️%ds" % int(player.ammo_boost_timer)
+		
+		$BottomStatusBar/StatusLabel.text = status_text
 
 func _update_boss_progress():
 	if spawner and has_node("BossProgress"):
@@ -168,6 +173,42 @@ func _add_upgrade_buttons():
 		vbox.add_child(btn)
 		print("✅ 升级按钮", i, "已添加: ", options[i])
 
+func _add_bottom_status_bar():
+	# 创建底部状态栏容器
+	var container = VBoxContainer.new()
+	container.name = "BottomStatusBar"
+	container.position = Vector2(0, 1240)  # 屏幕底部（1280-40）
+	container.size = Vector2(720, 40)
+	add_child(container)
+	
+	# 状态标签
+	var status_label = Label.new()
+	status_label.name = "StatusLabel"
+	status_label.text = "⚔️10.0 💨0.30s 🚀600"
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status_label.add_theme_font_size_override("font_size", 16)
+	status_label.modulate = Color(1, 1, 0.8)
+	container.add_child(status_label)
+
+func _add_triple_shot_display():
+	var triple_label = Label.new()
+	triple_label.name = "TripleShotDisplay"
+	triple_label.text = "🔫 三发子弹: 未解锁 (0/5)"
+	triple_label.position = Vector2(600, 10)
+	triple_label.modulate = Color(1, 1, 1)
+	triple_label.add_theme_font_size_override("font_size", 18)
+	add_child(triple_label)
+
+func _add_grenade_display():
+	var grenade_label = Label.new()
+	grenade_label.name = "GrenadeDisplay"
+	grenade_label.text = "💣 手雷: 0"
+	grenade_label.position = Vector2(600, 35)
+	grenade_label.modulate = Color(1, 0.5, 0.3)
+	grenade_label.add_theme_font_size_override("font_size", 18)
+	add_child(grenade_label)
+
 func _add_coordinate_markers():
 	var marker_label = Label.new()
 	marker_label.name = "CoordMarker"
@@ -198,68 +239,3 @@ func _add_coordinate_markers():
 		label.modulate = Color(1, 1, 1)
 		label.add_theme_font_size_override("font_size", 12)
 		add_child(label)
-
-func _add_triple_shot_display():
-	var triple_label = Label.new()
-	triple_label.name = "TripleShotDisplay"
-	triple_label.text = "🔫 三发子弹: 未解锁 (0/5)"
-	triple_label.position = Vector2(600, 10)
-	triple_label.modulate = Color(1, 1, 1)
-	triple_label.add_theme_font_size_override("font_size", 18)
-	add_child(triple_label)
-
-func _add_grenade_display():
-	var grenade_label = Label.new()
-	grenade_label.name = "GrenadeDisplay"
-	grenade_label.text = "💣 手雷: 0"
-	grenade_label.position = Vector2(600, 35)
-	grenade_label.modulate = Color(1, 0.5, 0.3)
-	grenade_label.add_theme_font_size_override("font_size", 18)
-	add_child(grenade_label)
-
-func _add_status_displays():
-	# 添加伤害显示
-	var damage_label = Label.new()
-	damage_label.name = "DamageDisplay"
-	damage_label.text = "⚔️ 伤害: 10.0"
-	damage_label.position = Vector2(600, 60)
-	damage_label.modulate = Color(1, 0.3, 0.3)
-	damage_label.add_theme_font_size_override("font_size", 16)
-	add_child(damage_label)
-	
-	# 添加射速显示
-	var speed_label = Label.new()
-	speed_label.name = "SpeedDisplay"
-	speed_label.text = "💨 射速: 0.30s"
-	speed_label.position = Vector2(600, 80)
-	speed_label.modulate = Color(0.3, 1, 0.3)
-	speed_label.add_theme_font_size_override("font_size", 16)
-	add_child(speed_label)
-	
-	# 添加子弹速度显示
-	var bullet_speed_label = Label.new()
-	bullet_speed_label.name = "BulletSpeedDisplay"
-	bullet_speed_label.text = "🚀 子弹速度: 600"
-	bullet_speed_label.position = Vector2(600, 100)
-	bullet_speed_label.modulate = Color(0.3, 0.3, 1)
-	bullet_speed_label.add_theme_font_size_override("font_size", 16)
-	add_child(bullet_speed_label)
-	
-	# 添加增益计时器显示
-	var ammo_boost_label = Label.new()
-	ammo_boost_label.name = "AmmoBoostDisplay"
-	ammo_boost_label.text = "🛢️ 增益: 0s"
-	ammo_boost_label.position = Vector2(600, 120)
-	ammo_boost_label.modulate = Color(1, 1, 0.3)
-	ammo_boost_label.add_theme_font_size_override("font_size", 16)
-	ammo_boost_label.visible = false
-	add_child(ammo_boost_label)
-	
-	# 添加Boss进度显示
-	var boss_progress_label = Label.new()
-	boss_progress_label.name = "BossProgress"
-	boss_progress_label.text = "👹 Boss进度: 0/10"
-	boss_progress_label.position = Vector2(600, 140)
-	boss_progress_label.modulate = Color(1, 0.5, 0.5)
-	boss_progress_label.add_theme_font_size_override("font_size", 16)
-	add_child(boss_progress_label)
