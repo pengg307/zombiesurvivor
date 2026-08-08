@@ -49,7 +49,7 @@ func _ready():
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
 	print("============================================================")
-	print("📊 生成模式: 5x5矩阵")
+	print("📊 生成模式: " + str(SPAWN_MATRIX_SIZE) + "x" + str(SPAWN_MATRIX_SIZE) + "矩阵")
 	print("📊 僵尸类型分布:")
 	print("   - basic: 65% (10血, 50速)")
 	print("   - fast: 35% (8血, 70速)")
