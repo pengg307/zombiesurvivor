@@ -34,6 +34,8 @@ func _ready():
 	add_child(spawn_timer)
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
+	# 启动定时器！
+	spawn_timer.start()
 	
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
@@ -55,7 +57,7 @@ func _ready():
 	print("============================================================")
 	print("")
 	
-	# 启动第一个波次
+	# 立即生成第一波
 	_start_next_wave()
 
 func _on_spawn_timer_timeout():
@@ -115,6 +117,10 @@ func _spawn_matrix():
 	print("✅ 已生成" + str(spawned_count) + "个僵尸")
 	print("----------------------------------------")
 	print("")
+	
+	# 每3波生成一个弹药桶
+	if wave_number % 3 == 0 and not boss_active:
+		_spawn_ammo_barrel(start_x)
 
 func _get_random_type() -> String:
 	# Boss只在击杀数达到要求时生成，且不在战斗中
@@ -169,3 +175,20 @@ func get_current_kills() -> int:
 
 func is_boss_active() -> bool:
 	return boss_active
+
+func _spawn_ammo_barrel(start_x: float) -> bool:
+	if boss_active:
+		return false
+	print("🛢️ 生成弹药桶！")
+	var barrel_scene = load("res://scripts/AmmoBarrel.gd")
+	if barrel_scene:
+		var barrel = barrel_scene.new()
+		barrel.position = Vector2(start_x, SPAWN_TOP_Y + 100)
+		barrel.barrel_type = randi() % 3
+		barrel.z_index = 50
+		add_child(barrel)
+		print("✅ 弹药桶生成成功！类型=" + str(barrel.barrel_type))
+		return true
+	else:
+		print("❌ 无法加载AmmoBarrel脚本！")
+		return false
