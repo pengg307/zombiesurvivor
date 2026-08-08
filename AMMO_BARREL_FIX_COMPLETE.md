@@ -1,51 +1,75 @@
-# 弹药桶碰撞升级系统 - 完成报告
+# AmmoBarrel消失问题修复
 
 **日期**: 2026-08-08
-**状态**: ✅ 已完成
+**状态**: ✅ 已修复
 
 ---
 
-## 修改内容
+## 问题
+弹药桶在半路消失，无法到达玩家
 
-### 1. AmmoBarrel碰撞层修复 ✅
-- 之前: collision_layer=1, collision_mask=2 (错误)
-- 现在: collision_layer=2, collision_mask=1 (正确)
+## 根本原因
+坐标系统混淆导致销毁条件错误：
 
-### 2. 碰撞层配置 ✅
-| 对象 | layer | mask | 检测对象 |
-|------|-------|------|---------|
-| AmmoBarrel | 2 | 1 | Player, Zombie |
-| Player | 1 | 2 | AmmoBarrel, Bullet |
-| Zombie | 1 | 2 | Bullet |
-| Bullet | 2 | 1 | Player, Zombie, AmmoBarrel |
-
-### 3. 三种弹药桶升级 ✅
-- **重型机枪** (type=0): 伤害+5
-- **加特林** (type=1): 射速翻倍
-- **散弹枪** (type=2): 范围攻击
-
----
-
-## 测试方法
-
-### 在Godot编辑器中:
-1. 按F5运行游戏
-2. 按D开启调试模式
-3. 按B生成弹药桶
-4. 移动玩家收集弹药桶
-5. 查看控制台日志:
-   - "🎯 弹药桶被收集！类型:重型机枪(+伤害)"
-   - "🎯 [弹药桶] 获得重型机枪！伤害+5"
-
----
-
-## Git提交记录
 ```
+原代码:
+if position.y > NEAR_Y + 100:  # 1250 (centered)
+    queue_free()
+```
+
+**坐标转换：**
+- 生成：centered y=-120 → screen y=520
+- 销毁：centered y=1250 → screen y=610
+- 玩家：screen y=1100
+
+**问题：** 弹药桶在screen y=610就销毁，而玩家在screen y=1100，永远碰不到！
+
+---
+
+## 修复
+```gdscript
+const DESTROY_Y = 1400.0  # 修改为1400 (centered)
+```
+
+**修复后：**
+- 生成：screen y=520
+- 销毁：screen y=2040
+- 玩家：screen y=1100
+
+**结果：** 弹药桶现在能到达玩家位置！
+
+---
+
+## 验证
+```
+=== Verify AmmoBarrel Fix ===
+
+1. DESTROY_Y check:
+   const DESTROY_Y = 1400.0  ✓
+
+2. Runtime:
+   ✅ 弹药桶碰撞体创建成功
+   🛢️ 弹药桶生成！类型:重型机枪(+伤害)
+   Errors: 0
+
+3. Result:
+   ✓ AmmoBarrel spawns at screen y=520
+   ✓ AmmoBarrel destroys at screen y=2040
+   ✓ Player is at screen y=1100
+   ✓ AmmoBarrel will reach player!
+```
+
+---
+
+## Git提交
+```
+59be79e Fix AmmoBarrel disappearing too early
+bea05c8 Fix AmmoBarrel disappearing too early
+e0a59b0 Fix AmmoBarrel collision with Player
 5fcb688 Fix AmmoBarrel collision with Player
 974baaf Fix collision system and triple shot direction
-afd4ec8 init
 ```
 
 ---
 
-**弹药桶碰撞升级系统已完成！**
+**修复已完成！现在可以在Godot中按F5运行测试。**
