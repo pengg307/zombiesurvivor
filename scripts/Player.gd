@@ -98,10 +98,18 @@ func _setup_collision():
 	shape.height = 50.0
 	collision.shape = shape
 	add_child(collision)
-	body_entered.connect(_on_body_entered)
+	
+	# Add Area2D for zombie detection
+	var area = Area2D.new()
+	area.name = "ZombieDetector"
+	area.collision_layer = 1
+	area.collision_mask = 2
+	area.body_entered.connect(_on_zombie_detected)
+	add_child(area)
+	
 	print("✅ 玩家碰撞体创建成功")
 
-func _on_body_entered(body):
+func _on_zombie_detected(body):
 	if body.is_in_group("zombies"):
 		print("💥 僵尸碰到玩家！游戏结束！")
 		current_health = 0
