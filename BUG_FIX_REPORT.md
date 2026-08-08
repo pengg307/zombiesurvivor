@@ -1,104 +1,57 @@
-# 🎮 问题修复报告
+# 修复报告：弹药桶消失和枪支失控
 
-## ✅ 已修复的问题
+**日期**: 2026-08-08
+**状态**: ✅ 已修复
 
-### 1. Zombie未加入zombies组
-```
-问题：Player找不到敌人
-原因：Zombie脚本没有调用add_to_group("zombies")
-解决：在_ready()中添加add_to_group("zombies")
+---
+
+## 问题1: 弹药桶在半路消失
+
+### 根本原因
+AmmoBarrel错误地检测了zombie碰撞，导致碰到僵尸就爆炸：
+```gdscript
+# 原代码
+elif body.is_in_group("zombies") or body.is_in_group("bullets"):
+    _explode()
 ```
 
-### 2. 子弹只是视觉特效
-```
-问题：子弹发射后没有实际伤害
-原因：_spawn_bullet_effect()只创建了视觉效果
-解决：需要添加碰撞检测和伤害逻辑
+### 修复
+```gdscript
+# 新代码：只检测player
+if body.is_in_group("player"):
+    _collect_barrel(body)
+# 移除zombie碰撞检测，让弹药桶穿过僵尸
 ```
 
 ---
 
-## 🔧 当前状态
+## 问题2: 枪支失控
 
+### 根本原因
+鼠标左键同时控制移动和手雷投掷，导致冲突：
+```gdscript
+# 原代码
+if event.button_index == MOUSE_BUTTON_LEFT:
+    if event.pressed:
+        mouse_left = true
+        if grenades > 0 and grenade_cooldown <= 0:
+            _throw_grenade()  # 冲突！
 ```
-✅ 游戏可以启动
-✅ Zombie正确加入zombies组
-⚠️ 子弹只是视觉效果（需要修复）
-⚠️ 敌人可能不生成（需要测试）
+
+### 修复
+- **鼠标左键**: 向左移动
+- **鼠标右键**: 向右移动
+- **鼠标中键**: 投掷手雷
+
+---
+
+## Git提交
+```
+8c3f2d1 Fix AmmoBarrel disappearing and gun out of control
+636ab9b Adjust zombie spawn positions closer to road center
+9b9b33e Adjust zombie spawn positions closer to road center
 ```
 
 ---
 
-## 🎮 测试步骤
-
-### 方法1：在Godot编辑器中测试
-```
-1. 打开Godot编辑器
-2. 按F5运行
-3. 观察：
-   • 是否有敌人生成？
-   • 敌人是否移动？
-   • 玩家是否攻击？
-   • 子弹是否有伤害？
-```
-
-### 方法2：查看Output面板
-```
-1. 打开Output面板
-2. 查看是否有错误信息
-3. 查看是否有打印信息：
-   • "Boss已生成！"
-   • "💣 获得手雷！"
-   • "✅ 游戏启动成功！"
-```
-
----
-
-## ⚠️ 已知问题
-
-### 1. 子弹无伤害
-```
-当前：子弹只是视觉效果
-需要：添加碰撞检测和伤害
-```
-
-### 2. 敌人生成
-```
-需要测试：敌人是否正确生成
-检查：EnemySpawner是否工作
-```
-
-### 3. 视觉简单
-```
-当前：只有几何体（圆形、方形）
-原因：素材未导入
-解决：导入Kenney素材
-```
-
----
-
-## 📝 下一步
-
-### 立即测试
-```
-在Godot编辑器中按F5测试游戏
-观察是否有任何错误
-```
-
-### 如果敌人不生成
-```
-检查EnemySpawner脚本
-检查spawn_timer是否启动
-查看Output面板的错误信息
-```
-
-### 如果需要子弹有伤害
-```
-需要创建Bullet场景
-添加CollisionShape2D
-添加Area2D检测碰撞
-```
-
----
-
-**请先在Godot编辑器中按F5测试，告诉我看到什么！** 🎮
+**修复完成！弹药桶现在会穿过僵尸到达玩家，鼠标控制也更稳定。**

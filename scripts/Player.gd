@@ -35,6 +35,7 @@ var last_log_kill = -1
 var debug_mode = false
 var _fire_timer = 0.0
 var move_direction = Vector2(0, 0)
+var base_fire_rate = FIRE_RATE_BASE
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
@@ -110,7 +111,6 @@ func _setup_audio():
 		audio_manager = am
 
 func _unhandled_input(event):
-	# 修复：键盘和鼠标输入分离
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D:
 			debug_mode = !debug_mode
@@ -137,7 +137,6 @@ func _unhandled_input(event):
 		elif event.keycode == KEY_ESCAPE:
 			get_tree().quit()
 	
-	# 触屏控制
 	elif event is InputEventScreenTouch:
 		var viewport_width = get_viewport().get_visible_rect().size.x
 		if event.position.x < viewport_width / 2.0:
@@ -155,20 +154,12 @@ func _unhandled_input(event):
 			touch_right = true
 			touch_left = false
 	
-	# 鼠标控制 - 修复：左右键分别控制左右移动，中键投掷手雷
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			# 左键：向左移动
 			mouse_left = event.pressed
-			if event.pressed:
-				print("🖱️ 鼠标左键 - 向左移动")
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			# 右键：向右移动
 			mouse_right = event.pressed
-			if event.pressed:
-				print("🖱️ 鼠标右键 - 向右移动")
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
-			# 中键：投掷手雷
 			if event.pressed and grenades > 0 and grenade_cooldown <= 0:
 				_throw_grenade()
 
@@ -176,26 +167,35 @@ func _physics_process(delta):
 	_move(delta)
 	_shoot(delta)
 	_handle_grenade(delta)
+	_update_ammo_boost(delta)
 	_update_position_label()
 	_animate(delta)
 	_update_debug_info()
 
+func _update_ammo_boost(delta):
+	# 修复：处理弹药桶增益的倒计时
+	if ammo_boost_timer > 0:
+		ammo_boost_timer -= delta
+		if ammo_boost_timer <= 0:
+			ammo_boost_timer = 0
+			# 恢复基础火力
+			ammo_boost_level = 0
+			fire_rate = base_fire_rate
+			print("⏰ [弹药桶] 增益效果已过期")
+
 func _move(delta):
 	var direction = Vector2(0, 0)
 	
-	# 键盘输入
 	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 		direction.x = -1
 	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		direction.x = 1
 	
-	# 触屏输入
 	if touch_left:
 		direction.x = -1
 	if touch_right:
 		direction.x = 1
 	
-	# 鼠标输入
 	if mouse_left:
 		direction.x = -1
 	if mouse_right:
@@ -213,7 +213,8 @@ func _move(delta):
 	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
 
 func _shoot(delta):
-	fire_rate = max(0.1, FIRE_RATE_BASE - float(ammo_boost_level) * 0.05)
+	# 修复：基于base_fire_rate和ammo_boost_level正确计算射速
+	fire_rate = max(0.1, base_fire_rate - float(ammo_boost_level) * 0.05)
 	_fire_timer += delta
 	if _fire_timer >= fire_rate:
 		_fire_timer = 0.0
@@ -226,10 +227,8 @@ func _attack():
 		if nearest and _is_enemy_in_range(nearest):
 			if triple_shot_unlocked:
 				_spawn_triple_bullet()
-				print("🎯 [三发子弹] 发射3发子弹！")
 			else:
 				_spawn_bullet(Vector2(0, -1))
-				print("🔫 [单发子弹] 发射1发子弹")
 			if audio_manager:
 				audio_manager.play_shoot()
 
@@ -306,16 +305,15 @@ func apply_ammo_boost(type: int):
 		0:
 			ammo_boost_level = 1
 			ammo_boost_timer = 15.0
-			print("🎯 [弹药桶] 获得重型机枪！伤害+5")
+			print("🎯 [弹药桶] 获得重型机枪！伤害+5，持续15秒")
 		1:
 			ammo_boost_level = 2
 			ammo_boost_timer = 10.0
-			fire_rate = 0.15
-			print("🎯 [弹药桶] 获得加特林！射速翻倍")
+			print("🎯 [弹药桶] 获得加特林！射速提升，持续10秒")
 		2:
 			ammo_boost_level = 3
 			ammo_boost_timer = 8.0
-			print("🎯 [弹药桶] 获得散弹枪！范围攻击")
+			print("🎯 [弹药桶] 获得散弹枪！范围攻击，持续8秒")
 	emit_signal("ammo_boost_applied", ammo_boost_level)
 
 func take_damage(damage: float):
@@ -358,8 +356,9 @@ func _update_debug_info():
 		print("📊 [调试] 当前状态:")
 		print("   - 击杀数: " + str(kills))
 		print("   - 三发子弹: " + ("已解锁" if triple_shot_unlocked else "未解锁"))
-		print("   - 火力等级: " + str(ammo_boost_level))
+		print("   - 火力等级: " + str(ammo_boost_level) + " (剩余: " + str(int(ammo_boost_timer)) + "秒)")
 		print("   - 子弹速度: " + str(bullet_speed))
+		print("   - 射速: " + str(fire_rate))
 
 func _spawn_debug_ammo_barrel():
 	var barrel_scene = load("res://scripts/AmmoBarrel.gd")

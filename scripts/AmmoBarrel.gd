@@ -15,8 +15,11 @@ var spawn_time = 0.0
 signal barrel_exploded
 
 func _ready():
+	# 修复：collision_layer=2, collision_mask=1 只检测player
+	# 但需要避免与zombie物理碰撞，所以使用ignore_layers
 	collision_layer = 2
 	collision_mask = 1
+	ignore_collision_layer(1)  # 忽略与layer 1 (zombie)的物理碰撞
 	_setup_barrel()
 	_setup_collision()
 	
@@ -28,7 +31,6 @@ func _ready():
 	label.position = Vector2(-20, 35)
 	add_child(label)
 	
-	# 修复：只连接player碰撞，不连接zombie碰撞
 	body_entered.connect(_on_body_entered)
 	
 	spawn_time = Time.get_ticks_msec()
@@ -90,10 +92,9 @@ func _physics_process(delta):
 		queue_free()
 
 func _on_body_entered(body: Node2D):
-	# 修复：只检测player，不检测zombie（避免碰撞僵尸时爆炸）
 	if body.is_in_group("player"):
 		_collect_barrel(body)
-	# 移除zombie碰撞检测，让弹药桶穿过僵尸
+	# 不再检测zombie碰撞，让弹药桶穿过僵尸
 
 func _collect_barrel(player: Node2D):
 	print("")
