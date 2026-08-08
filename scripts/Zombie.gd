@@ -126,9 +126,9 @@ func _physics_process(delta):
 	var player_node = get_tree().get_first_node_in_group("player")
 	
 	# 每100帧打印一次调试信息
-	if frame_count % 100 == 0:
+	if frame_count % 100 == 0 and player_node:
 		var screen_pos = _to_screen_position()
-		print("📍 [" + zombie_type + "] 帧" + str(frame_count) + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_pos.y)) + ") 玩家节点=" + str(player_node != null))
+		print("📍 [" + zombie_type + "] 帧" + str(frame_count) + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_pos.y)) + ")")
 	
 	if player_node:
 		var target_x_pos: float = player_node.position.x - 360.0
@@ -149,7 +149,7 @@ func _physics_process(delta):
 		var screen_pos = _to_screen_position()
 		var screen_y = screen_pos.y
 		
-		# 关键修改：只要僵尸到达玩家Y坐标就游戏失败
+		# 关键：只要僵尸到达玩家Y坐标就游戏失败
 		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
 			has_reached_player = true
 			print("")
@@ -196,10 +196,18 @@ func take_damage(damage: float):
 
 func _die():
 	var player = get_tree().get_first_node_in_group("player")
+	# 找到spawner
+	var spawner = get_tree().get_first_node_in_group("spawner")
+	
 	if player:
 		player.add_experience(EXPERIENCE_REWARD)
 		player.add_kill()
 		print("💀 Zombie死亡: 类型=" + zombie_type + " 玩家击杀数=" + str(player.kills))
+	
+	# 通知spawner统计击杀数
+	if spawner:
+		spawner.add_kill()
+		print("📊 Spawner击杀数: " + str(spawner.current_kills) + "/" + str(spawner.BOSS_KILLS_REQUIRED))
 	
 	if is_boss or zombie_type == "boss":
 		emit_signal("boss_died")

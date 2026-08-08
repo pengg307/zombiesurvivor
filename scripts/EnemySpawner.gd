@@ -10,9 +10,9 @@ const BOSS_HEALTH = 500.0
 
 # 5x5矩阵生成
 const SPAWN_MATRIX_SIZE = 5
-const SPAWN_LEFT_X = -150.0  # 左侧起点
-const SPAWN_RIGHT_X = 150.0  # 右侧起点
-const SPAWN_TOP_Y = -200.0   # 顶部生成位置
+const SPAWN_LEFT_X = -150.0
+const SPAWN_RIGHT_X = 150.0
+const SPAWN_TOP_Y = -200.0
 
 var spawn_timer = Timer.new()
 var wave_active = false
@@ -30,6 +30,7 @@ signal game_won
 
 func _ready():
 	add_to_group("audio_manager")
+	add_to_group("spawner")  # 添加spawner组
 	add_child(spawn_timer)
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
@@ -152,7 +153,6 @@ func _spawn_boss():
 		var boss = zombie_scene.new()
 		boss.zombie_type = "boss"
 		boss.is_boss = true
-		# Boss从中间生成
 		boss.position = Vector2(0, SPAWN_TOP_Y)
 		add_child(boss)
 		boss_active = true
