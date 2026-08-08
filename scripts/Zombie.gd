@@ -82,7 +82,7 @@ func _setup_boss_sprite():
 	sprite.visible = true
 	
 	# 尝试加载boss素材
-	var texture_path = "res://assets/downloads/littleboss_rgba.png"
+	var texture_path = "res://assets/downloads/boss.png"
 	var texture = load(texture_path)
 	
 	if texture:
@@ -92,7 +92,7 @@ func _setup_boss_sprite():
 		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
-		print("🎨 Boss素材加载成功: littleboss_rgba.png")
+		print("🎨 Boss素材加载成功: boss.png")
 		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
 		return
 	
