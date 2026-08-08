@@ -21,7 +21,7 @@ var base_speed = BASE_SPEED
 var target_x = 0.0
 var side = "左侧"
 var frame_count = 0
-var sprite_node: Sprite2D = null
+var sprite_node: Sprite2D = nil
 var walk_timer = 0.0
 var current_frame = 0
 var hit_flash_timer = 0.0
@@ -40,6 +40,9 @@ func _ready():
 	collision_layer = 1
 	collision_mask = 2
 	
+	# Defer collision setup to avoid "flushing queries" error
+	call_deferred("_setup_collision")
+	
 	if is_boss or zombie_type == "boss":
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
@@ -49,8 +52,6 @@ func _ready():
 		_setup_sprite()
 	else:
 		_setup_sprite()
-	
-	_setup_collision()
 	
 	print("✅ Zombie创建: 类型=" + zombie_type + " 初始位置=中心(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ")")
 
@@ -77,28 +78,29 @@ func _setup_boss_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	
-	# 尝试加载boss素材，如果失败使用红色方块
+	# 尝试加载boss素材
 	var texture_path = "res://assets/downloads/littleboss.png"
 	var texture = load(texture_path)
 	
 	if texture:
 		sprite.texture = texture
 		sprite.centered = true
-		sprite.scale = Vector2(1.5, 1.5)
+		sprite.scale = Vector2(2.0, 2.0)  # 更大更明显
 		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
 		print("🎨 Boss素材加载成功: littleboss.png")
 	else:
-		# 使用红色方块作为Boss
+		# 使用大型红色方块作为Boss，确保可见
 		print("⚠️ Boss素材加载失败，使用红色方块")
 		var rect = ColorRect.new()
-		rect.size = Vector2(80, 80)
-		rect.color = Color(0.8, 0.2, 0.2)  # 红色
+		rect.size = Vector2(100, 100)  # 更大
+		rect.color = Color(1, 0, 0)  # 纯红色，更明显
 		sprite.add_child(rect)
-		sprite.scale = Vector2(1.5, 1.5)
+		sprite.scale = Vector2(2.0, 2.0)  # 再放大
 		add_child(sprite)
 		sprite_node = sprite
+		print("🎨 Boss使用红色方块 (100x100, 2x缩放)")
 
 func _setup_fallback_sprite():
 	var sprite = Sprite2D.new()
@@ -116,8 +118,8 @@ func _setup_collision():
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
 	if is_boss or zombie_type == "boss":
-		shape.radius = 40.0
-		shape.height = 100.0
+		shape.radius = 50.0  # 更大的碰撞体
+		shape.height = 120.0
 	else:
 		shape.radius = 25.0
 		shape.height = 70.0
@@ -152,7 +154,6 @@ func _physics_process(delta):
 		var screen_pos = _to_screen_position()
 		var screen_y = screen_pos.y
 		
-		# 关键：僵尸到达玩家Y坐标 = 游戏失败
 		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
 			has_reached_player = true
 			print("")
