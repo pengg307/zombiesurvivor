@@ -35,6 +35,9 @@ func _ready():
 	# 添加手雷显示
 	_add_grenade_display()
 	
+	# 添加新的状态显示
+	_add_status_displays()
+	
 	print("✅ UIManager初始化完成")
 
 func _process(_delta):
@@ -44,6 +47,8 @@ func _process(_delta):
 		_update_kills()
 		_update_triple_shot()
 		_update_grenades()
+		_update_status()
+		_update_boss_progress()
 
 func set_player(player_node):
 	player = player_node
@@ -86,6 +91,31 @@ func _update_triple_shot():
 func _update_grenades():
 	if player and has_node("GrenadeDisplay"):
 		$GrenadeDisplay.text = "💣 手雷: %d" % player.grenades
+
+func _update_status():
+	if player:
+		if has_node("DamageDisplay"):
+			$DamageDisplay.text = "⚔️ 伤害: %.1f" % player.damage_per_shot
+		if has_node("SpeedDisplay"):
+			$SpeedDisplay.text = "💨 射速: %.2fs" % player.fire_rate
+		if has_node("BulletSpeedDisplay"):
+			$BulletSpeedDisplay.text = "🚀 子弹速度: %d" % player.bullet_speed
+		if player.ammo_boost_timer > 0:
+			if has_node("AmmoBoostDisplay"):
+				$AmmoBoostDisplay.text = "🛢️ 增益: %ds" % int(player.ammo_boost_timer)
+				$AmmoBoostDisplay.visible = true
+			else:
+				if has_node("AmmoBoostDisplay"):
+					$AmmoBoostDisplay.visible = false
+		else:
+			if has_node("AmmoBoostDisplay"):
+				$AmmoBoostDisplay.visible = false
+
+func _update_boss_progress():
+	if spawner and has_node("BossProgress"):
+		var boss_required = spawner.BOSS_KILLS_REQUIRED
+		var boss_current = spawner.current_kills
+		$BossProgress.text = "👹 Boss进度: %d/%d" % [boss_current, boss_required]
 
 func _on_start_game():
 	if has_node("StartPanel"):
@@ -190,3 +220,50 @@ func _add_grenade_display():
 	grenade_label.modulate = Color(1, 0.5, 0.3)
 	grenade_label.add_theme_font_size_override("font_size", 18)
 	add_child(grenade_label)
+
+func _add_status_displays():
+	# 添加伤害显示
+	var damage_label = Label.new()
+	damage_label.name = "DamageDisplay"
+	damage_label.text = "⚔️ 伤害: 10.0"
+	damage_label.position = Vector2(600, 60)
+	damage_label.modulate = Color(1, 0.3, 0.3)
+	damage_label.add_theme_font_size_override("font_size", 16)
+	add_child(damage_label)
+	
+	# 添加射速显示
+	var speed_label = Label.new()
+	speed_label.name = "SpeedDisplay"
+	speed_label.text = "💨 射速: 0.30s"
+	speed_label.position = Vector2(600, 80)
+	speed_label.modulate = Color(0.3, 1, 0.3)
+	speed_label.add_theme_font_size_override("font_size", 16)
+	add_child(speed_label)
+	
+	# 添加子弹速度显示
+	var bullet_speed_label = Label.new()
+	bullet_speed_label.name = "BulletSpeedDisplay"
+	bullet_speed_label.text = "🚀 子弹速度: 600"
+	bullet_speed_label.position = Vector2(600, 100)
+	bullet_speed_label.modulate = Color(0.3, 0.3, 1)
+	bullet_speed_label.add_theme_font_size_override("font_size", 16)
+	add_child(bullet_speed_label)
+	
+	# 添加增益计时器显示
+	var ammo_boost_label = Label.new()
+	ammo_boost_label.name = "AmmoBoostDisplay"
+	ammo_boost_label.text = "🛢️ 增益: 0s"
+	ammo_boost_label.position = Vector2(600, 120)
+	ammo_boost_label.modulate = Color(1, 1, 0.3)
+	ammo_boost_label.add_theme_font_size_override("font_size", 16)
+	ammo_boost_label.visible = false
+	add_child(ammo_boost_label)
+	
+	# 添加Boss进度显示
+	var boss_progress_label = Label.new()
+	boss_progress_label.name = "BossProgress"
+	boss_progress_label.text = "👹 Boss进度: 0/10"
+	boss_progress_label.position = Vector2(600, 140)
+	boss_progress_label.modulate = Color(1, 0.5, 0.5)
+	boss_progress_label.add_theme_font_size_override("font_size", 16)
+	add_child(boss_progress_label)
