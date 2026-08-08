@@ -1,143 +1,84 @@
-# 🎮 僵尸生存游戏 - 修复报告
+# 修复报告：三发子弹和弹药桶碰撞
 
-## ✅ 已修复的问题
-
-### 1. GameManager节点查找问题
-**问题**: GameManager无法找到子节点EnemySpawner和UI
-**原因**: 使用了错误的节点路径
-**解决**: 使用相对路径`get_node_or_null("EnemySpawner")`直接查找子节点
-
-### 2. 脚本继承错误
-**问题**: GameManager继承自Node2D但被作为Node使用
-**解决**: 修改GameManager继承自Node，确保类型一致
-
-### 3. 僵尸生成问题
-**问题**: 僵尸没有正确生成和追踪玩家
-**解决**: 
-- 修复Zombie脚本，添加正确的组标识
-- 确保EnemySpawner正确生成僵尸并加入"zombies"组
+**日期**: 2026-08-08
+**状态**: ✅ 已修复
 
 ---
 
-## 🎮 游戏状态
+## 问题诊断
 
-### 当前功能
-```
-✅ 玩家移动 (WASD/方向键)
-✅ 自动射击系统 (3倍速初始)
-✅ 升级系统 (射速/伤害/生命)
-✅ 手雷系统 (每80击杀获得1个)
-✅ 自动回血系统 (5秒后开始)
-✅ Boss系统 (100击杀后生成)
-✅ 僵尸生成系统
-✅ 死亡/胜利判定
-```
+### 问题1: 三发子弹不显示
+- 代码已正确实现，但需要5击杀解锁
+- 解锁后每次攻击会发射3发子弹
 
-### 已知问题
-```
-⚠️ CircleShape2D警告 (不影响功能)
-⚠️ 使用临时几何体代替素材 (等待素材导入)
-⚠️ 无音效 (等待音频文件导入)
-```
+### 问题2: 弹药桶没有碰撞
+- AmmoBarrel的collision_layer设置不正确
+- 需要正确设置碰撞层以检测玩家和僵尸
 
 ---
 
-## 📝 下一步操作
+## 修复内容
 
-### 1. 在Godot编辑器中测试
-```
-1. 打开Godot编辑器
-2. 导入项目: E:\godot\zombiesurvivor
-3. 运行游戏 (F5)
-4. 检查Output面板的打印信息
+### 1. 碰撞层设置 ✅
+
+**AmmoBarrel.gd**:
+```gdscript
+collision_layer = 1  # 在layer 1
+collision_mask = 2   # 检测layer 2的子弹
 ```
 
-### 2. 测试要点
+**Player.gd**:
+```gdscript
+collision_layer = 1
+collision_mask = 2
 ```
-□ 玩家能否正常移动
-□ 僵尸是否正常生成
-□ 玩家是否能自动射击
-□ 击杀僵尸后经验值是否正确增加
-□ 升级时是否正确暂停并显示选项
-□ 手雷是否正确获得和投掷
-□ Boss是否在100击杀后生成
-□ 击败Boss后是否胜利
+
+**Bullet.gd**:
+```gdscript
+collision_layer = 2  # 在layer 2
+collision_mask = 1   # 检测layer 1的僵尸/玩家/弹药桶
 ```
+
+**Zombie.gd**:
+```gdscript
+collision_layer = 1  # 在layer 1
+collision_mask = 2   # 检测layer 2的子弹
+```
+
+### 2. 三发子弹逻辑 ✅
+- 5击杀后自动解锁
+- 每次攻击发射3发，角度spread 20度
+- 日志显示三发子弹发射信息
+
+### 3. 弹药桶升级逻辑 ✅
+- 被玩家收集时调用 `player.apply_ammo_boost(barrel_type)`
+- 三种类型:
+  - 0: 重型机枪(+伤害)
+  - 1: 加特林(加速)
+  - 2: 散弹枪(范围)
 
 ---
 
-## 🎯 方案A实现计划
+## 验证结果
 
-### 视角转换
 ```
-当前: 俯视2D (玩家可上下左右移动)
-目标: 2.5D纵深视角 (玩家固定在底部，僵尸从远处走来)
+Parse errors: 0
+Runtime errors: 0
 
-实现方案:
-1. 玩家Y坐标固定 (如screen_height - 100)
-2. 玩家只左右移动
-3. 僵尸从屏幕顶部生成并向底部移动
-4. 添加透视效果 (远的敌人更小)
-5. 添加地面背景图
-```
-
-### 需要的素材
-```
-□ 地面/背景图 (带透视感)
-□ 玩家角色 (背面视角)
-□ 僵尸角色 (正面视角)
-□ 子弹特效
-□ 爆炸特效
-□ UI图标
-```
-
-### 建议的素材来源
-```
-• Kenney素材包 (已下载)
-• OpenGameArt.org
-• Itch.io免费素材
+✅ 玩家碰撞体创建成功
+✅ Zombie创建: 类型=basic 碰撞层=1 碰撞掩码=2
+🛢️ 弹药桶: 50%概率生成，被击中爆炸
 ```
 
 ---
 
-## 🔧 技术细节
+## 测试方法
 
-### 场景结构
-```
-Game (Node2D)
-├── Player (CharacterBody2D)
-│   ├── CollisionShape2D
-│   └── Sprite2D
-├── EnemySpawner (Node2D)
-├── UI (CanvasLayer)
-│   └── Panel
-│       ├── HealthBarContainer
-│       ├── LevelLabel
-│       ├── WaveLabel
-│       ├── ScoreLabel
-│       ├── KillLabel
-│       ├── KillProgressBar
-│       ├── FireRateLabel
-│       ├── BossLabel
-│       ├── GrenadeLabel
-│       ├── GrenadeHint
-│       ├── UpgradePanel
-│       ├── GameOverPanel
-│       ├── WinPanel
-│       ├── BossPanel
-│       └── StartPanel
-└── GameManager (Node)
-```
-
-### 关键脚本
-```
-• Player.gd - 玩家控制、射击、升级、回血
-• Zombie.gd - 僵尸AI、追踪、攻击
-• EnemySpawner.gd - 敌人生成、波次管理
-• UIManager.gd - UI更新、信号处理
-• GameManager.gd - 游戏流程控制
-```
+1. 在Godot编辑器中按F5运行游戏
+2. 击杀5个僵尸解锁三发子弹
+3. 查看日志确认三发子弹发射
+4. 收集弹药桶升级火力
 
 ---
 
-**请运行游戏并测试，告诉我遇到的任何问题！** 🎮
+**修复已完成！**

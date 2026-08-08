@@ -16,15 +16,32 @@ class_name AudioManager
 @export var bgm: AudioStream
 @export var bgm_volume: float = 0.3
 
-# 音效通道
-@onready var sfx_bus: int = AudioServer.get_bus_index("SFX")
-@onready var music_bus: int = AudioServer.get_bus_index("Music")
+# 音效通道索引
+var sfx_bus_idx: int = -1
+var music_bus_idx: int = -1
 @onready var bgm_player: AudioStreamPlayer = null
 
 func _ready():
-	# 设置音量
-	AudioServer.set_bus_volume_db(music_bus, linear_to_db(bgm_volume))
-	
+	# 确保音效和音乐通道存在
+	var bus_count = AudioServer.get_bus_count()
+	sfx_bus_idx = -1
+	music_bus_idx = -1
+	for i in range(bus_count):
+		var bus_name = AudioServer.get_bus_name(i)
+		if bus_name == "SFX":
+			sfx_bus_idx = i
+		elif bus_name == "Music":
+			music_bus_idx = i
+	if sfx_bus_idx == -1:
+		AudioServer.add_bus()
+		sfx_bus_idx = AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(sfx_bus_idx, "SFX")
+	if music_bus_idx == -1:
+		AudioServer.add_bus()
+		music_bus_idx = AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(music_bus_idx, "Music")
+		AudioServer.set_bus_volume_db(music_bus_idx, linear_to_db(bgm_volume))
+
 	# 创建背景音乐播放器
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.bus = "Music"
@@ -82,7 +99,9 @@ func play_bgm() -> void:
 
 func set_bgm_volume(volume: float) -> void:
 	bgm_volume = clamp(volume, 0.0, 1.0)
-	AudioServer.set_bus_volume_db(music_bus, linear_to_db(bgm_volume))
+	if music_bus_idx >= 0:
+		AudioServer.set_bus_volume_db(music_bus_idx, linear_to_db(bgm_volume))
 
 func set_sfx_volume(volume: float) -> void:
-	AudioServer.set_bus_volume_db(sfx_bus, linear_to_db(volume))
+	if sfx_bus_idx >= 0:
+		AudioServer.set_bus_volume_db(sfx_bus_idx, linear_to_db(volume))

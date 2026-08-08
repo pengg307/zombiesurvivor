@@ -1,208 +1,350 @@
 extends CharacterBody2D
+class_name Player
 
+const VIEWPORT_WIDTH = 720.0
+const VIEWPORT_HEIGHT = 1280.0
 const MOVE_SPEED = 250.0
 const MAX_HEALTH = 100.0
 const BASE_Y = 1100.0
 const FIRE_RATE_BASE = 0.3
 const SHOT_RANGE = 1200.0
+const GRENADE_INTERVAL = 80
+const MAX_GRENADES = 5
 
-var current_health = MAX_HEALTH
-var level = 1
-var experience = 0
-var kills = 0
-var move_direction = Vector2.ZERO
-var attack_timer = 0.0
-var fire_rate = FIRE_RATE_BASE
-var bullet_speed = 600.0
-var kills_for_speed = 0
+var current_health: float = MAX_HEALTH
+var experience: int = 0
+var kills: int = 0
+var ammo_boost_level: int = 0
+var ammo_boost_timer: float = 0.0
+var fire_rate: float = FIRE_RATE_BASE
+var bullet_speed: float = 600.0
+var kills_for_speed: int = 0
 var sprite_node: Sprite2D = null
-var walk_timer = 0.0
-var triple_shot_unlocked = false
-var ammo_boost_level = 0  # 弹药桶增强等级
-var ammo_boost_timer = 0.0  # 增强持续时间计时器
+var walk_timer: float = 0.0
+var anim_frame: int = 0
+var triple_shot_unlocked: bool = false
+var grenades: int = 0
+var grenade_cooldown: float = 0.0
+var audio_manager = null
+var touch_left = false
+var touch_right = false
+var mouse_left = false
+var mouse_right = false
+var input_mode = "keyboard"
+var last_log_kill = -1
+var debug_mode = false
+var _fire_timer = 0.0
+var move_direction = Vector2(0, 0)
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
+signal player_damaged
+signal player_died
+signal boss_spawned
+signal game_won
 
 func _ready():
-	# 玩家位置固定在屏幕底部中央
-	position = Vector2(360, BASE_Y)
-	# 设置碰撞层（layer 2 = 1<<1）
-	collision_layer = 2
-	collision_mask = 1  # 检测 ammo_barrels (layer 1)
-	# 添加碰撞形状
+	set_process_input(true)
+	input_mode = "keyboard"
+	
+	# 设置碰撞层
+	collision_layer = 1
+	collision_mask = 2
+	add_to_group("player")
+	
+	position = Vector2(VIEWPORT_WIDTH / 2.0, BASE_Y)
 	_setup_collision()
 	_setup_character()
-	# 添加坐标标签
 	_add_position_label()
-	print("✅ Player创建成功 - 位置:", position)
-
-func _setup_collision():
-	# 添加碰撞形状用于检测弹药桶
-	var collision = CollisionShape2D.new()
-	collision.name = "Collision"
-	var shape = CapsuleShape2D.new()
-	shape.radius = 25.0
-	shape.height = 50.0
-	collision.shape = shape
-	add_child(collision)
-
-func _add_position_label():
-	# 添加坐标标签显示玩家位置（放在玩家底部）
-	var label = Label.new()
-	label.name = "PositionLabel"
-	label.text = "Player(360,1100)"
-	label.add_theme_font_size_override("font_size", 14)
-	label.modulate = Color(1, 1, 0.3)  # 亮黄色
-	label.position = Vector2(-30, 30)  # 改为下方
-	add_child(label)
-	print("📍 Player坐标标签已添加")
+	_setup_audio()
+	
+	print("")
+	print("============================================================")
+	print("🎮 Player启动！碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
+	print("============================================================")
+	print("📊 当前状态:")
+	print("   - 三发子弹: " + ("已解锁" if triple_shot_unlocked else "未解锁(需要5击杀)"))
+	print("   - 当前手雷: " + str(grenades))
+	print("   - 火力增强等级: " + str(ammo_boost_level))
+	print("   - 移动速度: " + str(MOVE_SPEED))
+	print("   - 输入模式: " + input_mode)
+	print("============================================================")
+	print("")
 
 func _setup_character():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
-	
-	# 使用下载的玩家素材
-	var texture = load("res://assets/downloads/player_back_run.png")
+	var texture = load("res://assets/kenney_top-down-shooter/PNG/Man Blue/manBlue_stand.png")
 	if texture:
 		sprite.texture = texture
-		sprite.region_enabled = true
-		sprite.region_rect = Rect2(0, 0, 256, 64)
-		# 缩小到1/5
-		sprite.scale = Vector2(0.5, 0.5)
+		sprite.centered = true
 		add_child(sprite)
 		sprite_node = sprite
-		print("🎨 玩家素材加载成功，已缩小到0.5倍")
+		print("🎨 玩家素材加载成功")
 	else:
-		print("❌ 无法加载玩家素材，使用默认矩形")
-		var rect = ColorRect.new()
-		rect.size = Vector2(50, 70)
-		rect.color = Color(0.2, 0.4, 0.8)
-		sprite.add_child(rect)
-		add_child(sprite)
-		sprite_node = sprite
+		_setup_fallback_sprite()
 
-func _process(delta):
-	# 更新弹药桶增强计时器
-	if ammo_boost_timer > 0:
-		ammo_boost_timer -= delta
-		if ammo_boost_timer <= 0:
-			print("⏰ 弹药桶增强效果结束")
-			ammo_boost_level = 0
+func _setup_fallback_sprite():
+	var sprite = Sprite2D.new()
+	sprite.name = "Sprite"
+	var rect = ColorRect.new()
+	rect.size = Vector2(40, 60)
+	rect.color = Color(0.2, 0.4, 0.8)
+	sprite.add_child(rect)
+	add_child(sprite)
+	sprite_node = sprite
+	print("⚠️ 使用备用玩家素材")
+
+func _setup_collision():
+	var collision = CollisionShape2D.new()
+	collision.name = "Collision"
+	var shape = CapsuleShape2D.new()
+	shape.radius = 30.0
+	shape.height = 50.0
+	collision.shape = shape
+	add_child(collision)
+	print("✅ 玩家碰撞体创建成功")
+
+func _add_position_label():
+	var label = Label.new()
+	label.name = "PositionLabel"
+	label.text = "位置:" + str(int(position.x)) + "," + str(int(position.y))
+	label.add_theme_font_size_override("font_size", 12)
+	label.position = Vector2(0, -40)
+	add_child(label)
+	print("✅ 位置标签创建成功")
+
+func _setup_audio():
+	var am = get_tree().get_first_node_in_group("audio_manager")
+	if am:
+		audio_manager = am
+		print("🔊 音频管理器连接成功")
+	else:
+		print("⚠️ 未找到音频管理器")
+
+func _unhandled_input(event):
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_D:
+			debug_mode = !debug_mode
+			print("")
+			print("🔧 调试模式: " + ("开启" if debug_mode else "关闭"))
+			if debug_mode:
+				print("   按T解锁三发子弹")
+				print("   按B生成弹药桶")
+				print("   按K模拟击杀")
+				print("   按R重置游戏")
+		elif event.keycode == KEY_T and debug_mode:
+			if not triple_shot_unlocked:
+				triple_shot_unlocked = true
+				print("")
+				print("🔓 [调试] 三发子弹已解锁！")
+		elif event.keycode == KEY_B and debug_mode:
+			_spawn_debug_ammo_barrel()
+		elif event.keycode == KEY_K and debug_mode:
+			_simulate_kill()
+		elif event.keycode == KEY_R and debug_mode:
+			get_tree().reload_current_scene()
 	
-	attack_timer -= delta
-	if attack_timer <= 0:
-		_attack()
-		attack_timer = fire_rate
+	if event is InputEventScreenTouch:
+		var viewport_width = get_viewport().get_visible_rect().size.x
+		if event.position.x < viewport_width / 2.0:
+			touch_left = event.pressed
+			touch_right = false
+		else:
+			touch_right = event.pressed
+			touch_left = false
+	elif event is InputEventScreenDrag:
+		var viewport_width = get_viewport().get_visible_rect().size.x
+		if event.position.x < viewport_width / 2.0:
+			touch_left = true
+			touch_right = false
+		else:
+			touch_right = true
+			touch_left = false
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				mouse_left = true
+				print("🖱️ 鼠标左键按下 - 向左移动")
+				if grenades > 0 and grenade_cooldown <= 0:
+					_throw_grenade()
+			else:
+				mouse_left = false
+				print("🖱️ 鼠标左键释放")
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			if event.pressed:
+				mouse_right = true
+				print("🖱️ 鼠标右键按下 - 向右移动")
+			else:
+				mouse_right = false
+				print("🖱️ 鼠标右键释放")
+	elif event is InputEventKey:
+		if event.pressed:
+			if event.keycode == KEY_SPACE and grenades > 0 and grenade_cooldown <= 0:
+				_throw_grenade()
+			elif event.keycode == KEY_ESCAPE:
+				get_tree().quit()
 
 func _physics_process(delta):
-	walk_timer += delta
-	move_direction.y = 0
-	velocity.x = move_direction.x * MOVE_SPEED
-	move_and_slide()
+	_move(delta)
+	_shoot(delta)
+	_handle_grenade(delta)
+	_update_position_label()
+	_animate(delta)
+	_update_debug_info()
+
+func _move(delta):
+	var direction = Vector2(0, 0)
+	input_mode = "keyboard"
 	
-	# 玩家固定在屏幕底部
-	position.x = clamp(position.x, 32, 688)
-	position.y = BASE_Y
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT) or touch_left or mouse_left:
+		direction.x = -1
+		input_mode = "keyboard"
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT) or touch_right or mouse_right:
+		direction.x = 1
+		input_mode = "keyboard"
 	
-	# 更新动态坐标标签
-	if has_node("PositionLabel"):
-		$PositionLabel.text = "Player(" + str(int(position.x)) + ",1100)"
+	if direction.x != 0:
+		position.x += direction.x * MOVE_SPEED * delta
+		position.x = clamp(position.x, 30.0, VIEWPORT_WIDTH - 30.0)
 	
-	if Input.is_action_pressed("ui_left") or Input.is_key_pressed(KEY_A):
-		move_direction.x = -1
-		if has_node("Sprite") and sprite_node:
-			var frame = int(walk_timer * 5) % 4
-			sprite_node.region_rect = Rect2(frame * 256, 0, 256, 64)
-	elif Input.is_action_pressed("ui_right") or Input.is_key_pressed(KEY_D):
-		move_direction.x = 1
-		if has_node("Sprite") and sprite_node:
-			var frame = int(walk_timer * 5) % 4
-			sprite_node.region_rect = Rect2(frame * 256, 0, 256, 64)
-	else:
-		move_direction.x = 0
-		if has_node("Sprite") and sprite_node:
-			sprite_node.region_rect = Rect2(0, 0, 256, 64)
+	var prev_y = position.y
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		position.y -= MOVE_SPEED * 0.5 * delta
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		position.y += MOVE_SPEED * 0.5 * delta
+	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
+	
+	if position.y != prev_y:
+		input_mode = "keyboard"
+
+func _shoot(delta):
+	fire_rate = max(0.1, FIRE_RATE_BASE - float(ammo_boost_level) * 0.05)
+	_fire_timer += delta
+	if _fire_timer >= fire_rate:
+		_fire_timer = 0.0
+		_attack()
 
 func _attack():
 	var enemies = get_tree().get_nodes_in_group("zombies")
-	print("🔍 扫描敌人 - 数量:", enemies.size())
-	
 	if enemies.size() > 0:
 		var nearest = _find_nearest_enemy(enemies)
-		if nearest:
-			var dist = position.distance_to(nearest.position)
-			print("🎯 最近敌人距离:", int(dist), "射程:", SHOT_RANGE)
-			
-			if dist <= SHOT_RANGE:
-				# 检查是否解锁三发子弹
-				if triple_shot_unlocked:
-					_spawn_triple_bullet(nearest.position)
-					print("🔫 发射三发子弹！")
-				else:
-					_spawn_bullet(nearest.position, Vector2(0, -1))
-					print("🔫 发射一发子弹！")
-		else:
-			print("❌ 找不到最近敌人")
+		if nearest and _is_enemy_in_range(nearest):
+			if triple_shot_unlocked:
+				_spawn_triple_bullet()
+				print("🎯 [三发子弹] 发射3发子弹！")
+			else:
+				_spawn_bullet(Vector2(0, -1))
+				print("🔫 [单发子弹] 发射1发子弹")
+			if audio_manager:
+				audio_manager.play_shoot()
 	else:
-		print("⚠️ 没有敌人")
+		if debug_mode:
+			print("📢 当前没有 zombie 在范围内")
 
 func _find_nearest_enemy(enemies):
 	var nearest = null
 	var nearest_dist = SHOT_RANGE
-	
 	for enemy in enemies:
 		var dist = position.distance_to(enemy.position)
 		if dist < nearest_dist:
 			nearest_dist = dist
 			nearest = enemy
-	
 	return nearest
 
-func _spawn_triple_bullet(target_pos: Vector2):
-	# 中央子弹
-	_spawn_bullet(target_pos, Vector2(0, -1))
-	
-	# 左子弹（向左偏2度）
-	_spawn_bullet(target_pos, Vector2(-0.035, -1))
-	
-	# 右子弹（向右偏2度）
-	_spawn_bullet(target_pos, Vector2(0.035, -1))
+func _is_enemy_in_range(enemy) -> bool:
+	return position.distance_to(enemy.position) <= SHOT_RANGE
 
-func _spawn_bullet(target_pos: Vector2, direction: Vector2):
+func _spawn_triple_bullet():
+	# 中间子弹朝上，左右各偏2度
+	var angle_spread = deg_to_rad(2.0)  # 2度偏移
+	
+	# 中间方向: 向上 (0, -1)
+	var dir_middle = Vector2(0, -1)
+	_spawn_bullet(dir_middle)
+	print("🎯 [三发子弹] 中间方向: " + str(dir_middle))
+	
+	# 左方向: 向上偏左2度
+	var dir_left = dir_middle.rotated(-angle_spread)
+	_spawn_bullet(dir_left)
+	print("🎯 [三发子弹] 左方向: " + str(dir_left))
+	
+	# 右方向: 向上偏右2度
+	var dir_right = dir_middle.rotated(angle_spread)
+	_spawn_bullet(dir_right)
+	print("🎯 [三发子弹] 右方向: " + str(dir_right))
+	
+	print("🎯 [三发子弹] 发射完成！")
+
+func _spawn_bullet(direction: Vector2):
 	var bullet = load("res://scripts/Bullet.gd").new()
 	bullet.position = position
 	bullet.position.y -= 50
 	bullet.direction = direction.normalized()
-	bullet.damage = 10.0 + ammo_boost_level * 5  # 根据弹药桶增强伤害
+	bullet.damage = 10.0 + float(ammo_boost_level) * 5.0
 	bullet.current_speed = bullet_speed
 	bullet.kills_for_speed = kills
-	
 	get_parent().add_child(bullet)
-	print("✅ 子弹发射！伤害:", bullet.damage)
+	print("  🔫 子弹生成: 方向=" + str(direction) + " 伤害=" + str(bullet.damage))
+
+func _handle_grenade(delta):
+	if grenade_cooldown > 0:
+		grenade_cooldown = max(0.0, grenade_cooldown - delta)
+
+func _throw_grenade():
+	if grenades > 0 and grenade_cooldown <= 0:
+		grenades -= 1
+		grenade_cooldown = 1.0
+		var grenade = load("res://scripts/Grenade.gd").new()
+		grenade.position = position
+		grenade.position.y -= 50
+		grenade.throw_direction = Vector2(0, -1)
+		get_parent().add_child(grenade)
+		if audio_manager:
+			audio_manager.play_grenade_throw()
+		print("💣 [手雷] 投掷手雷！剩余:" + str(grenades))
+
+func _update_position_label():
+	if has_node("PositionLabel"):
+		$PositionLabel.text = "位置:" + str(int(position.x)) + "," + str(int(position.y))
+
+func _animate(delta):
+	walk_timer += delta
+	if sprite_node and walk_timer >= 0.15:
+		walk_timer = 0.0
+		if move_direction.x != 0:
+			anim_frame = (anim_frame + 1) % 2
+			if sprite_node and sprite_node.texture:
+				sprite_node.region_rect = Rect2(anim_frame * 64, 0, 64, 64)
+		else:
+			if sprite_node and sprite_node.texture:
+				sprite_node.region_rect = Rect2(0, 0, 64, 64)
 
 func apply_ammo_boost(type: int):
-	# 根据油桶类型给予不同的增强
 	match type:
-		0:  # 重型机枪
+		0:
 			ammo_boost_level = 1
-			ammo_boost_timer = 15.0  # 持续15秒
-			print("🎯 获得重型机枪增强！伤害+5，持续15秒")
-		1:  # 加特林
+			ammo_boost_timer = 15.0
+			print("🎯 [弹药桶] 获得重型机枪！伤害+5")
+		1:
 			ammo_boost_level = 2
-			ammo_boost_timer = 10.0  # 持续10秒
-			fire_rate = 0.15  # 射速加倍
-			print("🎯 获得加特林增强！射速加倍，持续10秒")
-		2:  # 散弹枪
+			ammo_boost_timer = 10.0
+			fire_rate = 0.15
+			print("🎯 [弹药桶] 获得加特林！射速翻倍")
+		2:
 			ammo_boost_level = 3
-			ammo_boost_timer = 8.0  # 持续8秒
-			print("🎯 获得散弹枪增强！范围伤害，持续8秒")
-	
+			ammo_boost_timer = 8.0
+			print("🎯 [弹药桶] 获得散弹枪！范围攻击")
 	emit_signal("ammo_boost_applied", ammo_boost_level)
 
 func take_damage(damage: float):
-	current_health = max(0, current_health - damage)
-	print("💥 玩家受伤！血量:", current_health)
+	current_health = max(0.0, current_health - damage)
+	if audio_manager:
+		audio_manager.play_hit()
+	emit_signal("player_damaged")
+	if current_health <= 0:
+		emit_signal("player_died")
+	print("💥 [受伤] 生命值:" + str(int(current_health)))
 
 func add_experience(amount: int):
 	experience += amount
@@ -210,16 +352,46 @@ func add_experience(amount: int):
 func add_kill():
 	kills += 1
 	kills_for_speed = kills
+	print("")
+	print("💀 [击杀] 当前击杀数:" + str(kills))
 	
-	# 每10个击杀增加子弹速度
 	if kills % 10 == 0:
-		bullet_speed += 100
-		print("⚡ 子弹速度提升！当前速度:", bullet_speed)
+		bullet_speed += 100.0
+		print("⚡ [速度提升] 子弹速度:" + str(bullet_speed))
 	
-	# 击杀5个后解锁三发子弹
 	if kills == 5 and not triple_shot_unlocked:
 		triple_shot_unlocked = true
-		print("🎯 解锁三发子弹模式！")
+		print("")
+		print("🎯 [解锁] 三发子弹已解锁！现在每次发射3发子弹")
+		print("   方向: 中间向上，左右各偏2度")
+	
+	if kills > 0 and kills % GRENADE_INTERVAL == 0 and grenades < MAX_GRENADES:
+		grenades += 1
+		print("💣 [手雷] 获得手雷！当前:" + str(grenades))
 	
 	emit_signal("kill_count_changed")
-	print("💀 击杀数:", kills)
+
+func _update_debug_info():
+	if debug_mode and last_log_kill != kills:
+		last_log_kill = kills
+		print("")
+		print("📊 [调试] 当前状态:")
+		print("   - 击杀数: " + str(kills))
+		print("   - 三发子弹: " + ("已解锁" if triple_shot_unlocked else "未解锁"))
+		print("   - 火力等级: " + str(ammo_boost_level))
+		print("   - 子弹速度: " + str(bullet_speed))
+		print("   - 碰撞层: " + str(collision_layer) + " 掩码: " + str(collision_mask))
+
+func _spawn_debug_ammo_barrel():
+	var barrel_scene = load("res://scripts/AmmoBarrel.gd")
+	if barrel_scene:
+		var barrel = barrel_scene.new()
+		barrel.position = position + Vector2(0, -80)
+		barrel.barrel_type = randi() % 3
+		get_parent().add_child(barrel)
+		print("🛢️ [调试] 弹药桶已生成！类型=" + str(barrel.barrel_type))
+
+func _simulate_kill():
+	print("")
+	print("🎯 [调试] 模拟击杀！")
+	add_kill()

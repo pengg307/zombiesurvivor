@@ -3,8 +3,15 @@ class_name UIManager
 
 var player = null
 var spawner = null
+var audio_manager = null
 
 func _ready():
+	# 连接音频管理器
+	var am = get_tree().get_first_node_in_group("audio_manager")
+	if am:
+		audio_manager = am
+	
+	# 初始化面板可见性
 	if has_node("StartPanel"):
 		$StartPanel.visible = true
 	if has_node("UpgradePanel"):
@@ -17,20 +24,16 @@ func _ready():
 		$BossPanel.visible = false
 	
 	# 连接按钮
-	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
-		$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
-	
-	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
-		$GameOverPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
-	
-	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
-		$WinPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+	_connect_buttons()
 	
 	# 添加坐标参考线
 	_add_coordinate_markers()
 	
 	# 添加三发子弹状态显示
 	_add_triple_shot_display()
+	
+	# 添加手雷显示
+	_add_grenade_display()
 	
 	print("✅ UIManager初始化完成")
 
@@ -40,6 +43,7 @@ func _process(_delta):
 		_update_level()
 		_update_kills()
 		_update_triple_shot()
+		_update_grenades()
 
 func set_player(player_node):
 	player = player_node
@@ -48,6 +52,15 @@ func set_player(player_node):
 func set_spawner(spawner_node):
 	spawner = spawner_node
 	print("✅ Spawner引用已设置")
+
+func _connect_buttons():
+	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
+		$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
+	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
+		$GameOverPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
+		$WinPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+	_add_upgrade_buttons()
 
 func _update_health():
 	if player and has_node("Panel/HealthBarContainer/HealthBar"):
@@ -66,12 +79,13 @@ func _update_kills():
 
 func _update_triple_shot():
 	if player and has_node("TripleShotDisplay"):
-		var text = "🔫 三发子弹: " + ("已解锁" if player.triple_shot_unlocked else "未解锁 (" + str(player.kills) + "/5)")
+		var text = "🔫 三发子弹: " + ("已解锁" if player.triple_shot_unlocked else "未解锁 (%d/5)" % player.kills)
 		$TripleShotDisplay.text = text
-		if player.triple_shot_unlocked:
-			$TripleShotDisplay.modulate = Color(1, 1, 0.5)
-		else:
-			$TripleShotDisplay.modulate = Color(1, 1, 1)
+		$TripleShotDisplay.modulate = Color(1, 1, 0.5) if player.triple_shot_unlocked else Color(1, 1, 1)
+
+func _update_grenades():
+	if player and has_node("GrenadeDisplay"):
+		$GrenadeDisplay.text = "💣 手雷: %d" % player.grenades
 
 func _on_start_game():
 	if has_node("StartPanel"):
@@ -86,15 +100,49 @@ func show_game_over(kills):
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
 		get_tree().paused = true
+		if audio_manager:
+			audio_manager.play_game_over()
 
 func show_win(kills):
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
 		get_tree().paused = true
+		if audio_manager:
+			audio_manager.play_victory()
+
+func show_upgrade_panel():
+	if has_node("UpgradePanel"):
+		$UpgradePanel.visible = true
+		get_tree().paused = true
+
+func hide_upgrade_panel():
+	if has_node("UpgradePanel"):
+		$UpgradePanel.visible = false
+		get_tree().paused = false
+
+func _add_upgrade_buttons():
+	if not has_node("UpgradePanel"):
+		return
+	var panel = get_node("UpgradePanel")
+	if not panel or not panel.has_node("PanelContainer/VBoxContainer"):
+		return
+	var vbox = panel.get_node("PanelContainer/VBoxContainer")
+	# 清除旧按钮
+	for child in vbox.get_children():
+		if child is Button:
+			child.queue_free()
+	# 添加三个升级选项按钮
+	var options = ["射速+20%", "伤害+50%", "生命+20"]
+	for i in range(options.size()):
+		var btn = Button.new()
+		btn.text = options[i]
+		btn.name = "UpgradeBtn" + str(i)
+		btn.custom_minimum_size = Vector2(200, 50)
+		vbox.add_child(btn)
+		print("✅ 升级按钮", i, "已添加: ", options[i])
 
 func _add_coordinate_markers():
-	# 在屏幕顶部添加X坐标参考
 	var marker_label = Label.new()
 	marker_label.name = "CoordMarker"
 	marker_label.text = "X坐标: 0(左边缘) | 360(玩家) | 720(右边缘) | Y=-600生成 | Y=1100玩家"
@@ -103,7 +151,7 @@ func _add_coordinate_markers():
 	marker_label.add_theme_font_size_override("font_size", 16)
 	add_child(marker_label)
 	
-	# 添加X坐标数字标签（顶部）
+	# 添加X坐标数字标签
 	var x_labels = [0, 100, 200, 300, 360, 400, 500, 600, 700, 720]
 	for x in x_labels:
 		var label = Label.new()
@@ -114,7 +162,7 @@ func _add_coordinate_markers():
 		label.add_theme_font_size_override("font_size", 12)
 		add_child(label)
 	
-	# 添加Y坐标数字标签（左侧）
+	# 添加Y坐标数字标签
 	var y_labels = [-600, -300, 0, 300, 600, 900, 1100, 1280]
 	for y in y_labels:
 		var label = Label.new()
@@ -124,55 +172,8 @@ func _add_coordinate_markers():
 		label.modulate = Color(1, 1, 1)
 		label.add_theme_font_size_override("font_size", 12)
 		add_child(label)
-	
-	# 添加垂直参考线（用Line2D）
-	# 红色线：X=360（玩家位置）
-	var ref_line = Line2D.new()
-	ref_line.name = "RefLine"
-	ref_line.width = 3.0
-	ref_line.default_color = Color(1, 0, 0, 0.7)
-	ref_line.add_point(Vector2(360, 0))
-	ref_line.add_point(Vector2(360, 1280))
-	add_child(ref_line)
-	
-	# 添加X=0参考线（绿色）
-	var ref_line_0 = Line2D.new()
-	ref_line_0.name = "RefLine0"
-	ref_line_0.width = 2.0
-	ref_line_0.default_color = Color(0, 1, 0, 0.5)
-	ref_line_0.add_point(Vector2(0, 0))
-	ref_line_0.add_point(Vector2(0, 1280))
-	add_child(ref_line_0)
-	
-	# 添加X=720参考线（蓝色）
-	var ref_line_720 = Line2D.new()
-	ref_line_720.name = "RefLine720"
-	ref_line_720.width = 2.0
-	ref_line_720.default_color = Color(0, 0, 1, 0.5)
-	ref_line_720.add_point(Vector2(720, 0))
-	ref_line_720.add_point(Vector2(720, 1280))
-	add_child(ref_line_720)
-	
-	# 添加Y=-600参考线（黄色，在屏幕上方外）
-	var ref_line_y600 = Line2D.new()
-	ref_line_y600.name = "RefLineY600"
-	ref_line_y600.width = 2.0
-	ref_line_y600.default_color = Color(1, 1, 0, 0.5)
-	ref_line_y600.add_point(Vector2(0, -600))
-	ref_line_y600.add_point(Vector2(720, -600))
-	add_child(ref_line_y600)
-	
-	# 添加Y=1100参考线（紫色）
-	var ref_line_y1100 = Line2D.new()
-	ref_line_y1100.name = "RefLineY1100"
-	ref_line_y1100.width = 2.0
-	ref_line_y1100.default_color = Color(1, 0, 1, 0.5)
-	ref_line_y1100.add_point(Vector2(0, 1100))
-	ref_line_y1100.add_point(Vector2(720, 1100))
-	add_child(ref_line_y1100)
 
 func _add_triple_shot_display():
-	# 添加三发子弹状态显示
 	var triple_label = Label.new()
 	triple_label.name = "TripleShotDisplay"
 	triple_label.text = "🔫 三发子弹: 未解锁 (0/5)"
@@ -180,3 +181,12 @@ func _add_triple_shot_display():
 	triple_label.modulate = Color(1, 1, 1)
 	triple_label.add_theme_font_size_override("font_size", 18)
 	add_child(triple_label)
+
+func _add_grenade_display():
+	var grenade_label = Label.new()
+	grenade_label.name = "GrenadeDisplay"
+	grenade_label.text = "💣 手雷: 0"
+	grenade_label.position = Vector2(600, 35)
+	grenade_label.modulate = Color(1, 0.5, 0.3)
+	grenade_label.add_theme_font_size_override("font_size", 18)
+	add_child(grenade_label)
