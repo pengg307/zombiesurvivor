@@ -92,6 +92,8 @@ func _setup_boss_sprite():
 	# 生成4帧 - 不同亮度的红色圆形
 	for frame in range(cols):
 		var x_start = frame * frame_w
+		var cx = frame_w / 2.0
+		var cy = frame_h / 2.0
 		
 		# 亮度变化：暗-亮-暗-亮 (模拟脉冲)
 		var brightness = 0.7 + 0.3 * ((frame % 2) * 0.5 + 0.5)
@@ -99,9 +101,6 @@ func _setup_boss_sprite():
 		for px in range(frame_w):
 			for py in range(frame_h):
 				# 创建圆形（不同姿态）
-				var cx = frame_w / 2.0
-				var cy = frame_h / 2.0
-				
 				# 轻微位移模拟行走
 				var offset_x = sin(frame * PI / 2.0) * 3.0
 				var offset_y = cos(frame * PI / 2.0) * 2.0
