@@ -125,11 +125,6 @@ func _physics_process(delta):
 	
 	var player_node = get_tree().get_first_node_in_group("player")
 	
-	# 每100帧打印一次调试信息
-	if frame_count % 100 == 0 and player_node:
-		var screen_pos = _to_screen_position()
-		print("📍 [" + zombie_type + "] 帧" + str(frame_count) + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_pos.y)) + ")")
-	
 	if player_node:
 		var target_x_pos: float = player_node.position.x - 360.0
 		var target_y_pos: float = player_node.position.y - 640.0

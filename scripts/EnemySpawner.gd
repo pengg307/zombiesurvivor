@@ -1,12 +1,13 @@
 extends Node2D
 class_name EnemySpawner
 
-const SPAWN_INTERVAL = 2.0
+const SPAWN_INTERVAL = 3.0
 const MAX_ENEMIES = 50
 const BOSS_KILLS_REQUIRED = 5
 const SQUARE_SPACING = 60.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
+const WAVES_BEFORE_BOSS = 1  # 第1波后生成Boss
 
 # 5x5矩阵生成
 const SPAWN_MATRIX_SIZE = 5
@@ -20,17 +21,21 @@ var current_kills = 0
 var boss_active = false
 var wave_number = 1
 var spawn_side = 0
+var total_zombies_spawned = 0
+var total_zombies_alive = 0
 var audio_manager = null
 var game_manager = null
 var type_log_count = {"basic": 0, "fast": 0, "boss": 0}
+var should_spawn_next_wave = false
 
 signal boss_spawned
 signal game_over
 signal game_won
+signal wave_complete
 
 func _ready():
 	add_to_group("audio_manager")
-	add_to_group("spawner")  # 添加spawner组
+	add_to_group("spawner")
 	add_child(spawn_timer)
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
@@ -60,12 +65,18 @@ func _ready():
 	_spawn_matrix()
 
 func _on_spawn_timer_timeout():
-	if wave_active and current_kills < BOSS_KILLS_REQUIRED:
+	# 如果当前波次还在进行，继续生成
+	if wave_active and total_zombies_alive < MAX_ENEMIES:
+		_spawn_matrix()
+	# 如果等待下一波，也开始生成
+	elif should_spawn_next_wave:
+		start_wave()
 		_spawn_matrix()
 
 func start_wave():
 	wave_active = true
-	wave_number = 1
+	should_spawn_next_wave = false
+	total_zombies_alive = 0
 	print("")
 	print("🌊 第" + str(wave_number) + "波开始！")
 	print("")
@@ -107,6 +118,8 @@ func _spawn_matrix():
 				zombie.side = side
 				add_child(zombie)
 				type_log_count[zombie_type] = type_log_count.get(zombie_type, 0) + 1
+				total_zombies_spawned += 1
+				total_zombies_alive += 1
 				spawned_count += 1
 				if spawned_count <= 3 or spawned_count == total_zombies:
 					print("  ✅ 僵尸" + str(spawned_count) + ": 类型=" + zombie_type + " 位置=(" + str(int(x)) + "," + str(int(y)) + ")")
@@ -136,11 +149,32 @@ func _get_random_type() -> String:
 
 func add_kill():
 	current_kills += 1
+	total_zombies_alive = max(0, total_zombies_alive - 1)
+	
 	print("")
 	print("💀 [击杀数] " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
+	print("📊 存活僵尸: " + str(total_zombies_alive))
 	
+	# 检查Boss生成条件
 	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active:
 		_spawn_boss()
+	
+	# 检查波次是否完成
+	_check_wave_complete()
+
+func _check_wave_complete():
+	# 如果所有僵尸都死了，准备下一波
+	if total_zombies_alive <= 0 and not boss_active:
+		print("")
+		print("✅ 第" + str(wave_number) + "波完成！")
+		wave_active = false
+		emit_signal("wave_complete")
+		
+		# 准备下一波
+		should_spawn_next_wave = true
+		wave_number += 1
+		print("📋 准备第" + str(wave_number) + "波...")
+		print("")
 
 func _spawn_boss():
 	print("")
