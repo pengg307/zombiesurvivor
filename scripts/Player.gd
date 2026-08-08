@@ -98,7 +98,14 @@ func _setup_collision():
 	shape.height = 50.0
 	collision.shape = shape
 	add_child(collision)
+	body_entered.connect(_on_body_entered)
 	print("✅ 玩家碰撞体创建成功")
+
+func _on_body_entered(body):
+	if body.is_in_group("zombies"):
+		print("💥 僵尸碰到玩家！游戏结束！")
+		current_health = 0
+		emit_signal("player_died")
 
 func _add_position_label():
 	var label = Label.new()
