@@ -104,12 +104,8 @@ func _update_status():
 			if has_node("AmmoBoostDisplay"):
 				$AmmoBoostDisplay.text = "🛢️ 增益: %ds" % int(player.ammo_boost_timer)
 				$AmmoBoostDisplay.visible = true
-			else:
-				if has_node("AmmoBoostDisplay"):
-					$AmmoBoostDisplay.visible = false
-		else:
-			if has_node("AmmoBoostDisplay"):
-				$AmmoBoostDisplay.visible = false
+		if has_node("AmmoBoostDisplay"):
+			$AmmoBoostDisplay.visible = player.ammo_boost_timer > 0
 
 func _update_boss_progress():
 	if spawner and has_node("BossProgress"):
