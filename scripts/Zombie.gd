@@ -77,6 +77,7 @@ func _setup_boss_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	
+	# 尝试加载boss素材，如果失败使用红色方块
 	var texture_path = "res://assets/downloads/littleboss.png"
 	var texture = load(texture_path)
 	
@@ -89,8 +90,15 @@ func _setup_boss_sprite():
 		sprite_node = sprite
 		print("🎨 Boss素材加载成功: littleboss.png")
 	else:
-		print("❌ Boss素材加载失败")
-		_setup_fallback_sprite()
+		# 使用红色方块作为Boss
+		print("⚠️ Boss素材加载失败，使用红色方块")
+		var rect = ColorRect.new()
+		rect.size = Vector2(80, 80)
+		rect.color = Color(0.8, 0.2, 0.2)  # 红色
+		sprite.add_child(rect)
+		sprite.scale = Vector2(1.5, 1.5)
+		add_child(sprite)
+		sprite_node = sprite
 
 func _setup_fallback_sprite():
 	var sprite = Sprite2D.new()
@@ -144,7 +152,7 @@ func _physics_process(delta):
 		var screen_pos = _to_screen_position()
 		var screen_y = screen_pos.y
 		
-		# 关键：只要僵尸到达玩家Y坐标就游戏失败
+		# 关键：僵尸到达玩家Y坐标 = 游戏失败
 		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
 			has_reached_player = true
 			print("")
@@ -168,9 +176,6 @@ func _physics_process(delta):
 		# 超出屏幕底部也清除
 		if screen_y > SCREEN_HEIGHT + 100:
 			queue_free()
-	else:
-		if frame_count % 100 == 0:
-			print("⚠️ [" + zombie_type + "] 未找到玩家节点！")
 
 func screen_position_y() -> float:
 	return position.y + 640.0
@@ -191,7 +196,6 @@ func take_damage(damage: float):
 
 func _die():
 	var player = get_tree().get_first_node_in_group("player")
-	# 找到spawner
 	var spawner = get_tree().get_first_node_in_group("spawner")
 	
 	if player:
@@ -199,7 +203,6 @@ func _die():
 		player.add_kill()
 		print("💀 Zombie死亡: 类型=" + zombie_type + " 玩家击杀数=" + str(player.kills))
 	
-	# 通知spawner统计击杀数
 	if spawner:
 		spawner.add_kill()
 		print("📊 Spawner击杀数: " + str(spawner.current_kills) + "/" + str(spawner.BOSS_KILLS_REQUIRED))

@@ -17,6 +17,7 @@ var spawn_timer = Timer.new()
 var wave_active = false
 var current_kills = 0
 var boss_active = false
+var boss_spawned_this_game = false  # Boss只能生成一次
 var wave_number = 0
 var spawn_side = 0
 var zombies_in_wave = 0
@@ -34,7 +35,6 @@ func _ready():
 	add_child(spawn_timer)
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
-	# 启动定时器！
 	spawn_timer.start()
 	
 	var am = get_tree().get_first_node_in_group("audio_manager")
@@ -53,28 +53,24 @@ func _ready():
 	print("📊 僵尸类型分布:")
 	print("   - basic: 65% (10血, 50速)")
 	print("   - fast: 35% (8血, 70速)")
-	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现 (500血)")
+	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现 (500血，只出现一次)")
 	print("============================================================")
 	print("")
 	
-	# 立即生成第一波
 	_start_next_wave()
 
 func _on_spawn_timer_timeout():
-	# 每2.5秒生成一波新僵尸
 	_start_next_wave()
 
 func _start_next_wave():
 	wave_number += 1
 	wave_active = true
 	zombies_in_wave = SPAWN_MATRIX_SIZE * SPAWN_MATRIX_SIZE
-	# boss只在击杀数达到要求时生成，不重置
-	# boss_active = false  # 移除这行，避免Boss被重置
 	
 	print("")
 	print("🌊 第" + str(wave_number) + "波开始！")
 	if boss_active:
-		print("👹 Boss已在场！生成普通僵尸！")
+		print("👹 Boss已在场！生成普通僵尸支援！")
 	else:
 		print("📐 生成" + str(zombies_in_wave) + "个僵尸（5x5矩阵）")
 	print("")
@@ -123,8 +119,8 @@ func _spawn_matrix():
 		_spawn_ammo_barrel(start_x)
 
 func _get_random_type() -> String:
-	# Boss只在击杀数达到要求时生成，且不在战斗中
-	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active:
+	# Boss只在击杀数达到要求时生成，且只生成一次
+	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active and not boss_spawned_this_game:
 		return "boss"
 	
 	# 普通僵尸类型
@@ -142,11 +138,12 @@ func add_kill():
 	print("💀 [击杀数] " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
 	print("📊 本波剩余: " + str(zombies_in_wave))
 	
-	# Boss生成条件
-	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active:
+	# Boss生成条件（只生成一次）
+	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active and not boss_spawned_this_game:
+		boss_spawned_this_game = true
 		_spawn_boss()
 	
-	# 波次完成检测（只检测普通僵尸，Boss不算）
+	# 波次完成检测
 	if zombies_in_wave <= 0 and not boss_active:
 		print("")
 		print("✅ 第" + str(wave_number) + "波完成！")
@@ -156,8 +153,9 @@ func add_kill():
 func _spawn_boss():
 	print("")
 	print("👹 Boss生成！")
-	if audio_manager:
-		audio_manager.play_boss_spawn()
+	# 不播放音效，避免错误
+	# if audio_manager:
+	# 	audio_manager.play_boss_spawn()
 	
 	var zombie_scene = load("res://scripts/Zombie.gd")
 	if zombie_scene:
