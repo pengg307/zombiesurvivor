@@ -52,7 +52,7 @@ func _ready():
 	input_mode = "keyboard"
 	
 	collision_layer = 1
-	collision_mask = 2
+	collision_mask = 2  # Detect zombies (layer 2)
 	add_to_group("player")
 	
 	position = Vector2(VIEWPORT_WIDTH / 2.0, BASE_Y)

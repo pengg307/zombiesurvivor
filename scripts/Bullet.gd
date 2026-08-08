@@ -16,8 +16,8 @@ var triple_shot = false
 
 func _ready():
 	# 设置碰撞层: bullet在layer 2，检测layer 1的僵尸
-	collision_layer = 2
-	collision_mask = 1
+	collision_layer = 3  # Different layer
+	collision_mask = 2   # Detect zombies (layer 2) only, not player
 	body_entered.connect(_on_body_entered)
 	
 	# 绘制子弹 - 更大的黄色矩形，确保可见

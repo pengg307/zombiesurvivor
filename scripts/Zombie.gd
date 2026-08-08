@@ -37,8 +37,8 @@ func _ready():
 	current_health = BASE_HEALTH
 	add_to_group("zombies")
 	
-	collision_layer = 1
-	collision_mask = 2
+	collision_layer = 2  # Different from player so they collide
+	collision_mask = 1   # Detect player (layer 1)
 	
 	# Defer collision setup to avoid "flushing queries" error
 	call_deferred("_setup_collision")
