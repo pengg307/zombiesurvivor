@@ -8,8 +8,9 @@ const SQUARE_SPACING = 60.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 250.0
 
-const SPAWN_LEFT_X = -100.0
-const SPAWN_RIGHT_X = 100.0
+# 修改：僵尸生成位置更靠近中间（道路中央）
+const SPAWN_LEFT_X = -50.0   # 屏幕x=310，更靠近中间
+const SPAWN_RIGHT_X = 50.0    # 屏幕x=410，更靠近中间
 const SPAWN_Y = -200.0
 
 var spawn_timer = Timer.new()
@@ -44,11 +45,15 @@ func _ready():
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
 	print("============================================================")
-	print("📊 僵尸类型分布 (已修改):")
+	print("📊 僵尸生成位置 (已调整):")
+	print("   - 左侧: 中心x=-50 → 屏幕x=310")
+	print("   - 右侧: 中心x=50 → 屏幕x=410")
+	print("   - 道路中央: 屏幕x=360")
+	print("   - 距离中央: 50像素（更靠近中间）")
+	print("📊 僵尸类型分布:")
 	print("   - basic: 65% (绿色基础僵尸, 10血, 50速)")
 	print("   - fast: 25% (紫色快速僵尸, 8血, 70速)")
 	print("   - boss: 击杀20后出现 (红色大僵尸, 250血)")
-	print("   - tank: 已移除！改为弹药桶生成")
 	print("🛢️ 弹药桶: 50%概率生成，被击中爆炸")
 	print("============================================================")
 	print("")
@@ -106,7 +111,7 @@ func _spawn_square():
 				zombie.side = side
 				add_child(zombie)
 				type_log_count[zombie_type] = type_log_count.get(zombie_type, 0) + 1
-				print("✅ Zombie创建: 类型=" + zombie_type + " 位置=(" + str(int(x)) + "," + str(int(y)) + ") 屏幕=(" + str(int(x + 360)) + "," + str(int(y + 640)) + ")")
+				print("✅ Zombie创建: 类型=" + zombie_type + " 位置=(centered " + str(int(x)) + "," + str(int(y)) + ") 屏幕=( " + str(int(x + 360)) + "," + str(int(y + 640)) + ")")
 	
 	print("📊 当前统计: basic=" + str(type_log_count.get("basic", 0)) + 
 	      " fast=" + str(type_log_count.get("fast", 0)) + 
