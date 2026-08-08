@@ -13,9 +13,9 @@ var exploded = false
 signal barrel_exploded
 
 func _ready():
-	# 设置碰撞层
-	collision_layer = 1
-	collision_mask = 2
+	# 碰撞层: AmmoBarrel在layer 2，检测layer 1的player
+	collision_layer = 2
+	collision_mask = 1
 	_setup_barrel()
 	_setup_collision()
 	
@@ -27,7 +27,10 @@ func _ready():
 	label.position = Vector2(-20, 35)
 	add_child(label)
 	
-	print("🛢️ 弹药桶生成！类型:" + _get_type_name() + " 碰撞层=" + str(collision_layer))
+	# 连接碰撞信号
+	body_entered.connect(_on_body_entered)
+	
+	print("🛢️ 弹药桶生成！类型:" + _get_type_name() + " 碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
 
 func _get_type_name() -> String:
 	match barrel_type:
@@ -85,26 +88,32 @@ func _physics_process(delta):
 		queue_free()
 
 func _on_body_entered(body: Node2D):
-	print("🎯 弹药桶碰撞检测: 碰到 " + body.name + " 在group: " + str(body.get_groups()))
+	print("🎯 弹药桶碰撞检测: 碰到 " + body.name + " 碰撞层=" + str(body.collision_layer) + " 组:" + str(body.get_groups()))
 	
 	if body.is_in_group("player"):
 		_collect_barrel(body)
 	elif body.is_in_group("zombies") or body.is_in_group("bullets"):
 		_explode()
+	else:
+		print("   ⚠️ 未知碰撞体: " + body.name)
 
 func _collect_barrel(player: Node2D):
-	print("🎯 弹药桶被收集！类型:" + _get_type_name())
+	print("")
+	print("🎯 [弹药桶] 被玩家收集！类型:" + _get_type_name())
+	print("   - 当前火力等级: " + str(player.ammo_boost_level))
 	
 	if player.has_method("apply_ammo_boost"):
 		player.apply_ammo_boost(barrel_type)
-		print("✅ 玩家火力已升级！")
+		print("   - 升级后火力等级: " + str(player.ammo_boost_level))
+		print("   - 子弹伤害: " + str(10.0 + float(player.ammo_boost_level) * 5.0))
 	
 	_spawn_collect_effect()
 	emit_signal("barrel_exploded")
 	queue_free()
 
 func _explode():
-	print("💥 弹药桶爆炸！")
+	print("")
+	print("💥 [弹药桶] 爆炸！")
 	_spawn_explosion_effect()
 	emit_signal("barrel_exploded")
 	queue_free()
