@@ -78,7 +78,7 @@ func _start_game():
 	spawner.current_kills = 0
 	spawner.boss_active = false
 	spawner.wave_number = 1
-	spawner.start_wave()
+	spawner._start_next_wave()
 	print("✅ 游戏启动成功！")
 
 func restart_game():
