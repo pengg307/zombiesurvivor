@@ -83,50 +83,63 @@ func _setup_boss_sprite():
 	sprite.z_index = 50  # Boss should be on top
 	sprite.visible = true
 	
-	# 尝试加载boss素材
-	var texture_path = "res://assets/downloads/boss.png"
-	var texture = load(texture_path)
+	# 创建4帧动画精灵图 (256x128 = 4帧×64x128)
+	var frame_w = 64
+	var frame_h = 128
+	var cols = 4
+	var sheet = Image.create(frame_w * cols, frame_h, false, Image.FORMAT_RGBA8)
 	
-	if texture:
-		# 创建4帧动画精灵图 (128x128每帧)
-		var frame_size = 128
-		var sheet = Image.create(frame_size * 2, frame_size * 2, false, Image.FORMAT_RGBA8)
+	# 生成4帧 - 不同亮度的红色圆形
+	for frame in range(cols):
+		var x_start = frame * frame_w
 		
-		# 加载原图并缩放到帧大小
-		var src_img = texture.get_image()
-		var resized = src_img.resize(frame_size, frame_size)
+		# 亮度变化：暗-亮-暗-亮 (模拟脉冲)
+		var brightness = 0.7 + 0.3 * ((frame % 2) * 0.5 + 0.5)
 		
-		# 创建4帧（不同亮度的红色圆形）
-		for frame in range(4):
-			var x = (frame % 2) * frame_size
-			var y = (frame / 2) * frame_size
-			
-			# 复制底图
-			for fx in range(frame_size):
-				for fy in range(frame_size):
-					var col = resized.get_pixel(fx, fy)
-					# 根据帧调整亮度（模拟脉冲）
-					if frame == 1 or frame == 3:  # 较亮
-						col = Color(min(1.0, col.r * 1.2), min(1.0, col.g * 1.2), min(1.0, col.b * 1.2), col.a)
-					elif frame == 0 or frame == 2:  # 正常
-						pass
-					sheet.set_pixel(x + fx, y + fy, col)
+		for px in range(frame_w):
+			for py in range(frame_h):
+				# 创建圆形（不同姿态）
+				var cx = frame_w / 2.0
+				var cy = frame_h / 2.0
+				
+				# 轻微位移模拟行走
+				var offset_x = sin(frame * PI / 2.0) * 3.0
+				var offset_y = cos(frame * PI / 2.0) * 2.0
+				
+				var dist = Vector2(px - cx - offset_x, py - cy).length()
+				
+				if dist < 50:
+					# 红色身体
+					var r = 0.9 * brightness
+					var g = 0.2 * brightness
+					var b = 0.2 * brightness
+					sheet.set_pixel(x_start + px, py, Color(r, g, b, 1.0))
+				elif dist < 55:
+					# 边缘渐变
+					sheet.set_pixel(x_start + px, py, Color(0.5, 0.1, 0.1, 0.5))
+				else:
+					sheet.set_pixel(x_start + px, py, Color(0, 0, 0, 0))
 		
-		var anim_texture = ImageTexture.create_from_image(sheet)
-		sprite.texture = anim_texture
-		sprite.region_enabled = true  # 启用区域裁剪
-		sprite.region_rect = Rect2(0, 0, frame_size, frame_size)  # 第一帧
-		sprite.centered = true
-		sprite.scale = Vector2(2.0, 2.0)
-		add_child(sprite)
-		sprite_node = sprite
-		_boss_frame_size = frame_size
-		print("🎨 Boss动画精灵图创建成功 (4帧)")
-		return
+		# 画眼睛（不同位置模拟表情）
+		var eye_offset = sin(frame * PI) * 2.0
+		for angle in [PI * 0.3, PI * 0.7]:
+			var ex = int(cx + 18 * cos(angle) + eye_offset)
+			var ey = int(cy - 15 + 5 * sin(angle))
+			for dx in range(-4, 4):
+				for dy in range(-4, 4):
+					if dx*dx + dy*dy < 16:
+						sheet.set_pixel(x_start + ex + dx, ey + dy, Color(1.0, 1.0, 0.0, 1.0))
 	
-	# 如果加载失败，使用程序化生成
-	print("⚠️ Boss素材加载失败，使用程序化纹理")
-	_setup_programmatic_boss(sprite)
+	var tex = ImageTexture.create_from_image(sheet)
+	sprite.texture = tex
+	sprite.region_enabled = true
+	sprite.region_rect = Rect2(0, 0, frame_w, frame_h)
+	sprite.centered = true
+	sprite.scale = Vector2(2.5, 2.5)
+	add_child(sprite)
+	sprite_node = sprite
+	_boss_frame_size = frame_w
+	print("🎨 Boss动画精灵图创建成功 (256x128, 4帧)")
 
 func _setup_programmatic_boss(sprite: Sprite2D):
 	# 创建4帧程序化Boss纹理 (128x128每帧)
