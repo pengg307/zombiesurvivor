@@ -32,15 +32,18 @@ const SPAWN_RIGHT_X = 50.0    # 屏幕x=410，距离右边缘310像素
 - 右侧生成: 屏幕x=410 (距离中央50像素)
 - 道路两侧边缘距离: 310像素
 
+**对比:**
+- 原距离中央: 100像素
+- 新距离中央: 50像素
+- **改进: 更靠近道路中央！**
+
 ---
 
 ## Git提交
 ```
-7e28e9b Adjust zombie spawn positions closer to road center
+636ab9b Adjust zombie spawn positions closer to road center
+9b9b33e Adjust zombie spawn positions closer to road center
 9589296 Fix AmmoBarrel disappearing too early
-e0a59b0 Fix AmmoBarrel collision with Player
-5fcb688 Fix AmmoBarrel collision with Player
-974baaf Fix collision system and triple shot direction
 ```
 
 ---

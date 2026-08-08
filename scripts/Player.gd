@@ -47,7 +47,6 @@ func _ready():
 	set_process_input(true)
 	input_mode = "keyboard"
 	
-	# 设置碰撞层
 	collision_layer = 1
 	collision_mask = 2
 	add_to_group("player")
@@ -62,14 +61,6 @@ func _ready():
 	print("============================================================")
 	print("🎮 Player启动！碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
 	print("============================================================")
-	print("📊 当前状态:")
-	print("   - 三发子弹: " + ("已解锁" if triple_shot_unlocked else "未解锁(需要5击杀)"))
-	print("   - 当前手雷: " + str(grenades))
-	print("   - 火力增强等级: " + str(ammo_boost_level))
-	print("   - 移动速度: " + str(MOVE_SPEED))
-	print("   - 输入模式: " + input_mode)
-	print("============================================================")
-	print("")
 
 func _setup_character():
 	var sprite = Sprite2D.new()
@@ -112,22 +103,19 @@ func _add_position_label():
 	label.add_theme_font_size_override("font_size", 12)
 	label.position = Vector2(0, -40)
 	add_child(label)
-	print("✅ 位置标签创建成功")
 
 func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
 		audio_manager = am
-		print("🔊 音频管理器连接成功")
-	else:
-		print("⚠️ 未找到音频管理器")
 
 func _unhandled_input(event):
+	# 修复：键盘和鼠标输入分离
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D:
 			debug_mode = !debug_mode
 			print("")
-			print("🔧 调试模式: " + ("开启" if debug_mode else "关闭"))
+			print("🔧 调试模式: " + ( "开启" if debug_mode else "关闭"))
 			if debug_mode:
 				print("   按T解锁三发子弹")
 				print("   按B生成弹药桶")
@@ -144,8 +132,13 @@ func _unhandled_input(event):
 			_simulate_kill()
 		elif event.keycode == KEY_R and debug_mode:
 			get_tree().reload_current_scene()
+		elif event.keycode == KEY_SPACE and grenades > 0 and grenade_cooldown <= 0:
+			_throw_grenade()
+		elif event.keycode == KEY_ESCAPE:
+			get_tree().quit()
 	
-	if event is InputEventScreenTouch:
+	# 触屏控制
+	elif event is InputEventScreenTouch:
 		var viewport_width = get_viewport().get_visible_rect().size.x
 		if event.position.x < viewport_width / 2.0:
 			touch_left = event.pressed
@@ -161,29 +154,23 @@ func _unhandled_input(event):
 		else:
 			touch_right = true
 			touch_left = false
+	
+	# 鼠标控制 - 修复：左右键分别控制左右移动，中键投掷手雷
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
+			# 左键：向左移动
+			mouse_left = event.pressed
 			if event.pressed:
-				mouse_left = true
-				print("🖱️ 鼠标左键按下 - 向左移动")
-				if grenades > 0 and grenade_cooldown <= 0:
-					_throw_grenade()
-			else:
-				mouse_left = false
-				print("🖱️ 鼠标左键释放")
+				print("🖱️ 鼠标左键 - 向左移动")
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			# 右键：向右移动
+			mouse_right = event.pressed
 			if event.pressed:
-				mouse_right = true
-				print("🖱️ 鼠标右键按下 - 向右移动")
-			else:
-				mouse_right = false
-				print("🖱️ 鼠标右键释放")
-	elif event is InputEventKey:
-		if event.pressed:
-			if event.keycode == KEY_SPACE and grenades > 0 and grenade_cooldown <= 0:
+				print("🖱️ 鼠标右键 - 向右移动")
+		elif event.button_index == MOUSE_BUTTON_MIDDLE:
+			# 中键：投掷手雷
+			if event.pressed and grenades > 0 and grenade_cooldown <= 0:
 				_throw_grenade()
-			elif event.keycode == KEY_ESCAPE:
-				get_tree().quit()
 
 func _physics_process(delta):
 	_move(delta)
@@ -195,14 +182,24 @@ func _physics_process(delta):
 
 func _move(delta):
 	var direction = Vector2(0, 0)
-	input_mode = "keyboard"
 	
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT) or touch_left or mouse_left:
+	# 键盘输入
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 		direction.x = -1
-		input_mode = "keyboard"
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT) or touch_right or mouse_right:
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		direction.x = 1
-		input_mode = "keyboard"
+	
+	# 触屏输入
+	if touch_left:
+		direction.x = -1
+	if touch_right:
+		direction.x = 1
+	
+	# 鼠标输入
+	if mouse_left:
+		direction.x = -1
+	if mouse_right:
+		direction.x = 1
 	
 	if direction.x != 0:
 		position.x += direction.x * MOVE_SPEED * delta
@@ -214,9 +211,6 @@ func _move(delta):
 	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
 		position.y += MOVE_SPEED * 0.5 * delta
 	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
-	
-	if position.y != prev_y:
-		input_mode = "keyboard"
 
 func _shoot(delta):
 	fire_rate = max(0.1, FIRE_RATE_BASE - float(ammo_boost_level) * 0.05)
@@ -238,9 +232,6 @@ func _attack():
 				print("🔫 [单发子弹] 发射1发子弹")
 			if audio_manager:
 				audio_manager.play_shoot()
-	else:
-		if debug_mode:
-			print("📢 当前没有 zombie 在范围内")
 
 func _find_nearest_enemy(enemies):
 	var nearest = null
@@ -256,25 +247,16 @@ func _is_enemy_in_range(enemy) -> bool:
 	return position.distance_to(enemy.position) <= SHOT_RANGE
 
 func _spawn_triple_bullet():
-	# 中间子弹朝上，左右各偏2度
-	var angle_spread = deg_to_rad(2.0)  # 2度偏移
+	var angle_spread = deg_to_rad(2.0)
 	
-	# 中间方向: 向上 (0, -1)
 	var dir_middle = Vector2(0, -1)
 	_spawn_bullet(dir_middle)
-	print("🎯 [三发子弹] 中间方向: " + str(dir_middle))
 	
-	# 左方向: 向上偏左2度
 	var dir_left = dir_middle.rotated(-angle_spread)
 	_spawn_bullet(dir_left)
-	print("🎯 [三发子弹] 左方向: " + str(dir_left))
 	
-	# 右方向: 向上偏右2度
 	var dir_right = dir_middle.rotated(angle_spread)
 	_spawn_bullet(dir_right)
-	print("🎯 [三发子弹] 右方向: " + str(dir_right))
-	
-	print("🎯 [三发子弹] 发射完成！")
 
 func _spawn_bullet(direction: Vector2):
 	var bullet = load("res://scripts/Bullet.gd").new()
@@ -285,7 +267,6 @@ func _spawn_bullet(direction: Vector2):
 	bullet.current_speed = bullet_speed
 	bullet.kills_for_speed = kills
 	get_parent().add_child(bullet)
-	print("  🔫 子弹生成: 方向=" + str(direction) + " 伤害=" + str(bullet.damage))
 
 func _handle_grenade(delta):
 	if grenade_cooldown > 0:
@@ -316,9 +297,9 @@ func _animate(delta):
 			anim_frame = (anim_frame + 1) % 2
 			if sprite_node and sprite_node.texture:
 				sprite_node.region_rect = Rect2(anim_frame * 64, 0, 64, 64)
-		else:
-			if sprite_node and sprite_node.texture:
-				sprite_node.region_rect = Rect2(0, 0, 64, 64)
+	else:
+		if sprite_node and sprite_node.texture:
+			sprite_node.region_rect = Rect2(0, 0, 64, 64)
 
 func apply_ammo_boost(type: int):
 	match type:
@@ -362,8 +343,7 @@ func add_kill():
 	if kills == 5 and not triple_shot_unlocked:
 		triple_shot_unlocked = true
 		print("")
-		print("🎯 [解锁] 三发子弹已解锁！现在每次发射3发子弹")
-		print("   方向: 中间向上，左右各偏2度")
+		print("🎯 [解锁] 三发子弹已解锁！")
 	
 	if kills > 0 and kills % GRENADE_INTERVAL == 0 and grenades < MAX_GRENADES:
 		grenades += 1
@@ -380,7 +360,6 @@ func _update_debug_info():
 		print("   - 三发子弹: " + ("已解锁" if triple_shot_unlocked else "未解锁"))
 		print("   - 火力等级: " + str(ammo_boost_level))
 		print("   - 子弹速度: " + str(bullet_speed))
-		print("   - 碰撞层: " + str(collision_layer) + " 掩码: " + str(collision_mask))
 
 func _spawn_debug_ammo_barrel():
 	var barrel_scene = load("res://scripts/AmmoBarrel.gd")
