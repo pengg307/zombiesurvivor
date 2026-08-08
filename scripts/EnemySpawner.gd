@@ -3,7 +3,7 @@ class_name EnemySpawner
 
 const SPAWN_INTERVAL = 3.0
 const MAX_ENEMIES = 25
-const BOSS_KILLS_REQUIRED = 20
+const BOSS_KILLS_REQUIRED = 10
 const SQUARE_SPACING = 60.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 250.0
