@@ -4,7 +4,7 @@ class_name Bullet
 const BASE_SPEED = 600.0
 const SPEED_INCREMENT = 100.0
 const KILL_THRESHOLD = 10
-const LIFETIME = 4.0
+const LIFETIME = 3.0
 const FAR_Y = 80.0
 const NEAR_Y = 1150.0
 
@@ -23,7 +23,7 @@ func _ready():
 	# 绘制子弹
 	_setup_visuals()
 	
-	# 碰撞形状
+	# 碰撞形状（与视觉对齐）
 	_setup_collision()
 	
 	# 死亡计时
@@ -32,32 +32,35 @@ func _ready():
 	print("🔫 子弹生成！位置:" + str(position) + " 方向:" + str(direction) + " 碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
 
 func _setup_visuals():
+	# 子弹主体（居中于节点）
 	var bullet = ColorRect.new()
 	bullet.name = "BulletSprite"
 	bullet.size = Vector2(8, 30)
 	bullet.color = Color(1, 1, 0.3)
-	bullet.position = Vector2(-4, -15)
+	bullet.position = Vector2(0, 0)  # 居中
 	add_child(bullet)
 	
+	# 弹头（在顶部）
 	var tip = ColorRect.new()
 	tip.name = "Tip"
 	tip.size = Vector2(6, 12)
 	tip.color = Color(1, 0.6, 0.1)
-	tip.position = Vector2(-3, -30)
+	tip.position = Vector2(0, -18)  # 顶部
 	add_child(tip)
 	
+	# 火焰（在底部）
 	var flame = ColorRect.new()
 	flame.name = "Flame"
 	flame.size = Vector2(5, 15)
 	flame.color = Color(1, 0.4, 0.0, 0.7)
-	flame.position = Vector2(-2.5, 8)
+	flame.position = Vector2(0, 12)  # 底部
 	add_child(flame)
 
 func _setup_collision():
 	var collision = CollisionShape2D.new()
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
-	shape.radius = 12.0
+	shape.radius = 6.0
 	shape.height = 28.0
 	collision.shape = shape
 	add_child(collision)
@@ -68,10 +71,12 @@ func _physics_process(delta):
 	
 	_update_scale()
 	
-	if position.y < FAR_Y - 50 or position.y > 1400 or position.x < -50 or position.x > 770:
+	# 检查边界（基于屏幕坐标）
+	if position.y < FAR_Y - 50 or position.y > NEAR_Y + 50 or position.x < -50 or position.x > 770:
 		queue_free()
 
 func _update_scale():
+	# 根据y位置调整大小（透视效果）
 	var depth_ratio = clamp((position.y - FAR_Y) / (NEAR_Y - FAR_Y), 0.0, 1.0)
 	var node_scale = 0.5 + depth_ratio * 0.5
 	scale = Vector2(node_scale, node_scale)
