@@ -36,6 +36,7 @@ var debug_mode = false
 var _fire_timer = 0.0
 var move_direction = Vector2(0, 0)
 var base_fire_rate = FIRE_RATE_BASE
+var shoot_debug_counter = 0
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
@@ -115,7 +116,7 @@ func _unhandled_input(event):
 		if event.keycode == KEY_D:
 			debug_mode = !debug_mode
 			print("")
-			print("🔧 调试模式: " + ( "开启" if debug_mode else "关闭"))
+			print("🔧 调试模式: " + ("开启" if debug_mode else "关闭"))
 			if debug_mode:
 				print("   按T解锁三发子弹")
 				print("   按B生成弹药桶")
@@ -211,6 +212,12 @@ func _move(delta):
 	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
 
 func _shoot(delta):
+	shoot_debug_counter += delta
+	if shoot_debug_counter >= 5.0:
+		shoot_debug_counter = 0.0
+		var enemies = get_tree().get_nodes_in_group("zombies")
+		print("🔧 [射击调试] 僵尸数量: " + str(enemies.size()) + " fire_rate: " + str(fire_rate) + " timer: " + str(_fire_timer))
+	
 	fire_rate = max(0.1, base_fire_rate - float(ammo_boost_level) * 0.05)
 	_fire_timer += delta
 	if _fire_timer >= fire_rate:
@@ -224,7 +231,8 @@ func _attack():
 	if enemies.size() > 0:
 		var nearest = _find_nearest_enemy(enemies)
 		if nearest:
-			var dist = position.distance_to(nearest.position)
+			var zombie_screen_pos = nearest.position + Vector2(360, 640)
+			var dist = position.distance_to(zombie_screen_pos)
 			print("🎯 最近僵尸距离: " + str(int(dist)) + " 射程: " + str(SHOT_RANGE))
 			
 			if dist <= SHOT_RANGE:
@@ -252,14 +260,15 @@ func _find_nearest_enemy(enemies):
 	var nearest = null
 	var nearest_dist = SHOT_RANGE
 	for enemy in enemies:
-		var dist = position.distance_to(enemy.position)
+		var enemy_screen_pos = enemy.position + Vector2(360, 640)
+		var dist = position.distance_to(enemy_screen_pos)
 		if dist < nearest_dist:
 			nearest_dist = dist
 			nearest = enemy
 	return nearest
 
 func _is_enemy_in_range(enemy) -> bool:
-	return position.distance_to(enemy.position) <= SHOT_RANGE
+	return position.distance_to(enemy.position + Vector2(360, 640)) <= SHOT_RANGE
 
 func _spawn_triple_bullet():
 	var angle_spread = deg_to_rad(2.0)
