@@ -82,7 +82,7 @@ func _setup_boss_sprite():
 	sprite.visible = true
 	
 	# 尝试加载boss素材
-	var texture_path = "res://assets/downloads/littleboss.png"
+	var texture_path = "res://assets/downloads/littleboss_rgba.png"
 	var texture = load(texture_path)
 	
 	if texture:
@@ -92,21 +92,22 @@ func _setup_boss_sprite():
 		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
-		print("🎨 Boss素材加载成功: littleboss.png")
+		print("🎨 Boss素材加载成功: littleboss_rgba.png")
 		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
-	else:
-		# 使用大型红色方块作为Boss，确保可见
-		print("⚠️ Boss素材加载失败，使用红色方块")
-		var rect = ColorRect.new()
-		rect.size = Vector2(120, 120)  # 更大的方块
-		rect.color = Color(1, 0, 0)  # 纯红色，非常显眼
-		sprite.add_child(rect)
-		sprite.scale = Vector2(2.5, 2.5)  # 再放大
-		sprite.modulate = Color(1, 0.5, 0.5)  # 带点粉色，更醒目
-		add_child(sprite)
-		sprite_node = sprite
-		print("🎨 Boss使用红色方块 (120x120, 2.5x缩放)")
-		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
+		return
+	
+	# 使用大型红色方块作为Boss，确保可见
+	print("⚠️ Boss素材加载失败，使用红色方块")
+	var rect = ColorRect.new()
+	rect.size = Vector2(120, 120)  # 更大的方块
+	rect.color = Color(1, 0, 0)  # 纯红色，非常显眼
+	sprite.add_child(rect)
+	sprite.scale = Vector2(2.5, 2.5)  # 再放大
+	sprite.modulate = Color(1, 0.5, 0.5)  # 带点粉色，更醒目
+	add_child(sprite)
+	sprite_node = sprite
+	print("🎨 Boss使用红色方块 (120x120, 2.5x缩放)")
+	print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
 
 func _setup_fallback_sprite():
 	var sprite = Sprite2D.new()
