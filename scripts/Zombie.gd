@@ -8,6 +8,7 @@ const BOSS_SPEED = 30.0
 const DAMAGE = 10.0
 const EXPERIENCE_REWARD = 10
 const SCREEN_HEIGHT = 1280.0
+const PLAYER_Y_SCREEN = 1100.0  # 玩家的屏幕Y坐标
 
 signal boss_died
 signal zombie_reached_player
@@ -35,7 +36,6 @@ func _ready():
 	current_health = BASE_HEALTH
 	add_to_group("zombies")
 	
-	# 碰撞层设置: zombie在layer 1，检测layer 2的子弹
 	collision_layer = 1
 	collision_mask = 2
 	
@@ -76,21 +76,19 @@ func _setup_boss_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	
-	# 使用littleboss.png作为Boss素材
 	var texture_path = "res://assets/downloads/littleboss.png"
 	var texture = load(texture_path)
 	
 	if texture:
 		sprite.texture = texture
 		sprite.centered = true
-		# Boss体型更大
 		sprite.scale = Vector2(1.5, 1.5)
 		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
 		print("🎨 Boss素材加载成功: littleboss.png")
 	else:
-		print("❌ Boss素材加载失败，使用备用样式")
+		print("❌ Boss素材加载失败")
 		_setup_fallback_sprite()
 
 func _setup_fallback_sprite():
@@ -109,7 +107,6 @@ func _setup_collision():
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
 	if is_boss or zombie_type == "boss":
-		# Boss碰撞体更大
 		shape.radius = 40.0
 		shape.height = 100.0
 	else:
@@ -140,30 +137,41 @@ func _physics_process(delta):
 	var move_dir = Vector2(dx, dy).normalized()
 	position += move_dir * base_speed * delta
 	
-	# Boss动画帧数不同（更慢）
+	# 动画
 	var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
-	if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture:
+	if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled:
 		current_frame = (current_frame + 1) % 4
-		if sprite_node.region_enabled:
-			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
+		sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 	
+	# 受击闪红
 	if hit_flash_timer > 0 and sprite_node:
 		sprite_node.modulate = Color(1, 0.3, 0.3)
 	else:
 		if sprite_node:
 			sprite_node.modulate = Color(1, 1, 1)
 	
-	if screen_position_y() > 1280 + 50:
+	# 检查是否到达玩家位置（关键修改：检查是否到达玩家Y坐标）
+	if screen_position_y() >= PLAYER_Y_SCREEN:
+		print("⚠️ Zombie到达玩家位置！类型=" + zombie_type + " 屏幕Y=" + str(int(screen_position_y())))
 		var player = get_tree().get_first_node_in_group("player")
 		var screen_pos = _to_screen_position()
-		var player_pos = player.position if player else Vector2(360, 1100)
-		if player and screen_pos.distance_to(player_pos) < 60:
+		var player_pos = player.position if player else Vector2(360, PLAYER_Y_SCREEN)
+		
+		# 检查水平距离
+		var horizontal_dist = abs(screen_pos.x - player_pos.x)
+		if horizontal_dist < 80:  # 在玩家附近
 			if is_boss or zombie_type == "boss":
+				print("👹 Boss到达玩家！游戏胜利！")
 				emit_signal("boss_died")
-				player.emit_signal("game_won")
+				if player:
+					player.emit_signal("game_won")
 			else:
-				player.take_damage(DAMAGE)
+				print("❌ 僵尸到达玩家！游戏失败！")
+				if player:
+					player.take_damage(999)  # 直接致死
+					player.emit_signal("player_died")
 				emit_signal("zombie_reached_player")
+		
 		queue_free()
 
 func screen_position_y() -> float:
