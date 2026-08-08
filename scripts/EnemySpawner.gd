@@ -3,7 +3,7 @@ class_name EnemySpawner
 
 const SPAWN_INTERVAL = 3.0
 const MAX_ENEMIES = 25
-const BOSS_KILLS_REQUIRED = 10
+const BOSS_KILLS_REQUIRED = 20
 const SQUARE_SPACING = 60.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 250.0
@@ -53,7 +53,7 @@ func _ready():
 	print("📊 僵尸类型分布:")
 	print("   - basic: 65% (绿色基础僵尸, 10血, 50速)")
 	print("   - fast: 25% (紫色快速僵尸, 8血, 70速)")
-	print("   - boss: 击杀10后出现 (红色大僵尸, 250血)")
+	print("   - boss: 击杀20后出现 (红色大僵尸, 250血)")
 	print("🛢️ 弹药桶: 50%概率生成，被击中爆炸")
 	print("============================================================")
 	print("")
