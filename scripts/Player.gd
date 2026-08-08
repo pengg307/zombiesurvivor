@@ -173,12 +173,10 @@ func _physics_process(delta):
 	_update_debug_info()
 
 func _update_ammo_boost(delta):
-	# 修复：处理弹药桶增益的倒计时
 	if ammo_boost_timer > 0:
 		ammo_boost_timer -= delta
 		if ammo_boost_timer <= 0:
 			ammo_boost_timer = 0
-			# 恢复基础火力
 			ammo_boost_level = 0
 			fire_rate = base_fire_rate
 			print("⏰ [弹药桶] 增益效果已过期")
@@ -213,7 +211,6 @@ func _move(delta):
 	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
 
 func _shoot(delta):
-	# 修复：基于base_fire_rate和ammo_boost_level正确计算射速
 	fire_rate = max(0.1, base_fire_rate - float(ammo_boost_level) * 0.05)
 	_fire_timer += delta
 	if _fire_timer >= fire_rate:
@@ -222,15 +219,34 @@ func _shoot(delta):
 
 func _attack():
 	var enemies = get_tree().get_nodes_in_group("zombies")
+	print("🔫 [攻击检测] 僵尸数量: " + str(enemies.size()))
+	
 	if enemies.size() > 0:
 		var nearest = _find_nearest_enemy(enemies)
-		if nearest and _is_enemy_in_range(nearest):
-			if triple_shot_unlocked:
-				_spawn_triple_bullet()
+		if nearest:
+			var dist = position.distance_to(nearest.position)
+			print("🎯 最近僵尸距离: " + str(int(dist)) + " 射程: " + str(SHOT_RANGE))
+			
+			if dist <= SHOT_RANGE:
+				print("✅ 僵尸在射程内，发射子弹！")
+				if triple_shot_unlocked:
+					_spawn_triple_bullet()
+					print("🎯 [三发子弹] 发射3发子弹！")
+				else:
+					_spawn_bullet(Vector2(0, -1))
+					print("🔫 [单发子弹] 发射1发子弹")
+				
+				if audio_manager:
+					audio_manager.play_shoot()
 			else:
-				_spawn_bullet(Vector2(0, -1))
-			if audio_manager:
-				audio_manager.play_shoot()
+				if debug_mode:
+					print("❌ 僵尸超出射程")
+		else:
+			if debug_mode:
+				print("❌ 未找到最近僵尸")
+	else:
+		if debug_mode:
+			print("📢 当前没有僵尸")
 
 func _find_nearest_enemy(enemies):
 	var nearest = null
@@ -266,6 +282,7 @@ func _spawn_bullet(direction: Vector2):
 	bullet.current_speed = bullet_speed
 	bullet.kills_for_speed = kills
 	get_parent().add_child(bullet)
+	print("  🔫 子弹生成: 方向=" + str(direction) + " 伤害=" + str(bullet.damage))
 
 func _handle_grenade(delta):
 	if grenade_cooldown > 0:

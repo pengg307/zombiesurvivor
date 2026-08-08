@@ -6,7 +6,7 @@ const MAX_ENEMIES = 25
 const BOSS_KILLS_REQUIRED = 10
 const SQUARE_SPACING = 60.0
 const SCREEN_WIDTH = 720.0
-const BOSS_HEALTH = 250.0
+const BOSS_HEALTH = 500.0
 
 # 修改：僵尸生成位置更靠近中间（道路中央）
 const SPAWN_LEFT_X = -50.0   # 屏幕x=310，更靠近中间

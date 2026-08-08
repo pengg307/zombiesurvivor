@@ -7,7 +7,7 @@ const DAMAGE = 10.0
 const EXPERIENCE_REWARD = 10
 const SCREEN_HEIGHT = 1280.0
 
-const BOSS_HEALTH = 250.0
+const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 70.0
 
 signal boss_died
@@ -28,7 +28,7 @@ var hit_flash_timer = 0.0
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
 	"fast": {"health": 8.0, "speed": 70.0, "color": Color(0.5, 0.3, 0.5)},
-	"boss": {"health": 250.0, "speed": 70.0, "color": Color(0.6, 0.2, 0.2)}
+	"boss": {"health": 500.0, "speed": 70.0, "color": Color(0.6, 0.2, 0.2)}
 }
 
 func _ready():
