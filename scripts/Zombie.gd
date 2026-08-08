@@ -27,6 +27,7 @@ var current_frame = 0
 var hit_flash_timer = 0.0
 var has_reached_player = false
 var _boss_anim_timer = 0.0  # Boss animation timer
+var _boss_frame_size = 128  # Boss sprite frame size
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -87,48 +88,89 @@ func _setup_boss_sprite():
 	var texture = load(texture_path)
 	
 	if texture:
-		sprite.texture = texture
+		# 创建4帧动画精灵图 (128x128每帧)
+		var frame_size = 128
+		var sheet = Image.create(frame_size * 2, frame_size * 2, false, Image.FORMAT_RGBA8)
+		
+		# 加载原图并缩放到帧大小
+		var src_img = texture.get_image()
+		var resized = src_img.resize(frame_size, frame_size)
+		
+		# 创建4帧（不同亮度的红色圆形）
+		for frame in range(4):
+			var x = (frame % 2) * frame_size
+			var y = (frame / 2) * frame_size
+			
+			# 复制底图
+			for fx in range(frame_size):
+				for fy in range(frame_size):
+					var col = resized.get_pixel(fx, fy)
+					# 根据帧调整亮度（模拟脉冲）
+					if frame == 1 or frame == 3:  # 较亮
+						col = Color(min(1.0, col.r * 1.2), min(1.0, col.g * 1.2), min(1.0, col.b * 1.2), col.a)
+					elif frame == 0 or frame == 2:  # 正常
+						pass
+					sheet.set_pixel(x + fx, y + fy, col)
+		
+		var anim_texture = ImageTexture.create_from_image(sheet)
+		sprite.texture = anim_texture
+		sprite.region_enabled = true  # 启用区域裁剪
+		sprite.region_rect = Rect2(0, 0, frame_size, frame_size)  # 第一帧
 		sprite.centered = true
-		sprite.scale = Vector2(2.5, 2.5)  # 更大更明显
-		sprite.position = Vector2(0, 0)
+		sprite.scale = Vector2(2.0, 2.0)
 		add_child(sprite)
 		sprite_node = sprite
-		print("🎨 Boss素材加载成功: boss.png")
-		print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
-		# Boss animation setup
-		_boss_anim_timer = 0.0
+		_boss_frame_size = frame_size
+		print("🎨 Boss动画精灵图创建成功 (4帧)")
 		return
 	
-	# 创建程序化Boss纹理 - 红色圆形带眼睛
+	# 如果加载失败，使用程序化生成
 	print("⚠️ Boss素材加载失败，使用程序化纹理")
-	var img = Image.create(128, 128, false, Image.FORMAT_RGBA8)
+	_setup_programmatic_boss(sprite)
+
+func _setup_programmatic_boss(sprite: Sprite2D):
+	# 创建4帧程序化Boss纹理 (128x128每帧)
+	var frame_size = 128
+	var sheet = Image.create(frame_size * 2, frame_size * 2, false, Image.FORMAT_RGBA8)
 	
-	# 填充红色背景
-	for x in range(128):
-		for y in range(128):
-			var dist = Vector2(x - 64, y - 64).length()
-			if dist < 60:
-				img.set_pixel(x, y, Color(1.0, 0.2, 0.2, 1.0))  # 红色
-			else:
-				img.set_pixel(x, y, Color(0.0, 0.0, 0.0, 0.0))  # 透明
+	for frame in range(4):
+		var x = (frame % 2) * frame_size
+		var y = (frame / 2) * frame_size
+		
+		# 创建红色圆形（不同亮度模拟脉冲）
+		for px in range(frame_size):
+			for py in range(frame_size):
+				var dist = Vector2(px - frame_size/2, py - frame_size/2).length()
+				var brightness = 1.0
+				if frame == 1 or frame == 3:
+					brightness = 1.3  # 较亮
+				elif frame == 0 or frame == 2:
+					brightness = 0.8  # 较暗
+				
+				if dist < 55:
+					sheet.set_pixel(x + px, y + py, Color(brightness * 0.8, brightness * 0.2, brightness * 0.2, 1.0))
+				elif dist < 60:
+					sheet.set_pixel(x + px, y + py, Color(0.0, 0.0, 0.0, 0.0))  # 边缘透明
+		
+		# 画眼睛
+		for angle in [PI * 0.3, PI * 0.7]:
+			var ex = int(frame_size/2 + 20 * cos(angle))
+			var ey = int(frame_size/2 + 20 * sin(angle))
+			for dx in range(-5, 5):
+				for dy in range(-5, 5):
+					if dx*dx + dy*dy < 20:
+						sheet.set_pixel(x + ex + dx, y + ey + dy, Color(1.0, 1.0, 0.0, 1.0))
 	
-	# 画眼睛
-	for angle in [PI * 0.3, PI * 0.7]:
-		var ex = int(64 + 25 * cos(angle))
-		var ey = int(64 + 25 * sin(angle))
-		for dx in range(-6, 6):
-			for dy in range(-6, 6):
-				if dx*dx + dy*dy < 25:
-					img.set_pixel(ex + dx, ey + dy, Color(1.0, 1.0, 0.0, 1.0))  # 黄色眼睛
-	
-	var tex = ImageTexture.create_from_image(img)
+	var tex = ImageTexture.create_from_image(sheet)
 	sprite.texture = tex
+	sprite.region_enabled = true
+	sprite.region_rect = Rect2(0, 0, frame_size, frame_size)
 	sprite.centered = true
-	sprite.scale = Vector2(2.5, 2.5)
+	sprite.scale = Vector2(2.0, 2.0)
 	add_child(sprite)
 	sprite_node = sprite
-	print("🎨 Boss使用程序化纹理 (红色圆形+黄色眼睛)")
-	print("👁️ Boss可见: scale=" + str(sprite.scale) + " z_index=" + str(sprite.z_index))
+	_boss_frame_size = frame_size
+	print("🎨 Boss程序化动画纹理创建成功 (4帧)")
 
 func _setup_fallback_sprite():
 	var sprite = Sprite2D.new()
@@ -182,8 +224,12 @@ func _physics_process(delta):
 		if (is_boss or zombie_type == "boss") and sprite_node:
 			_boss_anim_timer += delta
 			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)  # 脉动效果
-			var base_scale = Vector2(2.5, 2.5)
+			var base_scale = Vector2(2.0, 2.0)
 			sprite_node.scale = base_scale * pulse
+			# 同时切换帧
+			if frame_count % 8 == 0:
+				current_frame = (current_frame + 1) % 4
+				sprite_node.region_rect = Rect2(current_frame * _boss_frame_size, 0, _boss_frame_size, _boss_frame_size)
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()
