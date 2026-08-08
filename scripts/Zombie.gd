@@ -26,7 +26,6 @@ var walk_timer = 0.0
 var current_frame = 0
 var hit_flash_timer = 0.0
 var has_reached_player = false
-var debug_log_count = 0
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -123,73 +122,60 @@ func _to_screen_position() -> Vector2:
 
 func _physics_process(delta):
 	frame_count += 1
-	debug_log_count += 1
-	walk_timer += delta
-	hit_flash_timer = max(0.0, hit_flash_timer - delta)
 	
 	var player_node = get_tree().get_first_node_in_group("player")
-	var target_x_pos: float = 0.0
-	var target_y_pos: float = 460.0
+	
+	# 每100帧打印一次调试信息
+	if frame_count % 100 == 0:
+		var screen_pos = _to_screen_position()
+		print("📍 [" + zombie_type + "] 帧" + str(frame_count) + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_pos.y)) + ") 玩家节点=" + str(player_node != null))
 	
 	if player_node:
-		target_x_pos = player_node.position.x - 360.0
-		target_y_pos = player_node.position.y - 640.0
-	
-	var dx = target_x_pos - position.x
-	var dy = target_y_pos - position.y
-	var move_dir = Vector2(dx, dy).normalized()
-	position += move_dir * base_speed * delta
-	
-	# 动画
-	var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
-	if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled:
-		current_frame = (current_frame + 1) % 4
-		sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
-	
-	# 受击闪红
-	if hit_flash_timer > 0 and sprite_node:
-		sprite_node.modulate = Color(1, 0.3, 0.3)
-	else:
-		if sprite_node:
-			sprite_node.modulate = Color(1, 1, 1)
-	
-	# 检查是否到达玩家位置
-	var screen_pos = _to_screen_position()
-	var screen_y = screen_pos.y
-	
-	# 每50帧打印位置（避免日志过多）
-	if debug_log_count % 50 == 0:
-		print("📍 [" + zombie_type + "] 帧" + str(frame_count) + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_y)) + ") 目标Y=" + str(int(target_y_pos + 640)))
-	
-	# 关键：僵尸到达玩家Y坐标 = 游戏失败
-	if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
-		has_reached_player = true
-		print("")
-		print("🚨 警报！Zombie到达玩家位置！")
-		print("   类型: " + zombie_type)
-		print("   屏幕Y: " + str(int(screen_y)) + " >= " + str(PLAYER_Y_SCREEN))
-		print("   屏幕位置: (" + str(int(screen_pos.x)) + ", " + str(int(screen_y)) + ")")
-		if player_node:
-			print("   玩家位置: (" + str(int(player_node.position.x)) + ", " + str(int(player_node.position.y)) + ")")
-		print("")
+		var target_x_pos: float = player_node.position.x - 360.0
+		var target_y_pos: float = player_node.position.y - 640.0
 		
-		if is_boss or zombie_type == "boss":
-			print("👹 Boss到达玩家！游戏胜利！")
-			emit_signal("boss_died")
-			if player_node:
+		var dx = target_x_pos - position.x
+		var dy = target_y_pos - position.y
+		var move_dir = Vector2(dx, dy).normalized()
+		position += move_dir * base_speed * delta
+		
+		# 动画
+		var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
+		if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled:
+			current_frame = (current_frame + 1) % 4
+			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
+		
+		# 检查是否到达玩家位置
+		var screen_pos = _to_screen_position()
+		var screen_y = screen_pos.y
+		
+		# 关键修改：只要僵尸到达玩家Y坐标就游戏失败
+		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
+			has_reached_player = true
+			print("")
+			print("🚨 警报！Zombie到达玩家位置！")
+			print("   类型: " + zombie_type)
+			print("   屏幕Y: " + str(int(screen_y)) + " >= " + str(PLAYER_Y_SCREEN))
+			print("")
+			
+			if is_boss or zombie_type == "boss":
+				print("👹 Boss到达玩家！游戏胜利！")
+				emit_signal("boss_died")
 				player_node.emit_signal("game_won")
-		else:
-			print("❌ 僵尸到达玩家！游戏失败！")
-			if player_node:
+			else:
+				print("❌ 僵尸到达玩家！游戏失败！")
 				player_node.take_damage(999)
 				player_node.emit_signal("player_died")
-			emit_signal("zombie_reached_player")
+				emit_signal("zombie_reached_player")
+			
+			queue_free()
 		
-		queue_free()
-	
-	# 超出屏幕底部也清除
-	if screen_y > SCREEN_HEIGHT + 100:
-		queue_free()
+		# 超出屏幕底部也清除
+		if screen_y > SCREEN_HEIGHT + 100:
+			queue_free()
+	else:
+		if frame_count % 100 == 0:
+			print("⚠️ [" + zombie_type + "] 未找到玩家节点！")
 
 func screen_position_y() -> float:
 	return position.y + 640.0
