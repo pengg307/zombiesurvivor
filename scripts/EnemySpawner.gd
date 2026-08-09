@@ -35,7 +35,7 @@ func _ready():
 	add_child(spawn_timer)
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
-	spawn_timer.start()
+	# 不自动启动，等待 GameManager._start_game() 调用
 	
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
@@ -56,8 +56,7 @@ func _ready():
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现 (500血，只出现一次)")
 	print("============================================================")
 	print("")
-	
-	_start_next_wave()
+	# 不自动开始，等待玩家点击"开始游戏"
 
 func _on_spawn_timer_timeout():
 	_start_next_wave()

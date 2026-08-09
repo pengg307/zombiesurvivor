@@ -78,7 +78,9 @@ func _start_game():
 	
 	spawner.current_kills = 0
 	spawner.boss_active = false
-	spawner.wave_number = 1
+	spawner.boss_spawned_this_game = false
+	spawner.wave_number = 0
+	spawner.spawn_timer.start()  # 启动生成计时器
 	spawner._start_next_wave()
 	print("✅ 游戏启动成功！")
 
