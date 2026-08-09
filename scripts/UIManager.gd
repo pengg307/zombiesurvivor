@@ -102,12 +102,15 @@ func _connect_buttons():
 		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 			var restart_btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
 			restart_btn.pressed.connect(_on_restart_game)
-			restart_btn.pressed.connect(func(): print(">>> WIN BUTTON CLICKED <<<"))
-			# 也尝试连接 mouse button up
-			restart_btn.pressed.connect(func(): 
-				print(">>> DEBUG: WinPanel RestartButton pressed <<<")
+			# 额外调试
+			restart_btn.gui_input.connect(func(event): 
+				if event is InputEventMouseButton and event.pressed:
+					print(">>> GUI_INPUT: " + str(event))
 			)
 			print("  ✅ WinPanel RestartButton 已连接")
+			print("  - 按钮可见: " + str(restart_btn.visible))
+			print("  - 按钮位置: " + str(restart_btn.position))
+			print("  - 按钮大小: " + str(restart_btn.size))
 		else:
 			print("  ❌ 未找到 WinPanel/RestartButton")
 			print("  - WinPanel 子节点:")
