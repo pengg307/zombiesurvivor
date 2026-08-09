@@ -122,8 +122,14 @@ func _on_start_game():
 	if has_node("StartPanel"):
 		$StartPanel.visible = false
 		print("🎮 游戏开始！")
+		# 通知 GameManager 开始游戏
+		var gm = get_tree().get_first_node_in_group("game_manager")
+		if gm:
+			gm._start_game()
 
 func _on_restart_game():
+	print("🔄 重新开始游戏...")
+	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 func show_game_over(kills):

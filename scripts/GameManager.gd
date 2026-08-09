@@ -27,7 +27,8 @@ func _ready():
 	# 延迟连接信号，确保Player已完全加载
 	_connect_signals_deferred()
 	
-	_start_game()
+	# 不自动开始游戏，等待玩家点击"开始游戏"
+	# _start_game() 由 UIManager._on_start_game() 调用
 
 func _connect_signals_deferred():
 	# 等待一帧确保Player脚本完全加载
