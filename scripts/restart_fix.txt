@@ -27,9 +27,6 @@ func _on_restart_game():
 		print("  - 找到 GameManager，调用 reset_game()")
 		gm.reset_game()
 		print("  - reset_game() 调用完成")
-		# 自动开始新游戏
-		gm._start_game()
-		print("  - 新游戏已开始")
-		print("✅ [RESTART] 游戏已重置并开始新游戏")
+		print("✅ [RESTART] 游戏已重置")
 	else:
 		print("❌ [RESTART] 未找到 GameManager!")
