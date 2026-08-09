@@ -56,12 +56,16 @@ func set_spawner(spawner_node):
 	print("✅ Spawner引用已设置")
 
 func _connect_buttons():
+	print("🔗 连接按钮信号...")
 	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
 		$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
+		print("  ✅ StartButton 已连接")
 	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
 		$GameOverPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+		print("  ✅ GameOverPanel RestartButton 已连接")
 	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 		$WinPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+		print("  ✅ WinPanel RestartButton 已连接")
 	_add_upgrade_buttons()
 
 func _update_health():
@@ -128,7 +132,7 @@ func _on_start_game():
 			gm._start_game()
 
 func _on_restart_game():
-	print("🔄 重新开始游戏...")
+	print("🔄 重新开始游戏被点击!")
 	print("  - 当前暂停状态: " + str(get_tree().paused))
 	print("  - StartPanel visible: " + str(has_node("StartPanel") and $StartPanel.visible))
 	print("  - GameOverPanel visible: " + str(has_node("GameOverPanel") and $GameOverPanel.visible))
