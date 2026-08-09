@@ -1,4 +1,4 @@
-extends CanvasLayer
+﻿extends CanvasLayer
 class_name UIManager
 
 var player = null
@@ -6,13 +6,11 @@ var spawner = null
 var audio_manager = null
 
 func _ready():
-	# 连接音频管理器
-	var am = get_tree().get_first_node_in_group("audio_manager")
+	# 杩炴帴闊抽绠＄悊鍣?	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
 		audio_manager = am
 	
-	# 初始化面板可见性
-	if has_node("StartPanel"):
+	# 鍒濆鍖栭潰鏉垮彲瑙佹€?	if has_node("StartPanel"):
 		$StartPanel.visible = true
 	if has_node("UpgradePanel"):
 		$UpgradePanel.visible = false
@@ -23,19 +21,18 @@ func _ready():
 	if has_node("BossPanel"):
 		$BossPanel.visible = false
 	
-	# 连接按钮
+	# 杩炴帴鎸夐挳
 	_connect_buttons()
 	
-	# 添加底部状态栏
+	# 娣诲姞搴曢儴鐘舵€佹爮
 	_add_bottom_status_bar()
 	
-	# 添加三发子弹状态显示
-	_add_triple_shot_display()
+	# 娣诲姞涓夊彂瀛愬脊鐘舵€佹樉绀?	_add_triple_shot_display()
 	
-	# 添加手雷显示
+	# 娣诲姞鎵嬮浄鏄剧ず
 	_add_grenade_display()
 	
-	print("✅ UIManager初始化完成")
+	print("鉁?UIManager鍒濆鍖栧畬鎴?)
 
 func _process(_delta):
 	if player:
@@ -48,77 +45,76 @@ func _process(_delta):
 		_update_boss_progress()
 
 func _input(event):
-	# 调试：捕获所有鼠标点击（包括暂停时）
+	# 璋冭瘯锛氭崟鑾锋墍鏈夐紶鏍囩偣鍑伙紙鍖呮嫭鏆傚仠鏃讹級
 	if event is InputEventMouseButton and event.pressed:
-		print("🖱️ [INPUT] 鼠标点击: button_index=" + str(event.button_index) + " pos=" + str(event.position))
-		print("  - 暂停状态: " + str(get_tree().paused))
+		print("馃柋锔?[INPUT] 榧犳爣鐐瑰嚮: button_index=" + str(event.button_index) + " pos=" + str(event.position))
+		print("  - 鏆傚仠鐘舵€? " + str(get_tree().paused))
 		if has_node("WinPanel") and $WinPanel.visible:
-			print("  - WinPanel 可见，检查按钮...")
+			print("  - WinPanel 鍙锛屾鏌ユ寜閽?..")
 			if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 				var btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
-				print("  - 按钮位置: " + str(btn.position) + " 大小: " + str(btn.size))
-				print("  - 按钮区域: " + str(btn.get_global_rect()))
-				# 检查点击是否在按钮区域内
-				var global_pos = btn.get_global_rect().get_center()
-				print("  - 按钮中心: " + str(global_pos))
+				print("  - 鎸夐挳浣嶇疆: " + str(btn.position) + " 澶у皬: " + str(btn.size))
+				print("  - 鎸夐挳鍖哄煙: " + str(btn.get_global_rect()))
+				# 妫€鏌ョ偣鍑绘槸鍚﹀湪鎸夐挳鍖哄煙鍐?				var global_pos = btn.get_global_rect().get_center()
+				print("  - 鎸夐挳涓績: " + str(global_pos))
 
 func set_player(player_node):
 	player = player_node
-	print("✅ Player引用已设置")
+	print("鉁?Player寮曠敤宸茶缃?)
 
 func set_spawner(spawner_node):
 	spawner = spawner_node
-	print("✅ Spawner引用已设置")
+	print("鉁?Spawner寮曠敤宸茶缃?)
 
 func _connect_buttons():
-	print("🔗 连接按钮信号...")
-	print("  - 当前节点路径: " + str(get_path()))
+	print("馃敆 杩炴帴鎸夐挳淇″彿...")
+	print("  - 褰撳墠鑺傜偣璺緞: " + str(get_path()))
 	
-	# 检查 StartPanel
+	# 妫€鏌?StartPanel
 	if has_node("StartPanel"):
-		print("  - 找到 StartPanel")
+		print("  - 鎵惧埌 StartPanel")
 		if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
 			$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
-			print("  ✅ StartButton 已连接")
+			print("  鉁?StartButton 宸茶繛鎺?)
 		else:
-			print("  ❌ 未找到 StartButton")
+			print("  鉂?鏈壘鍒?StartButton")
 	else:
-		print("  ❌ 未找到 StartPanel")
+		print("  鉂?鏈壘鍒?StartPanel")
 	
-	# 检查 GameOverPanel
+	# 妫€鏌?GameOverPanel
 	if has_node("GameOverPanel"):
-		print("  - 找到 GameOverPanel")
+		print("  - 鎵惧埌 GameOverPanel")
 		if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
 			$GameOverPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
-			print("  ✅ GameOverPanel RestartButton 已连接")
+			print("  鉁?GameOverPanel RestartButton 宸茶繛鎺?)
 		else:
-			print("  ❌ 未找到 GameOverPanel/RestartButton")
+			print("  鉂?鏈壘鍒?GameOverPanel/RestartButton")
 	else:
-		print("  ❌ 未找到 GameOverPanel")
+		print("  鉂?鏈壘鍒?GameOverPanel")
 	
-	# 检查 WinPanel
+	# 妫€鏌?WinPanel
 	if has_node("WinPanel"):
-		print("  - 找到 WinPanel")
+		print("  - 鎵惧埌 WinPanel")
 		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 			var restart_btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
 			restart_btn.pressed.connect(_on_restart_game)
-			# 额外调试
+			# 棰濆璋冭瘯
 			restart_btn.gui_input.connect(func(event): 
 				if event is InputEventMouseButton and event.pressed:
 					print(">>> GUI_INPUT: " + str(event))
 			)
-			print("  ✅ WinPanel RestartButton 已连接")
-			print("  - 按钮可见: " + str(restart_btn.visible))
-			print("  - 按钮位置: " + str(restart_btn.position))
-			print("  - 按钮大小: " + str(restart_btn.size))
+			print("  鉁?WinPanel RestartButton 宸茶繛鎺?)
+			print("  - 鎸夐挳鍙: " + str(restart_btn.visible))
+			print("  - 鎸夐挳浣嶇疆: " + str(restart_btn.position))
+			print("  - 鎸夐挳澶у皬: " + str(restart_btn.size))
 		else:
-			print("  ❌ 未找到 WinPanel/RestartButton")
-			print("  - WinPanel 子节点:")
+			print("  鉂?鏈壘鍒?WinPanel/RestartButton")
+			print("  - WinPanel 瀛愯妭鐐?")
 			for child in get_node("WinPanel").get_children():
 				print("    - " + child.name + " (" + child.get_class() + ")")
 		print("  - WinPanel.visible = " + str($WinPanel.visible))
 	else:
-		print("  ❌ 未找到 WinPanel")
+		print("  鉂?鏈壘鍒?WinPanel")
 	
 	_add_upgrade_buttons()
 
@@ -139,34 +135,32 @@ func _update_kills():
 
 func _update_triple_shot():
 	if player and has_node("TripleShotDisplay"):
-		var text = "🔫 三发子弹: " + ("已解锁" if player.triple_shot_unlocked else "未解锁 (%d/5)" % player.kills)
+		var text = "馃敨 涓夊彂瀛愬脊: " + ("宸茶В閿? if player.triple_shot_unlocked else "鏈В閿?(%d/5)" % player.kills)
 		$TripleShotDisplay.text = text
 		$TripleShotDisplay.modulate = Color(1, 1, 0.5) if player.triple_shot_unlocked else Color(1, 1, 1)
 
 func _update_grenades():
 	if player and has_node("GrenadeDisplay"):
-		$GrenadeDisplay.text = "💣 手雷: %d" % player.grenades
+		$GrenadeDisplay.text = "馃挘 鎵嬮浄: %d" % player.grenades
 
 func _update_bottom_status():
-	# 底部状态栏实时更新
+	# 搴曢儴鐘舵€佹爮瀹炴椂鏇存柊
 	if has_node("BottomStatusBar"):
 		var status_text = ""
 		
-		# 伤害
+		# 浼ゅ
 		if player:
-			status_text += "⚔️%.1f " % player.damage_per_shot
+			status_text += "鈿旓笍%.1f " % player.damage_per_shot
 		
-		# 射速
+		# 灏勯€?		if player:
+			status_text += "馃挩%.2fs " % player.fire_rate
+		
+		# 瀛愬脊閫熷害
 		if player:
-			status_text += "💨%.2fs " % player.fire_rate
+			status_text += "馃殌%d " % player.bullet_speed
 		
-		# 子弹速度
-		if player:
-			status_text += "🚀%d " % player.bullet_speed
-		
-		# 增益状态
-		if player and player.ammo_boost_timer > 0:
-			status_text += "🛢️%ds" % int(player.ammo_boost_timer)
+		# 澧炵泭鐘舵€?		if player and player.ammo_boost_timer > 0:
+			status_text += "馃洟锔?ds" % int(player.ammo_boost_timer)
 		
 		$BottomStatusBar/StatusLabel.text = status_text
 
@@ -174,49 +168,45 @@ func _update_boss_progress():
 	if spawner and has_node("BossProgress"):
 		var boss_required = spawner.BOSS_KILLS_REQUIRED
 		var boss_current = spawner.current_kills
-		$BossProgress.text = "👹 Boss进度: %d/%d" % [boss_current, boss_required]
+		$BossProgress.text = "馃懝 Boss杩涘害: %d/%d" % [boss_current, boss_required]
 
 func _on_start_game():
 	if has_node("StartPanel"):
 		$StartPanel.visible = false
-		print("🎮 游戏开始！")
-		# 通知 GameManager 开始游戏
-		var gm = get_tree().get_first_node_in_group("game_manager")
+		print("馃幃 娓告垙寮€濮嬶紒")
+		# 閫氱煡 GameManager 寮€濮嬫父鎴?		var gm = get_tree().get_first_node_in_group("game_manager")
 		if gm:
 			gm._start_game()
 
 func _on_restart_game():
-	print("🔄 [RESTART] 重新开始游戏被点击!")
-	print("  - 当前时间: " + str(Time.get_ticks_msec()))
-	print("  - 暂停状态: " + str(get_tree().paused))
-	print("  - 场景路径: " + str(get_path()))
-	print("  - UIManager节点: " + str(self))
-	print("  - WinPanel节点: " + str(get_node("WinPanel")))
+	print("馃攧 [RESTART] 閲嶆柊寮€濮嬫父鎴忚鐐瑰嚮!")
+	print("  - 褰撳墠鏃堕棿: " + str(Time.get_ticks_msec()))
+	print("  - 鏆傚仠鐘舵€? " + str(get_tree().paused))
+	print("  - 鍦烘櫙璺緞: " + str(get_path()))
+	print("  - UIManager鑺傜偣: " + str(self))
+	print("  - WinPanel鑺傜偣: " + str(get_node("WinPanel")))
 
-	# 强制隐藏所有面板
-	if has_node("GameOverPanel"):
+	# 寮哄埗闅愯棌鎵€鏈夐潰鏉?	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
-		print("  - GameOverPanel 已隐藏")
+		print("  - GameOverPanel 宸查殣钘?)
 	if has_node("WinPanel"):
 		$WinPanel.visible = false
-		print("  - WinPanel 已隐藏")
+		print("  - WinPanel 宸查殣钘?)
 	if has_node("StartPanel"):
 		$StartPanel.visible = true
-		print("  - StartPanel 已显示")
+		print("  - StartPanel 宸叉樉绀?)
 
-	# 清除暂停状态
-	get_tree().paused = false
-	print("  - 暂停状态已清除")
+	# 娓呴櫎鏆傚仠鐘舵€?	get_tree().paused = false
+	print("  - 鏆傚仠鐘舵€佸凡娓呴櫎")
 
-	# 重置游戏状态
-	var gm = get_tree().get_first_node_in_group("game_manager")
+	# 閲嶇疆娓告垙鐘舵€?	var gm = get_tree().get_first_node_in_group("game_manager")
 	if gm:
-		print("  - 找到 GameManager，调用 reset_game()")
+		print("  - 鎵惧埌 GameManager锛岃皟鐢?reset_game()")
 		gm.reset_game()
-		print("  - reset_game() 调用完成")
-		print("✅ [RESTART] 游戏已重置")
+		print("  - reset_game() 璋冪敤瀹屾垚")
+		print("鉁?[RESTART] 娓告垙宸查噸缃?)
 	else:
-		print("❌ [RESTART] 未找到 GameManager!")
+		print("鉂?[RESTART] 鏈壘鍒?GameManager!")
 
 func show_game_over(kills):
 	if has_node("GameOverPanel"):
@@ -227,22 +217,21 @@ func show_game_over(kills):
 			audio_manager.play_game_over()
 
 func show_win(kills):
-	print("🏆 [SHOW_WIN] 显示胜利面板")
+	print("馃弳 [SHOW_WIN] 鏄剧ず鑳滃埄闈㈡澘")
 	print("  - kills = " + str(kills))
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
-		print("  - WinPanel 已显示，visible = " + str($WinPanel.visible))
-		# 强制让按钮可见
-		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
+		print("  - WinPanel 宸叉樉绀猴紝visible = " + str($WinPanel.visible))
+		# 寮哄埗璁╂寜閽彲瑙?		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 			$WinPanel/PanelContainer/VBoxContainer/RestartButton.visible = true
-			print("  - RestartButton 已强制显示")
+			print("  - RestartButton 宸插己鍒舵樉绀?)
 		get_tree().paused = true
-		print("  - 游戏已暂停")
+		print("  - 娓告垙宸叉殏鍋?)
 		if audio_manager and audio_manager.has_method("play_victory"):
 			audio_manager.play_victory()
 	else:
-		print("  ❌ 未找到 WinPanel!")
+		print("  鉂?鏈壘鍒?WinPanel!")
 
 func show_upgrade_panel():
 	if has_node("UpgradePanel"):
@@ -261,32 +250,29 @@ func _add_upgrade_buttons():
 	if not panel or not panel.has_node("PanelContainer/VBoxContainer"):
 		return
 	var vbox = panel.get_node("PanelContainer/VBoxContainer")
-	# 清除旧按钮
-	for child in vbox.get_children():
+	# 娓呴櫎鏃ф寜閽?	for child in vbox.get_children():
 		if child is Button:
 			child.queue_free()
-	# 添加三个升级选项按钮
-	var options = ["射速+20%", "伤害+50%", "生命+20"]
+	# 娣诲姞涓変釜鍗囩骇閫夐」鎸夐挳
+	var options = ["灏勯€?20%", "浼ゅ+50%", "鐢熷懡+20"]
 	for i in range(options.size()):
 		var btn = Button.new()
 		btn.text = options[i]
 		btn.name = "UpgradeBtn" + str(i)
 		btn.custom_minimum_size = Vector2(200, 50)
 		vbox.add_child(btn)
-		print("✅ 升级按钮", i, "已添加: ", options[i])
+		print("鉁?鍗囩骇鎸夐挳", i, "宸叉坊鍔? ", options[i])
 
 func _add_bottom_status_bar():
-	# 创建底部状态栏容器
+	# 鍒涘缓搴曢儴鐘舵€佹爮瀹瑰櫒
 	var container = VBoxContainer.new()
 	container.name = "BottomStatusBar"
-	container.position = Vector2(0, 1240)  # 屏幕底部（1280-40）
-	container.size = Vector2(720, 40)
+	container.position = Vector2(0, 1240)  # 灞忓箷搴曢儴锛?280-40锛?	container.size = Vector2(720, 40)
 	add_child(container)
 	
-	# 状态标签
-	var status_label = Label.new()
+	# 鐘舵€佹爣绛?	var status_label = Label.new()
 	status_label.name = "StatusLabel"
-	status_label.text = "⚔️10.0 💨0.30s 🚀600"
+	status_label.text = "鈿旓笍10.0 馃挩0.30s 馃殌600"
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	status_label.add_theme_font_size_override("font_size", 16)
@@ -296,7 +282,7 @@ func _add_bottom_status_bar():
 func _add_triple_shot_display():
 	var triple_label = Label.new()
 	triple_label.name = "TripleShotDisplay"
-	triple_label.text = "🔫 三发子弹: 未解锁 (0/5)"
+	triple_label.text = "馃敨 涓夊彂瀛愬脊: 鏈В閿?(0/5)"
 	triple_label.position = Vector2(600, 10)
 	triple_label.modulate = Color(1, 1, 1)
 	triple_label.add_theme_font_size_override("font_size", 18)
@@ -305,7 +291,7 @@ func _add_triple_shot_display():
 func _add_grenade_display():
 	var grenade_label = Label.new()
 	grenade_label.name = "GrenadeDisplay"
-	grenade_label.text = "💣 手雷: 0"
+	grenade_label.text = "馃挘 鎵嬮浄: 0"
 	grenade_label.position = Vector2(600, 35)
 	grenade_label.modulate = Color(1, 0.5, 0.3)
 	grenade_label.add_theme_font_size_override("font_size", 18)
@@ -314,13 +300,13 @@ func _add_grenade_display():
 func _add_coordinate_markers():
 	var marker_label = Label.new()
 	marker_label.name = "CoordMarker"
-	marker_label.text = "X坐标: 0(左边缘) | 360(玩家) | 720(右边缘) | Y=-600生成 | Y=1100玩家"
+	marker_label.text = "X鍧愭爣: 0(宸﹁竟缂? | 360(鐜╁) | 720(鍙宠竟缂? | Y=-600鐢熸垚 | Y=1100鐜╁"
 	marker_label.position = Vector2(0, 0)
 	marker_label.modulate = Color(1, 1, 0.5)
 	marker_label.add_theme_font_size_override("font_size", 16)
 	add_child(marker_label)
 	
-	# 添加X坐标数字标签
+	# 娣诲姞X鍧愭爣鏁板瓧鏍囩
 	var x_labels = [0, 100, 200, 300, 360, 400, 500, 600, 700, 720]
 	for x in x_labels:
 		var label = Label.new()
@@ -331,7 +317,7 @@ func _add_coordinate_markers():
 		label.add_theme_font_size_override("font_size", 12)
 		add_child(label)
 	
-	# 添加Y坐标数字标签
+	# 娣诲姞Y鍧愭爣鏁板瓧鏍囩
 	var y_labels = [-600, -300, 0, 300, 600, 900, 1100, 1280]
 	for y in y_labels:
 		var label = Label.new()
