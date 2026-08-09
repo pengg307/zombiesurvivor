@@ -48,15 +48,19 @@ func _process(_delta):
 		_update_boss_progress()
 
 func _input(event):
-	# 调试：捕获所有鼠标点击
+	# 调试：捕获所有鼠标点击（包括暂停时）
 	if event is InputEventMouseButton and event.pressed:
 		print("🖱️ [INPUT] 鼠标点击: button_index=" + str(event.button_index) + " pos=" + str(event.position))
+		print("  - 暂停状态: " + str(get_tree().paused))
 		if has_node("WinPanel") and $WinPanel.visible:
 			print("  - WinPanel 可见，检查按钮...")
 			if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 				var btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
 				print("  - 按钮位置: " + str(btn.position) + " 大小: " + str(btn.size))
 				print("  - 按钮区域: " + str(btn.get_global_rect()))
+				# 检查点击是否在按钮区域内
+				var global_pos = btn.get_global_rect().get_center()
+				print("  - 按钮中心: " + str(global_pos))
 
 func set_player(player_node):
 	player = player_node
