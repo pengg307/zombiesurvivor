@@ -381,6 +381,7 @@ func add_kill():
 	kills += 1
 	kills_for_speed = kills
 	level += 1
+	emit_signal("kill_count_changed")  # 发射信号，通知UI和GameManager
 	print("")
 	print("💀 [击杀] 当前击杀数:" + str(kills) + " 等级:" + str(level))
 	
