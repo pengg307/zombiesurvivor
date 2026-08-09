@@ -84,5 +84,30 @@ func _start_game():
 	spawner._start_next_wave()
 	print("✅ 游戏启动成功！")
 
+func reset_game():
+	print("🔄 重置游戏状态...")
+	# 重置生成器
+	if spawner:
+		spawner.current_kills = 0
+		spawner.boss_active = false
+		spawner.boss_spawned_this_game = false
+		spawner.wave_number = 0
+		spawner.spawn_timer.stop()
+	# 清理所有僵尸
+	for zombie in get_tree().get_nodes_in_group("zombie"):
+		zombie.queue_free()
+	# 清理所有子弹
+	for bullet in get_tree().get_nodes_in_group("bullet"):
+		bullet.queue_free()
+	# 重置玩家状态
+	if player:
+		player.current_health = player.MAX_HEALTH
+		player.kills = 0
+		player.level = 1
+		player.triple_shot_unlocked = false
+		player.grenades = 0
+		player.ammo_boost_timer = 0
+	print("✅ 游戏已重置")
+
 func restart_game():
 	get_tree().reload_current_scene()
