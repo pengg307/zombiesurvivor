@@ -130,6 +130,9 @@ func _setup_audio():
 		audio_manager = am
 
 func _unhandled_input(event):
+	# 暂停时不处理玩家输入，让UI按钮可以响应
+	if get_tree().paused:
+		return
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D:
 			debug_mode = !debug_mode
