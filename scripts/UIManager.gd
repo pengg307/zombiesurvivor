@@ -187,8 +187,8 @@ func _on_restart_game():
 	print("  - 当前时间: " + str(Time.get_ticks_msec()))
 	print("  - 暂停状态: " + str(get_tree().paused))
 	print("  - 场景路径: " + str(get_path()))
-	print("  - 调用堆栈:")
-	print("    - UIManager._on_restart_game()")
+	print("  - UIManager节点: " + str(self))
+	print("  - WinPanel节点: " + str(get_node("WinPanel")))
 
 	# 强制隐藏所有面板
 	if has_node("GameOverPanel"):
