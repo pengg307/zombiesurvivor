@@ -57,7 +57,7 @@ func set_spawner(spawner_node):
 
 func _connect_buttons():
 	print("🔗 连接按钮信号...")
-	print("  - 当前节点路径: " + get_path())
+	print("  - 当前节点路径: " + str(get_path()))
 	
 	# 检查 StartPanel
 	if has_node("StartPanel"):
@@ -165,7 +165,7 @@ func _on_restart_game():
 	print("🔄 [RESTART] 重新开始游戏被点击!")
 	print("  - 当前时间: " + str(Time.get_ticks_msec()))
 	print("  - 暂停状态: " + str(get_tree().paused))
-	print("  - 场景路径: " + get_path())
+	print("  - 场景路径: " + str(get_path()))
 	
 	# 强制隐藏所有面板
 	if has_node("GameOverPanel"):
