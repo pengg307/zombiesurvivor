@@ -22,6 +22,7 @@ var music_bus_idx: int = -1
 @onready var bgm_player: AudioStreamPlayer = null
 
 func _ready():
+	add_to_group("audio_manager")
 	# 确保音效和音乐通道存在
 	var bus_count = AudioServer.get_bus_count()
 	sfx_bus_idx = -1

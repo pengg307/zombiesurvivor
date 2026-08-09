@@ -131,7 +131,7 @@ func show_game_over(kills):
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
 		get_tree().paused = true
-		if audio_manager:
+		if audio_manager and audio_manager.has_method("play_game_over"):
 			audio_manager.play_game_over()
 
 func show_win(kills):
@@ -139,7 +139,7 @@ func show_win(kills):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
 		get_tree().paused = true
-		if audio_manager:
+		if audio_manager and audio_manager.has_method("play_victory"):
 			audio_manager.play_victory()
 
 func show_upgrade_panel():
