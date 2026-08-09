@@ -94,7 +94,7 @@ func reset_game():
 		spawner.wave_number = 0
 		spawner.spawn_timer.stop()
 	# 清理所有僵尸
-	for zombie in get_tree().get_nodes_in_group("zombie"):
+	for zombie in get_tree().get_nodes_in_group("zombies"):
 		zombie.queue_free()
 	# 清理所有子弹
 	for bullet in get_tree().get_nodes_in_group("bullet"):
