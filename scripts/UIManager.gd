@@ -85,11 +85,13 @@ func _connect_buttons():
 	if has_node("WinPanel"):
 		print("  - 找到 WinPanel")
 		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
-			$WinPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+			var btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
+			btn.pressed.connect(_on_restart_game)
 			print("  ✅ WinPanel RestartButton 已连接")
+			# 添加额外的调试 - 直接打印点击
+			btn.pressed.connect(func(): print("🎯 [DEBUG] 按钮被点击!"))
 		else:
 			print("  ❌ 未找到 WinPanel/RestartButton")
-			# 打印 WinPanel 的子节点
 			print("  - WinPanel 子节点:")
 			for child in get_node("WinPanel").get_children():
 				print("    - " + child.name + " (" + child.get_class() + ")")
