@@ -131,11 +131,15 @@ func _on_restart_game():
 	print("🔄 重新开始游戏...")
 	# 清除暂停状态
 	get_tree().paused = false
-	# 隐藏游戏结束/胜利面板，显示开始界面
-	$GameOverPanel.visible = false
-	$WinPanel.visible = false
-	$StartPanel.visible = true  # 回到开始界面，等待玩家点击
-	print("✅ 游戏已重置，请再次点击「开始游戏」")
+	# 隐藏所有面板（直接获取节点，不依赖缓存引用）
+	if has_node("GameOverPanel"):
+		$GameOverPanel.visible = false
+	if has_node("WinPanel"):
+		$WinPanel.visible = false
+	if has_node("StartPanel"):
+		$StartPanel.visible = true
+	# 重新加载场景
+	get_tree().reload_current_scene()
 
 func show_game_over(kills):
 	if has_node("GameOverPanel"):
