@@ -203,12 +203,18 @@ func show_game_over(kills):
 			audio_manager.play_game_over()
 
 func show_win(kills):
+	print("🏆 [SHOW_WIN] 显示胜利面板")
+	print("  - kills = " + str(kills))
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
-		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
+		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
+		print("  - WinPanel 已显示")
 		get_tree().paused = true
+		print("  - 游戏已暂停")
 		if audio_manager and audio_manager.has_method("play_victory"):
 			audio_manager.play_victory()
+	else:
+		print("  ❌ 未找到 WinPanel!")
 
 func show_upgrade_panel():
 	if has_node("UpgradePanel"):
