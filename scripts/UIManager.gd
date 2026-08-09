@@ -208,7 +208,11 @@ func show_win(kills):
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
-		print("  - WinPanel 已显示")
+		print("  - WinPanel 已显示，visible = " + str($WinPanel.visible))
+		# 强制让按钮可见
+		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
+			$WinPanel/PanelContainer/VBoxContainer/RestartButton.visible = true
+			print("  - RestartButton 已强制显示")
 		get_tree().paused = true
 		print("  - 游戏已暂停")
 		if audio_manager and audio_manager.has_method("play_victory"):
