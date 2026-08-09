@@ -102,6 +102,7 @@ func _setup_collision():
 	# Add Area2D for zombie detection
 	var area = Area2D.new()
 	area.name = "ZombieDetector"
+	area.monitoring = true  # Enable collision detection
 	area.collision_layer = 1
 	area.collision_mask = 2
 	area.body_entered.connect(_on_zombie_detected)
