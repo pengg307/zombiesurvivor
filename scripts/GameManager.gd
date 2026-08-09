@@ -93,10 +93,15 @@ func reset_game():
 		spawner.boss_spawned_this_game = false
 		spawner.wave_number = 0
 		spawner.spawn_timer.stop()
+		print("  - Spawner 已重置")
 	# 清理所有僵尸
+	var zombie_count = get_tree().get_nodes_in_group("zombies").size()
+	print("  - 清理前僵尸数量: " + str(zombie_count))
 	for zombie in get_tree().get_nodes_in_group("zombies"):
 		zombie.queue_free()
 	# 清理所有子弹
+	var bullet_count = get_tree().get_nodes_in_group("bullet").size()
+	print("  - 清理前子弹数量: " + str(bullet_count))
 	for bullet in get_tree().get_nodes_in_group("bullet"):
 		bullet.queue_free()
 	# 重置玩家状态
@@ -107,6 +112,7 @@ func reset_game():
 		player.triple_shot_unlocked = false
 		player.grenades = 0
 		player.ammo_boost_timer = 0
+		print("  - Player 已重置 (HP=" + str(player.MAX_HEALTH) + ", kills=0)")
 	print("✅ 游戏已重置")
 
 func restart_game():

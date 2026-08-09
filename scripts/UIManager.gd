@@ -129,20 +129,32 @@ func _on_start_game():
 
 func _on_restart_game():
 	print("🔄 重新开始游戏...")
+	print("  - 当前暂停状态: " + str(get_tree().paused))
+	print("  - StartPanel visible: " + str(has_node("StartPanel") and $StartPanel.visible))
+	print("  - GameOverPanel visible: " + str(has_node("GameOverPanel") and $GameOverPanel.visible))
+	print("  - WinPanel visible: " + str(has_node("WinPanel") and $WinPanel.visible))
 	# 清除暂停状态
 	get_tree().paused = false
+	print("  - 暂停已清除")
 	# 隐藏游戏结束/胜利面板
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
+		print("  - GameOverPanel 已隐藏")
 	if has_node("WinPanel"):
 		$WinPanel.visible = false
+		print("  - WinPanel 已隐藏")
 	# 显示开始界面
 	if has_node("StartPanel"):
 		$StartPanel.visible = true
+		print("  - StartPanel 已显示")
 	# 重置游戏状态
 	var gm = get_tree().get_first_node_in_group("game_manager")
 	if gm:
+		print("  - 找到 GameManager，调用 reset_game()")
 		gm.reset_game()
+	else:
+		print("  - ERROR: 未找到 GameManager!")
+	print("✅ 重新开始完成")
 	print("✅ 游戏已重置，请再次点击「开始游戏」")
 
 func show_game_over(kills):
