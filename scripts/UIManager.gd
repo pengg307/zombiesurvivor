@@ -57,15 +57,45 @@ func set_spawner(spawner_node):
 
 func _connect_buttons():
 	print("🔗 连接按钮信号...")
-	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
-		$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
-		print("  ✅ StartButton 已连接")
-	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
-		$GameOverPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
-		print("  ✅ GameOverPanel RestartButton 已连接")
-	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
-		$WinPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
-		print("  ✅ WinPanel RestartButton 已连接")
+	print("  - 当前节点路径: " + get_path())
+	
+	# 检查 StartPanel
+	if has_node("StartPanel"):
+		print("  - 找到 StartPanel")
+		if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
+			$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
+			print("  ✅ StartButton 已连接")
+		else:
+			print("  ❌ 未找到 StartButton")
+	else:
+		print("  ❌ 未找到 StartPanel")
+	
+	# 检查 GameOverPanel
+	if has_node("GameOverPanel"):
+		print("  - 找到 GameOverPanel")
+		if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
+			$GameOverPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+			print("  ✅ GameOverPanel RestartButton 已连接")
+		else:
+			print("  ❌ 未找到 GameOverPanel/RestartButton")
+	else:
+		print("  ❌ 未找到 GameOverPanel")
+	
+	# 检查 WinPanel
+	if has_node("WinPanel"):
+		print("  - 找到 WinPanel")
+		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
+			$WinPanel/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_game)
+			print("  ✅ WinPanel RestartButton 已连接")
+		else:
+			print("  ❌ 未找到 WinPanel/RestartButton")
+			# 打印 WinPanel 的子节点
+			print("  - WinPanel 子节点:")
+			for child in get_node("WinPanel").get_children():
+				print("    - " + child.name + " (" + child.get_class() + ")")
+	else:
+		print("  ❌ 未找到 WinPanel")
+	
 	_add_upgrade_buttons()
 
 func _update_health():
@@ -132,30 +162,35 @@ func _on_start_game():
 			gm._start_game()
 
 func _on_restart_game():
-	print("🔄 重新开始游戏被点击!")
-	print("  - 当前暂停状态: " + str(get_tree().paused))
-	print("  - StartPanel visible: " + str(has_node("StartPanel") and $StartPanel.visible))
-	print("  - GameOverPanel visible: " + str(has_node("GameOverPanel") and $GameOverPanel.visible))
-	print("  - WinPanel visible: " + str(has_node("WinPanel") and $WinPanel.visible))
+	print("🔄 [RESTART] 重新开始游戏被点击!")
+	print("  - 当前时间: " + str(Time.get_ticks_msec()))
+	print("  - 暂停状态: " + str(get_tree().paused))
+	print("  - 场景路径: " + get_path())
 	
 	# 强制隐藏所有面板
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
+		print("  - GameOverPanel 已隐藏")
 	if has_node("WinPanel"):
 		$WinPanel.visible = false
+		print("  - WinPanel 已隐藏")
 	if has_node("StartPanel"):
 		$StartPanel.visible = true
+		print("  - StartPanel 已显示")
 	
 	# 清除暂停状态
 	get_tree().paused = false
+	print("  - 暂停状态已清除")
 	
 	# 重置游戏状态
 	var gm = get_tree().get_first_node_in_group("game_manager")
 	if gm:
+		print("  - 找到 GameManager，调用 reset_game()")
 		gm.reset_game()
-		print("✅ 游戏已重置，请再次点击「开始游戏」")
+		print("  - reset_game() 调用完成")
+		print("✅ [RESTART] 游戏已重置")
 	else:
-		print("❌ 未找到 GameManager!")
+		print("❌ [RESTART] 未找到 GameManager!")
 
 func show_game_over(kills):
 	if has_node("GameOverPanel"):
