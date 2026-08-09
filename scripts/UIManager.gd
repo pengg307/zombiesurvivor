@@ -6,6 +6,7 @@ var spawner = null
 var audio_manager = null
 
 func _ready():
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	# 连接音频管理器
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
