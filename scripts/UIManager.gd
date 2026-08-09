@@ -138,8 +138,10 @@ func _on_restart_game():
 		$WinPanel.visible = false
 	if has_node("StartPanel"):
 		$StartPanel.visible = true
-	# 重新加载场景
-	get_tree().reload_current_scene()
+	# 重置游戏状态（不重新加载场景）
+	var gm = get_tree().get_first_node_in_group("game_manager")
+	if gm:
+		gm._start_game()
 
 func show_game_over(kills):
 	if has_node("GameOverPanel"):
