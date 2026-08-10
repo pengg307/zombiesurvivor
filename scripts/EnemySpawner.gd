@@ -6,10 +6,10 @@ const BOSS_KILLS_REQUIRED = 5
 const SQUARE_SPACING = 80.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
-const SPAWN_LEFT_X = -80.0
-const SPAWN_RIGHT_X = 80.0
-const SPAWN_TOP_Y = -100.0
-const SPAWN_BOTTOM_Y = 100.0  # 添加底部生成范围
+const SPAWN_TOP_Y = -400.0  # 僵尸从屏幕上方生成
+const SPAWN_BOTTOM_Y = -200.0  # 不要生成太低
+const SPAWN_LEFT_X = -360.0  # 屏幕左侧
+const SPAWN_RIGHT_X = 360.0  # 屏幕右侧
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -42,8 +42,8 @@ var zombies_in_wave = 0
 var audio_manager = null
 var game_manager = null
 var weapon_upgrade_sys = null
-var game_started = false  # 游戏是否已开始
-var safety_timer = 0.0  # 安全延迟
+var game_started = false
+var safety_timer = 0.0
 
 signal boss_spawned
 signal game_over
@@ -70,10 +70,10 @@ func _ready():
 	print("📊 僵尸类型: basic, fast, tank, explorer")
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("🛡️  安全延迟: 2秒")
+	print("📍 生成范围: X=" + str(SPAWN_LEFT_X) + "~" + str(SPAWN_RIGHT_X) + " Y=" + str(SPAWN_TOP_Y) + "~" + str(SPAWN_BOTTOM_Y))
 	print("============================================================")
 
 func _physics_process(delta):
-	# 游戏开始后的安全延迟，让玩家可以先移动
 	if game_started and safety_timer > 0:
 		safety_timer -= delta
 
@@ -156,13 +156,19 @@ func _spawn_zombie(index, config):
 	if zombie_scene:
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
+		
+		# 使用正确的中心坐标系统生成僵尸
 		var x_pos = SPAWN_LEFT_X + index * SQUARE_SPACING if spawn_side == 0 else SPAWN_RIGHT_X + index * SQUARE_SPACING
-		# 使用更大的Y范围生成僵尸，避免立即碰撞
 		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
+		
 		zombie.position = Vector2(x_pos, y_pos)
-		zombie.spawn_time = Time.get_ticks_msec() / 1000.0  # 记录生成时间
+		zombie.spawn_time = Time.get_ticks_msec() / 1000.0
 		add_child(zombie)
-		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 位置=(" + str(int(x_pos)) + ", " + str(int(y_pos)) + ")")
+		
+		# 计算屏幕位置用于调试
+		var screen_x = x_pos + 360
+		var screen_y = y_pos + 640
+		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 中心坐标=(" + str(int(x_pos)) + ", " + str(int(y_pos)) + ") 屏幕坐标=(" + str(int(screen_x)) + ", " + str(int(screen_y)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
@@ -186,17 +192,18 @@ func _spawn_boss():
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
-		boss.position = Vector2(0, -200)  # Boss从更上方生成
+		# Boss从屏幕正上方生成
+		boss.position = Vector2(0, SPAWN_TOP_Y - 100)
 		boss.spawn_time = Time.get_ticks_msec() / 1000.0
 		add_child(boss)
-		print("👹 Boss已生成！")
+		print("👹 Boss已生成！位置=" + str(boss.position))
 		emit_signal("boss_spawned")
 
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
 	print("  - 游戏开始，启动安全延迟2秒")
 	game_started = true
-	safety_timer = 2.0  # 2秒安全延迟
+	safety_timer = 2.0
 	spawn_timer.start()
 	print("⏰ Timer已启动，等待首次生成...")
 
