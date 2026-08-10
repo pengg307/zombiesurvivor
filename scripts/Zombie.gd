@@ -9,7 +9,7 @@ const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 30.0
 const DAMAGE_PER_SECOND = 5.0
 const EXPERIENCE_REWARD = 10
-const SAFE_DISTANCE = 200.0  # 安全距离（像素）
+const COLLISION_RADIUS = 50.0  # 碰撞半径
 
 @export var is_boss: bool = false
 var zombie_type = "basic"
@@ -21,7 +21,6 @@ var sprite_node: Sprite2D = null
 var frame_count = 0
 var current_frame = 0
 var boss_anim_timer = 0.0
-var spawn_screen_pos = Vector2(0, 0)  # 屏幕坐标
 
 signal zombie_reached_player
 signal zombie_spawned
@@ -31,9 +30,6 @@ func _ready():
 	
 	_setup_sprite()
 	_setup_collision()
-	
-	# 记录生成时的屏幕位置
-	spawn_screen_pos = _to_screen_position()
 	
 	# 初始化健康值
 	if is_boss or zombie_type == "boss":
@@ -52,8 +48,8 @@ func _ready():
 	print("")
 	print("============================================================")
 	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + " 速度=" + str(int(base_speed)))
-	print("   中心坐标=(" + str(int(position.x)) + ", " + str(int(position.y)) + ")")
-	print("   屏幕坐标=(" + str(int(spawn_screen_pos.x)) + ", " + str(int(spawn_screen_pos.y)) + ")")
+	print("   位置=(" + str(int(position.x)) + ", " + str(int(position.y)) + ") 屏幕=(" + str(int(position.x + 360)) + ", " + str(int(position.y + 640)) + ")")
+	print("   碰撞半径=" + str(COLLISION_RADIUS))
 	print("============================================================")
 	
 	emit_signal("zombie_spawned")
@@ -100,42 +96,38 @@ func _setup_collision():
 	area.collision_mask = 1
 	area.monitoring = true
 	area.body_entered.connect(_on_player_detected)
-	area.body_exited.connect(_on_player_exited)
 	add_child(area)
 	
 	var collision = CollisionShape2D.new()
 	collision.name = "CollisionShape"
 	var shape = CircleShape2D.new()
-	shape.radius = 40.0  # 增大碰撞半径
+	shape.radius = COLLISION_RADIUS
 	collision.shape = shape
 	area.add_child(collision)
 	
-	print("✅ 碰撞体创建成功 (半径=40, 层=" + str(area.collision_layer) + ", 掩码=" + str(area.collision_mask) + ")")
-
-func _to_screen_position() -> Vector2:
-	return position + Vector2(360, 640)
-
-func _to_center_position(screen_pos: Vector2) -> Vector2:
-	return screen_pos - Vector2(360, 640)
+	print("✅ 碰撞体创建成功 (半径=" + str(COLLISION_RADIUS) + ", 层=" + str(area.collision_layer) + ", 掩码=" + str(area.collision_mask) + ")")
 
 func _on_player_detected(body):
 	if body.is_in_group("player") and not dead:
-		var player_pos = _to_screen_position() if body.is_in_group("zombies") else body.position
-		var dist = position.distance_to(body.position)
-		print("💥 Zombie 碰到玩家！类型=" + zombie_type + " 距离=" + str(int(dist)))
-		print("   Zombie屏幕位置=(" + str(int(spawn_screen_pos.x)) + ", " + str(int(spawn_screen_pos.y)) + ")")
-		print("   玩家屏幕位置=(" + str(int(player_pos.x)) + ", " + str(int(player_pos.y)) + ")")
+		# 计算屏幕位置
+		var zombie_screen_pos = position + Vector2(360, 640)
+		var player_screen_pos = body.position
+		var dist = zombie_screen_pos.distance_to(player_screen_pos)
 		
-		if not dead:
-			dead = true
-			var player = get_tree().get_first_node_in_group("player")
-			if player:
-				player.take_damage(999)
-			emit_signal("zombie_reached_player")
-
-func _on_player_exited(body):
-	if body.is_in_group("player"):
-		print("🔓 玩家离开碰撞区域")
+		print("")
+		print("💥 Zombie 检测到玩家！类型=" + zombie_type)
+		print("   Zombie屏幕位置=(" + str(int(zombie_screen_pos.x)) + ", " + str(int(zombie_screen_pos.y)) + ")")
+		print("   玩家屏幕位置=(" + str(int(player_screen_pos.x)) + ", " + str(int(player_screen_pos.y)) + ")")
+		print("   距离=" + str(int(dist)) + " 碰撞半径=" + str(COLLISION_RADIUS))
+		print("")
+		
+		if dist <= COLLISION_RADIUS:
+			if not dead:
+				dead = true
+				var player = get_tree().get_first_node_in_group("player")
+				if player:
+					player.take_damage(999)
+				emit_signal("zombie_reached_player")
 
 func _physics_process(delta):
 	if dead:
@@ -146,16 +138,13 @@ func _physics_process(delta):
 	var player_node = get_tree().get_first_node_in_group("player")
 	
 	if player_node:
-		# 计算目标位置
-		var target_center_pos = _to_center_position(player_node.position)
+		# 计算目标位置（中心坐标系统）
+		var target_center_pos = player_node.position - Vector2(360, 640)
 		
 		var dx = target_center_pos.x - position.x
 		var dy = target_center_pos.y - position.y
 		var move_dir = Vector2(dx, dy).normalized()
 		position += move_dir * base_speed * delta
-		
-		# 更新屏幕位置
-		spawn_screen_pos = _to_screen_position()
 		
 		# 动画
 		var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
