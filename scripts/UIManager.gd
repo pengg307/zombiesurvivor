@@ -107,6 +107,7 @@ func _on_start_game():
 	if spawner:
 		print("  - 调用spawner.start()")
 		spawner.start()
+		print("  - Spawner已启动！")
 	else:
 		print("  - ❌ Spawner引用为空！")
 	
@@ -199,7 +200,7 @@ func show_upgrade_panel():
 		_generate_upgrade_options()
 
 func _generate_upgrade_options():
-	var upgrade_sys = get_node_or_null("/root/UpgradeSystem")
+	var upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
 	if not upgrade_sys:
 		upgrade_sys = preload("res://scripts/UpgradeSystem.gd").new()
 		add_child(upgrade_sys)

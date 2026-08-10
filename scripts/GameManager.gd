@@ -9,7 +9,6 @@ var weapon_upgrade_sys = null
 var stats_manager = null
 var settings_manager = null
 var tutorial_manager = null
-var splash_screen = null
 
 func _ready():
 	add_to_group("game_manager")
@@ -22,7 +21,6 @@ func _ready():
 	stats_manager = get_node_or_null("/root/StatsManager")
 	settings_manager = get_node_or_null("/root/SettingsManager")
 	tutorial_manager = get_node_or_null("/root/TutorialOverlay")
-	splash_screen = get_node_or_null("/root/SplashScreen")
 	
 	if ui and player:
 		if ui.has_method("set_player"):
@@ -59,28 +57,6 @@ func _connect_signals_deferred():
 		if spawner.has_signal("boss_spawned"):
 			spawner.boss_spawned.connect(_on_boss_spawned)
 			print("✅ 已连接 boss_spawned")
-
-func start_game():
-	print("🎮 开始游戏！")
-	if settings_manager:
-		settings_manager._apply_audio_settings()
-	if splash_screen:
-		splash_screen.show()
-		# 3秒后自动开始
-		var timer = get_tree().create_timer(3.0)
-		timer.timeout.connect(_start_real_game)
-	elif spawner:
-		_start_real_game()
-
-func _start_real_game():
-	if spawner:
-		spawner.start()
-	if audio_manager:
-		audio_manager.play_bgm("normal")
-	if settings_manager and not settings_manager.is_tutorial_seen():
-		if tutorial_manager:
-			tutorial_manager.start_tutorial()
-	print("🎮 游戏正式开始！")
 
 func _on_kill_count_changed():
 	if player and weapon_upgrade_sys:
