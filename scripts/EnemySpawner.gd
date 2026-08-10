@@ -6,10 +6,10 @@ const BOSS_KILLS_REQUIRED = 5
 const SQUARE_SPACING = 80.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
-const SPAWN_TOP_Y = -400.0  # 僵尸从屏幕上方生成
-const SPAWN_BOTTOM_Y = -200.0  # 不要生成太低
-const SPAWN_LEFT_X = -360.0  # 屏幕左侧
-const SPAWN_RIGHT_X = 360.0  # 屏幕右侧
+const SPAWN_TOP_Y = -450.0  # 更远的生成位置
+const SPAWN_BOTTOM_Y = -350.0
+const SPAWN_LEFT_X = -360.0
+const SPAWN_RIGHT_X = 360.0
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -39,11 +39,7 @@ var boss_spawned_this_game = false
 var wave_number = 0
 var spawn_side = 0
 var zombies_in_wave = 0
-var audio_manager = null
-var game_manager = null
-var weapon_upgrade_sys = null
 var game_started = false
-var safety_timer = 0.0
 
 signal boss_spawned
 signal game_over
@@ -56,35 +52,19 @@ func _ready():
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
 	
-	var gm = get_tree().get_first_node_in_group("game_manager")
-	if gm:
-		game_manager = gm
-	
-	weapon_upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
-	
 	print("")
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
 	print("============================================================")
-	print("📊 生成模式: 矩阵")
-	print("📊 僵尸类型: basic, fast, tank, explorer")
-	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
-	print("🛡️  安全延迟: 2秒")
 	print("📍 生成范围: X=" + str(SPAWN_LEFT_X) + "~" + str(SPAWN_RIGHT_X) + " Y=" + str(SPAWN_TOP_Y) + "~" + str(SPAWN_BOTTOM_Y))
+	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("============================================================")
 
-func _physics_process(delta):
-	if game_started and safety_timer > 0:
-		safety_timer -= delta
-
 func _on_spawn_timer_timeout():
-	print("⏰ [定时器] 触发！当前波次: " + str(wave_number))
 	var config = WAVE_CONFIG[min(wave_number + 1, WAVE_CONFIG.size())]
 	if config:
 		spawn_timer.wait_time = config.interval
 		_start_next_wave()
-	else:
-		print("❌ 无法获取波次配置")
 
 func _start_next_wave():
 	wave_number += 1
@@ -94,35 +74,13 @@ func _start_next_wave():
 	zombies_in_wave = config.zombies
 	
 	print("")
-	print("========================================")
-	print("🌊 第" + str(wave_number) + "波开始！")
-	print("📐 生成" + str(zombies_in_wave) + "个僵尸")
-	print("⏱️ 间隔: " + str(config.interval) + "s")
-	print("========================================")
+	print("🌊 第" + str(wave_number) + "波开始！生成" + str(zombies_in_wave) + "个僵尸")
 	
 	_spawn_matrix(config)
 
 func _spawn_matrix(config):
-	print("----------------------------------------")
-	
-	var start_x: float
-	var side: String
-	
-	if spawn_side == 0:
-		start_x = SPAWN_LEFT_X
-		side = "左侧"
-		var end_x = start_x + (zombies_in_wave - 1) * SQUARE_SPACING
-		print("🎯 从左侧生成: x=" + str(int(start_x)) + " ~ " + str(int(end_x)))
-	else:
-		start_x = SPAWN_RIGHT_X
-		side = "右侧"
-		var end_x = start_x + (zombies_in_wave - 1) * SQUARE_SPACING
-		print("🎯 从右侧生成: x=" + str(int(start_x)) + " ~ " + str(int(end_x)))
-	print("========================================")
-	
 	for i in range(zombies_in_wave):
 		_spawn_zombie(i, config)
-	
 	spawn_side = 1 - spawn_side
 
 func _spawn_zombie(index, config):
@@ -162,13 +120,12 @@ func _spawn_zombie(index, config):
 		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
 		
 		zombie.position = Vector2(x_pos, y_pos)
-		zombie.spawn_time = Time.get_ticks_msec() / 1000.0
 		add_child(zombie)
 		
 		# 计算屏幕位置用于调试
 		var screen_x = x_pos + 360
 		var screen_y = y_pos + 640
-		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 中心坐标=(" + str(int(x_pos)) + ", " + str(int(y_pos)) + ") 屏幕坐标=(" + str(int(screen_x)) + ", " + str(int(screen_y)) + ")")
+		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 中心=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
@@ -183,29 +140,22 @@ func _spawn_boss():
 	boss_active = true
 	boss_spawned_this_game = true
 	print("")
-	print("👹 ========================================")
 	print("👹 Boss即将出现！")
-	print("👹 ========================================")
 	
 	var boss_scene = load("res://scripts/Zombie.gd")
 	if boss_scene:
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
-		# Boss从屏幕正上方生成
 		boss.position = Vector2(0, SPAWN_TOP_Y - 100)
-		boss.spawn_time = Time.get_ticks_msec() / 1000.0
 		add_child(boss)
-		print("👹 Boss已生成！位置=" + str(boss.position))
+		print("👹 Boss已生成！")
 		emit_signal("boss_spawned")
 
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
-	print("  - 游戏开始，启动安全延迟2秒")
 	game_started = true
-	safety_timer = 2.0
 	spawn_timer.start()
-	print("⏰ Timer已启动，等待首次生成...")
 
 func stop():
 	print("⏹️ 生成器停止！")
