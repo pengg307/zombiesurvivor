@@ -302,36 +302,8 @@ func _on_restart_game():
 
 func show_game_over(kills):
 	print("💀 [GAME_OVER] 游戏结束")
-	# 创建全屏红色覆盖层 - 放在底层
-	if not has_node("GameOverOverlay"):
-		var overlay = Panel.new()
-		overlay.name = "GameOverOverlay"
-		overlay.visible = true
-		overlay.layout_mode = 1
-		overlay.anchor_left = 0.0
-		overlay.anchor_top = 0.0
-		overlay.anchor_right = 1.0
-		overlay.anchor_bottom = 1.0
-		overlay.modulate = Color(1, 0, 0, 0.6)  # 红色半透明
-		overlay.z_index = 0  # 放在最底层
-		add_child(overlay)
-	
-	# 显示"LOST"文字
-	if not has_node("GameOverOverlay/LostLabel"):
-		var label = Label.new()
-		label.name = "LostLabel"
-		label.text = "💀 LOST 💀"
-		label.add_theme_font_size_override("font_size", 100)
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.modulate = Color(1, 0.2, 0.2)
-		label.position = Vector2(0, -100)
-		label.size = Vector2(720, 200)
-		$GameOverOverlay.add_child(label)
-	
-	# 显示分数和重启按钮 - 放在覆盖层上面
+	# 只显示分数面板，不创建覆盖层
 	if has_node("GameOverPanel"):
-		$GameOverPanel.z_index = 10  # 确保在覆盖层上面
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
 	get_tree().paused = true
@@ -339,36 +311,8 @@ func show_game_over(kills):
 
 func show_win(kills):
 	print("🏆 [WIN] 游戏胜利")
-	# 创建全屏绿色覆盖层 - 放在底层
-	if not has_node("WinOverlay"):
-		var overlay = Panel.new()
-		overlay.name = "WinOverlay"
-		overlay.visible = true
-		overlay.layout_mode = 1
-		overlay.anchor_left = 0.0
-		overlay.anchor_top = 0.0
-		overlay.anchor_right = 1.0
-		overlay.anchor_bottom = 1.0
-		overlay.modulate = Color(0, 1, 0, 0.6)  # 绿色半透明
-		overlay.z_index = 0  # 放在最底层
-		add_child(overlay)
-	
-	# 显示"WON"文字
-	if not has_node("WinOverlay/WonLabel"):
-		var label = Label.new()
-		label.name = "WonLabel"
-		label.text = "🏆 WON 🏆"
-		label.add_theme_font_size_override("font_size", 100)
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.modulate = Color(0.2, 1, 0.2)
-		label.position = Vector2(0, -100)
-		label.size = Vector2(720, 200)
-		$WinOverlay.add_child(label)
-	
-	# 显示分数和重启按钮 - 放在覆盖层上面
+	# 只显示分数面板，不创建覆盖层
 	if has_node("WinPanel"):
-		$WinPanel.z_index = 10  # 确保在覆盖层上面
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 	get_tree().paused = true
