@@ -1,7 +1,6 @@
 extends Node
 class_name AudioManager
 
-# 音效路径
 const SOUND_PATHS = {
 	"shoot": "res://assets/audio/shoot.wav",
 	"hit": "res://assets/audio/hit.wav",
@@ -15,7 +14,6 @@ const SOUND_PATHS = {
 	"grenade_explode": "res://assets/audio/grenade_explode.wav"
 }
 
-# BGM路径
 const BGM_PATHS = {
 	"normal": "res://assets/audio/bgm_normal.ogg",
 	"boss": "res://assets/audio/bgm_boss.ogg"
@@ -35,7 +33,6 @@ func _ready():
 	print("🎵 AudioManager启动")
 
 func _init_audio():
-	# 初始化音效播放器
 	for sound_name in SOUND_PATHS:
 		var player = AudioStreamPlayer.new()
 		player.name = sound_name + "Player"
@@ -43,7 +40,6 @@ func _init_audio():
 		add_child(player)
 		sound_effects[sound_name] = player
 	
-	# 初始化BGM播放器
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.name = "BGMPlayer"
 	bgm_player.volume_db = linear_to_db(music_volume)

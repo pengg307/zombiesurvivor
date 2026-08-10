@@ -8,13 +8,10 @@ var kills_for_speed = 0
 var is_pierce = false
 var max_distance = 1200.0
 var traveled_distance = 0.0
-var collision_layer = 3
-var collision_mask = 2
 
 func _ready():
 	add_to_group("bullets")
-	self.collision_layer = collision_layer
-	self.collision_mask = collision_mask
+	# collision_layer and collision_mask are inherited from CharacterBody2D
 
 func _physics_process(delta):
 	var move = direction * current_speed * delta
