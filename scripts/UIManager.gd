@@ -8,6 +8,7 @@ var stats_manager = null
 var settings_manager = null
 var tutorial_manager = null
 var game_ended = false
+var game_started = false
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -31,6 +32,7 @@ func _ready():
 	_add_stats_button()
 	
 	game_ended = false
+	game_started = false
 	
 	print("")
 	print("✅ UIManager初始化完成")
@@ -87,7 +89,7 @@ func _connect_buttons():
 		print("  ✅ Win RestartButton 已连接")
 
 func _on_start_game():
-	if game_ended:
+	if game_started or game_ended:
 		return
 	
 	print("")
@@ -96,6 +98,7 @@ func _on_start_game():
 	print("========================================")
 	print("  - Spawner引用: " + str(spawner))
 	
+	game_started = true
 	game_ended = false
 	
 	if audio_manager:
@@ -136,6 +139,7 @@ func show_game_over(kills):
 	if game_ended:
 		return
 	game_ended = true
+	game_started = false
 	
 	print("💀 [GAME_OVER] 游戏结束")
 	
@@ -159,6 +163,7 @@ func show_win(kills):
 	if game_ended:
 		return
 	game_ended = true
+	game_started = false
 	
 	print("🏆 [WIN] 游戏胜利！")
 	
@@ -187,7 +192,7 @@ func _on_restart_game():
 	get_tree().reload_current_scene()
 
 func show_upgrade_panel():
-	if game_ended:
+	if game_ended or not game_started:
 		return
 	print("🎁 [升级] 显示升级面板")
 	
@@ -379,11 +384,11 @@ func _add_mobile_controls():
 	print("✅ 移动端控制已添加")
 
 func _on_joystick_moved(direction: Vector2):
-	if player and not game_ended:
+	if player and not game_ended and game_started:
 		player.move_direction = direction
 
 func _on_grenade_pressed():
-	if player and not game_ended and player.grenades > 0:
+	if player and not game_ended and game_started and player.grenades > 0:
 		player._throw_grenade()
 
 func _add_settings_button():

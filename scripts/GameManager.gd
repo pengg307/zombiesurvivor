@@ -35,6 +35,20 @@ func _ready():
 	print("============================================================")
 	print("🎮 GameManager启动！")
 	print("============================================================")
+	
+	# 启动游戏
+	_start_game()
+
+func _start_game():
+	print("🎮 启动游戏！")
+	if settings_manager:
+		settings_manager._apply_audio_settings()
+	if spawner:
+		spawner.start()
+		print("  ✅ 生成器已启动")
+	if audio_manager:
+		audio_manager.play_bgm("normal")
+		print("  ✅ BGM已播放")
 
 func _connect_signals_deferred():
 	await get_tree().process_frame
