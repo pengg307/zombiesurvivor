@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bigbossjpg"
-path="res://.godot/imported/bigboss.png-PLACEHOLDER.ctex"
+path="res://.godot/imported/bigboss.png-de93188d7263039735b4664a506c945d.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/downloads/bigboss.png"
-dest_files=["res://.godot/imported/bigboss.png-PLACEHOLDER.ctex"]
+dest_files=["res://.godot/imported/bigboss.png-de93188d7263039735b4664a506c945d.ctex"]
 
 [params]
 
