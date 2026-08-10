@@ -17,9 +17,11 @@ func _ready():
 	weapon_upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
 	
 	if ui and player:
-		ui.set_player(player)
+		if ui.has_method("set_player"):
+			ui.set_player(player)
 	if ui and spawner:
-		ui.set_spawner(spawner)
+		if ui.has_method("set_spawner"):
+			ui.set_spawner(spawner)
 	
 	_connect_signals_deferred()
 
@@ -51,12 +53,12 @@ func _on_kill_count_changed():
 
 func _on_upgrade_available():
 	print("🎁 [升级] 获得升级机会！")
-	if ui:
+	if ui and ui.has_method("show_upgrade_panel"):
 		ui.show_upgrade_panel()
 
 func _on_player_died():
 	print("💀 玩家死亡！")
-	if ui:
+	if ui and ui.has_method("show_game_over"):
 		ui.show_game_over(spawner.current_kills if spawner else 0)
 	if spawner:
 		spawner.stop()
@@ -66,16 +68,11 @@ func _on_boss_spawned():
 
 func _on_game_won():
 	print("🏆 胜利！")
-	if ui:
+	if ui and ui.has_method("show_win"):
 		ui.show_win(spawner.current_kills if spawner else 0)
 	if spawner:
 		spawner.stop()
 
 func start_game():
-	print("")
-	print("========================================")
-	print("🎮 [DEBUG] GameManager._start_game 被调用！")
-	print("========================================")
-	if spawner:
+	if spawner and spawner.has_method("start"):
 		spawner.start()
-		print("  ✅ 生成器启动")

@@ -6,6 +6,9 @@ const BOSS_KILLS_REQUIRED = 5
 const SQUARE_SPACING = 80.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
+const SPAWN_LEFT_X = -80.0
+const SPAWN_RIGHT_X = 80.0
+const SPAWN_TOP_Y = -100.0
 
 # 难度曲线配置
 const WAVE_CONFIG = {
@@ -56,7 +59,6 @@ func _ready():
 	if gm:
 		game_manager = gm
 	
-	# 获取武器升级系统
 	weapon_upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
 	
 	print("")
@@ -108,18 +110,15 @@ func _spawn_matrix(config):
 		print("🎯 从右侧生成: x=" + str(int(start_x)) + " ~ " + str(int(end_x)))
 	print("========================================")
 	
-	# 根据配置生成僵尸
 	for i in range(zombies_in_wave):
 		_spawn_zombie(i, config)
 	
-	# 切换生成侧
 	spawn_side = 1 - spawn_side
 
 func _spawn_zombie(index, config):
 	var zombie_scene
 	var zombie_type
 	
-	# 随机选择僵尸类型
 	var rand_val = randi() % 100
 	var cumulative = 0
 	var available_types = config.types if config else ["basic", "fast"]
@@ -132,7 +131,6 @@ func _spawn_zombie(index, config):
 		else:
 			zombie_type = "basic"
 	
-	# 生成僵尸
 	match zombie_type:
 		"basic":
 			zombie_scene = load("res://scripts/Zombie.gd")
@@ -159,7 +157,6 @@ func add_kill():
 	current_kills += 1
 	print("📊 击杀数: " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
 	
-	# 检查Boss生成
 	if current_kills >= BOSS_KILLS_REQUIRED and not boss_spawned_this_game:
 		_spawn_boss()
 
@@ -176,7 +173,7 @@ func _spawn_boss():
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
-		boss.position = Vector2(0, -300)  # Boss从上方出现
+		boss.position = Vector2(0, -300)
 		add_child(boss)
 		print("👹 Boss已生成！")
 		emit_signal("boss_spawned")

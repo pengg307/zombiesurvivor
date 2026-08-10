@@ -39,7 +39,6 @@ var move_direction = Vector2(0, 0)
 var base_fire_rate = FIRE_RATE_BASE
 var shoot_debug_counter = 0.0
 var damage_per_shot: float = 10.0
-# 新增属性
 var critical_chance: float = 0.0
 var pierce_shot: bool = false
 var bullet_count: int = 1
@@ -60,7 +59,7 @@ func _ready():
 	input_mode = "keyboard"
 	
 	collision_layer = 1
-	collision_mask = 2  # Detect zombies (layer 2)
+	collision_mask = 2
 	add_to_group("player")
 	
 	position = Vector2(VIEWPORT_WIDTH / 2.0, BASE_Y)
@@ -107,10 +106,9 @@ func _setup_collision():
 	collision.shape = shape
 	add_child(collision)
 	
-	# Add Area2D for zombie detection
 	var area = Area2D.new()
 	area.name = "ZombieDetector"
-	area.monitoring = true  # Enable collision detection
+	area.monitoring = true
 	area.collision_layer = 1
 	area.collision_mask = 2
 	area.body_entered.connect(_on_zombie_detected)
@@ -120,7 +118,6 @@ func _setup_collision():
 
 func _on_zombie_detected(body):
 	if body.is_in_group("zombies"):
-		print("💥 僵尸碰到玩家！游戏结束！")
 		current_health = 0
 		emit_signal("player_died")
 
@@ -138,7 +135,6 @@ func _setup_audio():
 		audio_manager = am
 
 func _unhandled_input(event):
-	# 暂停时不处理玩家输入，让UI按钮可以响应
 	if get_tree().paused:
 		return
 	if event is InputEventKey and event.pressed:
@@ -201,11 +197,8 @@ func _physics_process(delta):
 	_update_position_label()
 	_animate(delta)
 	_update_debug_info()
-	# 生命恢复
 	if regen_rate > 0 and current_health < MAX_HEALTH:
 		current_health = min(MAX_HEALTH, current_health + regen_rate * delta)
-		if get_node_or_null("../UI") and has_node("UI"):
-			get_node("../UI")._update_health()
 
 func _update_ammo_boost(delta):
 	if ammo_boost_timer > 0:
@@ -246,7 +239,6 @@ func _move(delta):
 	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
 
 func _shoot(delta):
-	# 调试日志：每5秒打印一次状态
 	shoot_debug_counter += delta
 	if shoot_debug_counter >= 5.0:
 		shoot_debug_counter = 0.0
@@ -269,7 +261,6 @@ func _attack():
 			var dist = position.distance_to(zombie_screen_pos)
 			
 			if dist <= SHOT_RANGE:
-				# 多发射击
 				for i in range(bullet_count):
 					var angle_offset = (i - (bullet_count - 1) / 2.0) * 0.1
 					var dir = Vector2(0, -1).rotated(angle_offset)
@@ -277,21 +268,11 @@ func _attack():
 				
 				if audio_manager:
 					audio_manager.play_shoot()
-			else:
-				if debug_mode:
-					print("❌ 僵尸超出射程")
-		else:
-			if debug_mode:
-				print("❌ 未找到最近僵尸")
-	else:
-		if debug_mode:
-			print("📢 当前没有僵尸")
 
 func _find_nearest_enemy(enemies):
 	var nearest = null
 	var nearest_dist = SHOT_RANGE
 	for enemy in enemies:
-		# 修复：将僵尸的中心坐标转换为屏幕坐标
 		var enemy_screen_pos = enemy.position + Vector2(360, 640)
 		var dist = position.distance_to(enemy_screen_pos)
 		if dist < nearest_dist:
@@ -324,7 +305,6 @@ func _spawn_bullet(direction: Vector2):
 	bullet.kills_for_speed = kills
 	bullet.is_pierce = pierce_shot
 	get_parent().add_child(bullet)
-	print("  🔫 子弹生成: 方向=" + str(direction) + " 伤害=" + str(bullet.damage))
 
 func _handle_grenade(delta):
 	if grenade_cooldown > 0:
@@ -389,7 +369,6 @@ func add_kill():
 	kills += 1
 	kills_for_speed = kills
 	level += 1
-	# 检查升级
 	if kills % 10 == 0:
 		emit_signal("upgrade_available")
 	emit_signal("kill_count_changed")
@@ -410,31 +389,10 @@ func add_kill():
 		print("💣 [手雷] 获得手雷！当前:" + str(grenades))
 	
 	emit_signal("kill_count_changed")
+
+func add_experience(amount: int):
 	experience += amount
 	level = 1 + experience / 100
-
-func add_kill():
-	kills += 1
-	kills_for_speed = kills
-	level += 1
-	emit_signal("kill_count_changed")  # 发射信号，通知UI和GameManager
-	print("")
-	print("💀 [击杀] 当前击杀数:" + str(kills) + " 等级:" + str(level))
-	
-	if kills % 10 == 0:
-		bullet_speed += 100.0
-		print("⚡ [速度提升] 子弹速度:" + str(bullet_speed))
-	
-	if kills == 5 and not triple_shot_unlocked:
-		triple_shot_unlocked = true
-		print("")
-		print("🎯 [解锁] 三发子弹已解锁！")
-	
-	if kills > 0 and kills % GRENADE_INTERVAL == 0 and grenades < MAX_GRENADES:
-		grenades += 1
-		print("💣 [手雷] 获得手雷！当前:" + str(grenades))
-	
-	emit_signal("kill_count_changed")
 
 func _update_debug_info():
 	if debug_mode and last_log_kill != kills:
