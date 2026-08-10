@@ -386,6 +386,63 @@ func _add_grenade_display():
 	grenade_label.add_theme_font_size_override("font_size", 18)
 	add_child(grenade_label)
 
+func _create_health_alert_panel():
+	# 動態創建底部健康警報面板
+	var panel = Panel.new()
+	panel.name = "HealthAlertPanel"
+	panel.visible = false
+	panel.layout_mode = 1  # Anchor mode
+	panel.anchor_left = 0.0
+	panel.anchor_top = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 0.0
+	panel.offset_top = 0.0
+	panel.offset_right = 0.0
+	panel.offset_bottom = -150.0  # 150px 高
+	panel.modulate = Color(1, 1, 1, 1)
+	add_child(panel)
+	
+	# 容器
+	var container = VBoxContainer.new()
+	container.name = "HealthAlertContainer"
+	container.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_child(container)
+	
+	# 標題
+	var label = Label.new()
+	label.name = "HealthAlertLabel"
+	label.text = "💥 受傷！"
+	label.add_theme_font_size_override("font_size", 36)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	container.add_child(label)
+	
+	# 健康條容器
+	var bar_container = HBoxContainer.new()
+	bar_container.name = "HealthBarContainer"
+	bar_container.child_min_height = 40
+	panel.add_child(bar_container)
+	
+	# 健康條
+	var bar = ProgressBar.new()
+	bar.name = "HealthBar"
+	bar.value = 100.0
+	bar.min_value = 0.0
+	bar.max_value = 100.0
+	bar.horizontal_size_flags = SizeFlags.FLAG_EXPAND_FILL
+	bar.add_theme_constant_override("separation", 10)
+	bar_container.add_child(bar)
+	
+	# 健康文字
+	var text_label = Label.new()
+	text_label.name = "HealthTextLabel"
+	text_label.text = "HP: 100/100"
+	text_label.add_theme_font_size_override("font_size", 24)
+	text_label.size_flags_horizontal = SizeFlags.FLAG_SHIFT_BEGIN
+	bar_container.add_child(text_label)
+	
+	print("✅ 健康警報面板已創建")
+
 func _add_coordinate_markers():
 	var marker_label = Label.new()
 	marker_label.name = "CoordMarker"
