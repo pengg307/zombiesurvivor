@@ -163,6 +163,20 @@ func _connect_buttons():
 func _update_health():
 	if not player:
 		return
+	# 更新顶部健康条
+	if has_node("Panel/TopPanel/HealthBarContainer/HealthBar"):
+		var top_bar = $Panel/TopPanel/HealthBarContainer/HealthBar
+		var top_label = $Panel/TopPanel/HealthBarContainer/HealthLabel
+		top_bar.value = player.current_health
+		top_label.text = "HP: %d/%d" % [player.current_health, player.MAX_HEALTH]
+		# 颜色变化
+		var pct = float(player.current_health) / float(player.MAX_HEALTH)
+		if pct > 0.6:
+			top_bar.modulate = Color(0, 1, 0)  # 绿色
+		elif pct > 0.3:
+			top_bar.modulate = Color(1, 1, 0)  # 黄色
+		else:
+			top_bar.modulate = Color(1, 0, 0)  # 红色
 	# 更新底部警报面板
 	if has_node("HealthAlertPanel"):
 		var panel = $HealthAlertPanel
