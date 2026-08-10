@@ -22,6 +22,7 @@ var frame_count = 0
 var current_frame = 0
 var boss_anim_timer = 0.0
 var spawn_time = 0.0  # 生成时间，用于安全延迟
+var safety_delay = 2.0  # 安全延迟时间（秒）
 
 signal zombie_reached_player
 signal zombie_spawned
@@ -31,6 +32,10 @@ func _ready():
 	
 	_setup_sprite()
 	_setup_collision()
+	
+	# 记录生成时间
+	spawn_time = Time.get_ticks_msec() / 1000.0
+	safety_delay = 2.0
 	
 	# 初始化健康值
 	if is_boss or zombie_type == "boss":
@@ -49,7 +54,7 @@ func _ready():
 	print("")
 	print("============================================================")
 	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + " 速度=" + str(int(base_speed)))
-	print("   位置=(" + str(int(position.x)) + ", " + str(int(position.y)) + ") 游戏开始前2秒安全")
+	print("   位置=(" + str(int(position.x)) + ", " + str(int(position.y)) + ") 安全延迟=" + str(safety_delay) + "秒")
 	print("============================================================")
 	
 	emit_signal("zombie_spawned")
@@ -71,14 +76,8 @@ func _setup_sprite():
 		else:
 			_setup_fallback_sprite(Color(1, 0, 0), Vector2(2, 2))
 	else:
-		var zombie_texture = load("res://assets/kenney_top-down-shooter/PNG/Hitman 1/hitman1_hit.png")
-		if zombie_texture:
-			sprite.texture = zombie_texture
-			sprite.region_enabled = true
-			sprite.region_rect = Rect2(0, 0, 64, 64)
-			print("🎨 僵尸素材加载成功")
-		else:
-			_setup_fallback_sprite(Color(0, 0.5, 0), Vector2(1, 1))
+		# 使用备用素材，因为原素材路径可能不存在
+		_setup_fallback_sprite(Color(0, 0.5, 0), Vector2(1, 1))
 	
 	add_child(sprite)
 	sprite_node = sprite
@@ -95,7 +94,7 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 	sprite.scale = scale
 	add_child(sprite)
 	sprite_node = sprite
-	print("⚠️ 使用备用僵尸素材")
+	print("⚠️ 使用备用僵尸素材 (颜色=" + str(color) + ")")
 
 func _setup_collision():
 	var area = Area2D.new()
@@ -114,7 +113,7 @@ func _setup_collision():
 	
 	_create_health_bar()
 	
-	print("✅ 碰撞体创建成功")
+	print("✅ 碰撞体创建成功 (半径=30)")
 
 func _create_health_bar():
 	if is_boss or zombie_type == "boss":
@@ -159,12 +158,14 @@ func _to_screen_position() -> Vector2:
 func _on_player_detected(body):
 	# 检查是否在安全延迟期间
 	var safety_time = Time.get_ticks_msec() / 1000.0 - spawn_time
-	if safety_time < 2.0:
-		print("  🔒 僵尸在安全期内，不攻击玩家 (剩余: " + str(2.0 - safety_time) + "秒)")
+	var remaining_time = safety_delay - safety_time
+	
+	if safety_time < safety_delay:
+		print("  🔒 僵尸在安全期内，不攻击玩家 (剩余: " + str(remaining_time) + "秒)")
 		return
 	
 	if body.is_in_group("player") and not dead:
-		print("💥 Zombie 碰到玩家！类型=" + zombie_type)
+		print("💥 Zombie 碰到玩家！类型=" + zombie_type + " 剩余安全时间=0")
 		if not dead:
 			dead = true
 			var player = get_tree().get_first_node_in_group("player")
@@ -180,7 +181,7 @@ func _physics_process(delta):
 	
 	# 检查安全延迟
 	var safety_time = Time.get_ticks_msec() / 1000.0 - spawn_time
-	if safety_time < 2.0:
+	if safety_time < safety_delay:
 		return  # 还在安全期内，不移动
 	
 	var player_node = get_tree().get_first_node_in_group("player")
