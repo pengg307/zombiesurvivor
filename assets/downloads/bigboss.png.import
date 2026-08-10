@@ -1,0 +1,27 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://bigbossjpg"
+path="res://.godot/imported/bigboss.png-xxxxxxxxxxxxxxxxxxxx.ctex"
+metadata={
+"vram_texture": false
+}
+
+[deps]
+
+source_file="res://assets/downloads/bigboss.png"
+dest_files=["res://.godot/imported/bigboss.png-xxxxxxxxxxxxxxxxxxxx.ctex"]
+
+[params]
+
+repeat=1
+compress/mode=0
+compress/lossy_quality=0.7
+compress/hint=0
+mipmaps=false
+normal_map=0
+flags/repeat=0
+flags/srgb=2
+process/fix_alpha_border=true
+process/load_thumbnails=true
