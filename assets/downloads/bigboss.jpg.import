@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bigbossjpg"
-path="res://.godot/imported/bigboss.png-ac1aca1f28557551c13c7d7e93466380.ctex"
+uid="uid://bt0ocgrdrn7ur"
+path="res://.godot/imported/bigboss.jpg-60e00fa8ad0a4a4110b21cb6c7d6a51e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/downloads/bigboss.png"
-dest_files=["res://.godot/imported/bigboss.png-ac1aca1f28557551c13c7d7e93466380.ctex"]
+source_file="res://assets/downloads/bigboss.jpg"
+dest_files=["res://.godot/imported/bigboss.jpg-60e00fa8ad0a4a4110b21cb6c7d6a51e.ctex"]
 
 [params]
 
