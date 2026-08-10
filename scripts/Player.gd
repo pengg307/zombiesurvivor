@@ -37,8 +37,15 @@ var debug_mode = false
 var _fire_timer = 0.0
 var move_direction = Vector2(0, 0)
 var base_fire_rate = FIRE_RATE_BASE
-var shoot_debug_counter = 0
+var shoot_debug_counter = 0.0
 var damage_per_shot: float = 10.0
+# 新增属性
+var critical_chance: float = 0.0
+var pierce_shot: bool = false
+var bullet_count: int = 1
+var regen_rate: float = 0.0
+var exp_multiplier: float = 1.0
+var shield: int = 0
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
@@ -46,6 +53,7 @@ signal player_damaged
 signal player_died
 signal boss_spawned
 signal game_won
+signal upgrade_available
 
 func _ready():
 	set_process_input(true)
@@ -193,6 +201,11 @@ func _physics_process(delta):
 	_update_position_label()
 	_animate(delta)
 	_update_debug_info()
+	# 生命恢复
+	if regen_rate > 0 and current_health < MAX_HEALTH:
+		current_health = min(MAX_HEALTH, current_health + regen_rate * delta)
+		if get_node_or_null("../UI") and has_node("UI"):
+			get_node("../UI")._update_health()
 
 func _update_ammo_boost(delta):
 	if ammo_boost_timer > 0:
@@ -248,24 +261,19 @@ func _shoot(delta):
 
 func _attack():
 	var enemies = get_tree().get_nodes_in_group("zombies")
-	print("🔫 [攻击检测] 僵尸数量: " + str(enemies.size()))
 	
 	if enemies.size() > 0:
 		var nearest = _find_nearest_enemy(enemies)
 		if nearest:
-			# 修复：将僵尸的中心坐标转换为屏幕坐标
 			var zombie_screen_pos = nearest.position + Vector2(360, 640)
 			var dist = position.distance_to(zombie_screen_pos)
-			print("🎯 最近僵尸距离: " + str(int(dist)) + " 射程: " + str(SHOT_RANGE))
 			
 			if dist <= SHOT_RANGE:
-				print("✅ 僵尸在射程内，发射子弹！")
-				if triple_shot_unlocked:
-					_spawn_triple_bullet()
-					print("🎯 [三发子弹] 发射3发子弹！")
-				else:
-					_spawn_bullet(Vector2(0, -1))
-					print("🔫 [单发子弹] 发射1发子弹")
+				# 多发射击
+				for i in range(bullet_count):
+					var angle_offset = (i - (bullet_count - 1) / 2.0) * 0.1
+					var dir = Vector2(0, -1).rotated(angle_offset)
+					_spawn_bullet(dir)
 				
 				if audio_manager:
 					audio_manager.play_shoot()
@@ -295,7 +303,7 @@ func _is_enemy_in_range(enemy) -> bool:
 	return position.distance_to(enemy.position + Vector2(360, 640)) <= SHOT_RANGE
 
 func _spawn_triple_bullet():
-	var angle_spread = deg_to_rad(2.0)
+	var angle_spread = deg_to_rad(15.0)
 	
 	var dir_middle = Vector2(0, -1)
 	_spawn_bullet(dir_middle)
@@ -314,6 +322,7 @@ func _spawn_bullet(direction: Vector2):
 	bullet.damage = damage_per_shot + float(ammo_boost_level) * 5.0
 	bullet.current_speed = bullet_speed
 	bullet.kills_for_speed = kills
+	bullet.is_pierce = pierce_shot
 	get_parent().add_child(bullet)
 	print("  🔫 子弹生成: 方向=" + str(direction) + " 伤害=" + str(bullet.damage))
 
@@ -376,7 +385,31 @@ func take_damage(damage: float):
 		emit_signal("player_died")
 	print("💥 [受伤] 生命值:" + str(int(current_health)))
 
-func add_experience(amount: int):
+func add_kill():
+	kills += 1
+	kills_for_speed = kills
+	level += 1
+	# 检查升级
+	if kills % 10 == 0:
+		emit_signal("upgrade_available")
+	emit_signal("kill_count_changed")
+	print("")
+	print("💀 [击杀] 当前击杀数:" + str(kills) + " 等级:" + str(level))
+	
+	if kills % 10 == 0:
+		bullet_speed += 100.0
+		print("⚡ [速度提升] 子弹速度:" + str(bullet_speed))
+	
+	if kills == 5 and not triple_shot_unlocked:
+		triple_shot_unlocked = true
+		print("")
+		print("🎯 [解锁] 三发子弹已解锁！")
+	
+	if kills > 0 and kills % GRENADE_INTERVAL == 0 and grenades < MAX_GRENADES:
+		grenades += 1
+		print("💣 [手雷] 获得手雷！当前:" + str(grenades))
+	
+	emit_signal("kill_count_changed")
 	experience += amount
 	level = 1 + experience / 100
 

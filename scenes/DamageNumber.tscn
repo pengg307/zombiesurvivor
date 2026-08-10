@@ -1,0 +1,19 @@
+extends Node2D
+class_name DamageNumber
+
+var lifetime = 0.8
+var velocity = Vector2(0, -80)
+var target: Node2D = null
+
+func _ready():
+	pass
+
+func _process(delta):
+	lifetime -= delta
+	if target:
+		position = target.global_position + Vector2(0, -30)
+	position += velocity * delta
+	velocity.y -= 100 * delta
+	modulate.a = clamp(lifetime / 0.8, 0, 1)
+	if lifetime <= 0:
+		queue_free()

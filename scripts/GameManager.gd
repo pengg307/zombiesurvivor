@@ -45,11 +45,19 @@ func _connect_signals_deferred():
 		if player.has_signal("game_won"):
 			player.game_won.connect(_on_game_won)
 			print("✅ 已连接 game_won 信号")
+		if player.has_signal("upgrade_available"):
+			player.upgrade_available.connect(_on_upgrade_available)
+			print("✅ 已连接 upgrade_available 信号")
 	
 	if spawner:
 		if spawner.has_signal("boss_spawned"):
 			spawner.boss_spawned.connect(_on_boss_spawned)
 			print("✅ 已连接 boss_spawned 信号")
+
+func _on_upgrade_available():
+	print("🎁 [升级] 获得升级机会！显示强化面板...")
+	if ui:
+		ui.show_upgrade_panel()
 
 func _on_kill_count_changed():
 	print("📊 击杀数更新，当前:", player.kills)

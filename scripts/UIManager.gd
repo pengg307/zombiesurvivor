@@ -353,10 +353,46 @@ func show_upgrade_panel():
 	if has_node("UpgradePanel"):
 		$UpgradePanel.visible = true
 		get_tree().paused = true
+		# 生成随机强化选项
+		_generate_upgrade_options()
 
-func hide_upgrade_panel():
-	if has_node("UpgradePanel"):
-		$UpgradePanel.visible = false
+func _generate_upgrade_options():
+	# 使用 UpgradeSystem 生成随机选项
+	var upgrade_sys = get_node_or_null("/root/UpgradeSystem")
+	if not upgrade_sys:
+		upgrade_sys = preload("res://scripts/UpgradeSystem.gd").new()
+		add_child(upgrade_sys)
+	
+	var options = upgrade_sys.get_random_options(3)
+	# 显示选项到面板
+	_show_upgrade_options(options)
+
+func _show_upgrade_options(options):
+	# 清空旧选项
+	for child in $UpgradePanel/PanelContainer/VBoxContainer/OptionsContainer.get_children():
+		child.queue_free()
+	
+	# 添加新选项
+	for option_key in options:
+		var btn = Button.new()
+		btn.text = get_upgrade_name(option_key)
+		btn.pressed.connect(_on_upgrade_selected.bind(option_key))
+		$UpgradePanel/PanelContainer/VBoxContainer/OptionsContainer.add_child(btn)
+
+func get_upgrade_name(key):
+	var upgrade_sys = get_node_or_null("/root/UpgradeSystem")
+	if upgrade_sys and key in upgrade_sys.UPGRADE_OPTIONS:
+		return upgrade_sys.UPGRADE_OPTIONS[key].name
+	return key
+
+func _on_upgrade_selected(option_key):
+	print("🎯 [强化选择] " + get_upgrade_name(option_key))
+	# 应用强化到玩家
+	var upgrade_sys = get_node_or_null("/root/UpgradeSystem")
+	if upgrade_sys and player:
+		upgrade_sys.apply_upgrade(player, option_key)
+	# 隐藏面板
+	hide_upgrade_panel()
 		get_tree().paused = false
 
 func _add_upgrade_buttons():
