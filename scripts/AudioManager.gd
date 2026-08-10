@@ -43,7 +43,6 @@ func _init_audio():
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.name = "BGMPlayer"
 	bgm_player.volume_db = linear_to_db(music_volume)
-	bgm_player.loop = true
 	add_child(bgm_player)
 	
 	print("✅ 音频系统初始化完成")
@@ -62,9 +61,11 @@ func play_bgm(bgm_name: String):
 	if not music_enabled:
 		return
 	if bgm_name in BGM_PATHS:
-		bgm_player.stream = load(BGM_PATHS[bgm_name])
-		bgm_player.play()
-		print("🎵 播放BGM: " + bgm_name)
+		var stream = load(BGM_PATHS[bgm_name])
+		if stream:
+			bgm_player.stream = stream
+			bgm_player.play()
+			print("🎵 播放BGM: " + bgm_name)
 
 func stop_bgm():
 	if bgm_player:
