@@ -202,6 +202,12 @@ func _physics_process(delta):
 	
 	var player_node = get_tree().get_first_node_in_group("player")
 	
+	# Boss 可见性调试
+	if (is_boss or zombie_type == "boss") and frame_count % 60 == 0:
+		print("👹 Boss调试: 位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ") 可见=" + str(visible) + " sprite可见=" + str(sprite_node.visible if sprite_node else "null"))
+	
+	var player_node = get_tree().get_first_node_in_group("player")
+	
 	if player_node:
 		var target_x_pos: float = player_node.position.x - 360.0
 		var target_y_pos: float = player_node.position.y - 640.0
@@ -284,6 +290,8 @@ func take_damage(damage: float):
 func _die():
 	var player = get_tree().get_first_node_in_group("player")
 	var spawner = get_tree().get_first_node_in_group("spawner")
+	
+	print("💀 Boss/僵尸死亡: 类型=" + zombie_type + " 血量=" + str(current_health))
 	
 	if player:
 		player.add_experience(EXPERIENCE_REWARD)
