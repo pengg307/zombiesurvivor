@@ -29,6 +29,7 @@ var has_reached_player = false
 var _boss_anim_timer = 0.0  # Boss animation timer
 var _boss_frame_size = 128  # Boss sprite frame width
 var _boss_frame_height = 128  # Boss sprite frame height
+var player_node = null  # 添加 player_node 变量声明
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
