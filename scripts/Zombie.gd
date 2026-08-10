@@ -3,6 +3,8 @@ class_name Zombie
 
 const BASE_HEALTH = 10.0
 const BASE_SPEED = 50.0
+const FAST_HEALTH = 8.0
+const FAST_SPEED = 70.0
 const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 30.0
 const DAMAGE = 10.0
@@ -30,6 +32,9 @@ var _boss_anim_timer = 0.0  # Boss animation timer
 var _boss_frame_size = 128  # Boss sprite frame width
 var _boss_frame_height = 128  # Boss sprite frame height
 var player_node = null  # 添加 player_node 变量声明
+var health_bar: ProgressBar = null
+var health_bar_bg: ColorRect = null
+var sprite_size = Vector2(64, 64)  # 默认尺寸
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -77,6 +82,7 @@ func _setup_sprite():
 		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
+		sprite_size = Vector2(64, 64)
 		print("🎨 僵尸素材加载成功")
 	else:
 		_setup_fallback_sprite()
