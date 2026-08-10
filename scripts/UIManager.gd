@@ -83,17 +83,18 @@ func _show_health_alert():
 	if not has_node("HealthAlertPanel"):
 		return
 	var panel = $HealthAlertPanel
+	# 確保面板可見
 	panel.visible = true
 	# 閃爍效果
 	var tween = create_tween()
 	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
 	tween.tween_property(panel, "modulate:a", 0.3, 0.1)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
-	# 2秒後隱藏
-	var timer = get_tree().create_timer(2.0)
+	# 恢復正常顏色
+	var timer = get_tree().create_timer(0.5)
 	timer.timeout.connect(func():
 		if has_node("HealthAlertPanel"):
-			$HealthAlertPanel.visible = false
+			_update_health()
 	)
 
 func set_spawner(spawner_node):
@@ -390,7 +391,7 @@ func _create_health_alert_panel():
 	# 動態創建底部健康警報面板
 	var panel = Panel.new()
 	panel.name = "HealthAlertPanel"
-	panel.visible = false
+	panel.visible = true  # 始終可見
 	panel.layout_mode = 1  # Anchor mode
 	panel.anchor_left = 0.0
 	panel.anchor_top = 1.0
