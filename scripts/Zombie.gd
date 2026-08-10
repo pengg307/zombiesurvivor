@@ -28,13 +28,13 @@ var walk_timer = 0.0
 var current_frame = 0
 var hit_flash_timer = 0.0
 var has_reached_player = false
-var _boss_anim_timer = 0.0  # Boss animation timer
-var _boss_frame_size = 128  # Boss sprite frame width
-var _boss_frame_height = 128  # Boss sprite frame height
-var player_node = null  # 添加 player_node 变量声明
+var _boss_anim_timer = 0.0
+var _boss_frame_size = 166
+var _boss_frame_height = 374
+var player_node = null
 var health_bar: ProgressBar = null
 var health_bar_bg: ColorRect = null
-var sprite_size = Vector2(64, 64)  # 默认尺寸
+var sprite_size = Vector2(64, 64)
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -46,26 +46,23 @@ func _ready():
 	current_health = BASE_HEALTH
 	add_to_group("zombies")
 	
-	collision_layer = 2  # Different from player so they collide
-	collision_mask = 1   # Detect player (layer 1)
+	collision_layer = 2
+	collision_mask = 1
 	
-	# Defer collision setup to avoid "flushing queries" error
 	call_deferred("_setup_collision")
 	
 	if is_boss or zombie_type == "boss":
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
 		_setup_boss_sprite()
-		print("👹 Boss创建完成: 位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ") 可见=" + str(visible))
+		print("👹 Boss创建完成: 位置=( " + str(int(position.x)) + "," + str(int(position.y)) + ")")
 	elif zombie_type == "fast":
 		base_speed = 70.0
 		_setup_sprite()
 	else:
 		_setup_sprite()
 	
-	print("✅ Zombie创建: 类型=" + zombie_type + " 初始位置=中心(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ")")
-	print("👁️ 可见性: z_index=" + str(z_index) + " visible=" + str(visible))
-	print("👥 组: " + str(get_groups()))
+	print("✅ Zombie创建: 类型=" + zombie_type)
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
@@ -92,128 +89,57 @@ func _setup_boss_sprite():
 	sprite.name = "Sprite"
 	sprite.z_index = 50
 	sprite.visible = true
-
-	# 使用 biggerboss.png 作为 Boss 纹理
+	
 	var boss_texture_path = "res://assets/downloads/biggerboss.png"
 	var boss_texture = load(boss_texture_path)
-
+	
 	if boss_texture:
 		sprite.texture = boss_texture
-		sprite.centered = true
 		sprite.region_enabled = true
-
-		# 自动检测图片尺寸
-		var tex_width = boss_texture.get_width()
-		var tex_height = boss_texture.get_height()
-
-		# 图片是 4帧横排布局 (4x1)，每帧宽度 = 总宽度 / 4
-		var frame_cols = 4
-		var frame_rows = 1
-		var frame_w = tex_width / frame_cols
-		var frame_h = tex_height / frame_rows
-
-		# 只显示第1帧（最左边的帧）
-		sprite.region_rect = Rect2(0, 0, frame_w, frame_h)
-		_boss_frame_size = int(frame_w)
-		_boss_frame_height = int(frame_h)  # 保存帧高度
-
-		# 缩放：让 Boss 显示得和僵尸差不多大小
-		var target_frame_size = 150.0
-		var scale = target_frame_size / frame_w
-		sprite.scale = Vector2(scale, scale)
-
-		print("🎨 Boss 纹理加载成功: " + boss_texture_path)
-		print("  - 原始尺寸: " + str(int(tex_width)) + "x" + str(int(tex_height)))
-		print("  - 帧布局: " + str(frame_cols) + "x" + str(frame_rows))
-		print("  - 帧尺寸: " + str(int(frame_w)) + "x" + str(int(frame_h)))
-		print("  - 显示帧: 第1帧 (最左边)")
-		print("  - 缩放: " + str(sprite.scale))
+		# Boss 4x1 布局，每帧166x374
+		_boss_frame_size = 166
+		_boss_frame_height = 374
+		sprite.region_rect = Rect2(0, 0, _boss_frame_size, _boss_frame_height)
+		sprite.centered = true
+		sprite.position = Vector2(0, 0)
 		add_child(sprite)
 		sprite_node = sprite
+		sprite_size = Vector2(_boss_frame_size, _boss_frame_height)
+		print("🎨 Boss素材加载成功: " + str(boss_texture.get_width()) + "x" + str(boss_texture.get_height()))
 	else:
-		print("❌ 无法加载 Boss 纹理: " + boss_texture_path)
 		_setup_fallback_sprite()
-
-func _setup_programmatic_boss(sprite: Sprite2D):
-	# 创建4帧程序化Boss纹理 (128x128每帧)
-	var frame_size = 128
-	var sheet = Image.create(frame_size * 2, frame_size * 2, false, Image.FORMAT_RGBA8)
-	
-	for frame in range(4):
-		var x = (frame % 2) * frame_size
-		var y = (frame / 2) * frame_size
-		
-		# 创建红色圆形（不同亮度模拟脉冲）
-		for px in range(frame_size):
-			for py in range(frame_size):
-				var dist = Vector2(px - frame_size/2, py - frame_size/2).length()
-				var brightness = 1.0
-				if frame == 1 or frame == 3:
-					brightness = 1.3  # 较亮
-				elif frame == 0 or frame == 2:
-					brightness = 0.8  # 较暗
-				
-				if dist < 55:
-					sheet.set_pixel(x + px, y + py, Color(brightness * 0.8, brightness * 0.2, brightness * 0.2, 1.0))
-				elif dist < 60:
-					sheet.set_pixel(x + px, y + py, Color(0.0, 0.0, 0.0, 0.0))  # 边缘透明
-		
-		# 画眼睛
-		for angle in [PI * 0.3, PI * 0.7]:
-			var ex = int(frame_size/2 + 20 * cos(angle))
-			var ey = int(frame_size/2 + 20 * sin(angle))
-			for dx in range(-5, 5):
-				for dy in range(-5, 5):
-					if dx*dx + dy*dy < 20:
-						sheet.set_pixel(x + ex + dx, y + ey + dy, Color(1.0, 1.0, 0.0, 1.0))
-	
-	var tex = ImageTexture.create_from_image(sheet)
-	sprite.texture = tex
-	sprite.region_enabled = true
-	sprite.region_rect = Rect2(0, 0, frame_size, frame_size)
-	sprite.centered = true
-	sprite.scale = Vector2(2.0, 2.0)
-	add_child(sprite)
-	sprite_node = sprite
-	_boss_frame_size = frame_size
-	print("🎨 Boss程序化动画纹理创建成功 (4帧)")
+		print("⚠️ 无法加载Boss素材")
 
 func _setup_fallback_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
 	var rect = ColorRect.new()
-	rect.size = Vector2(50, 70)
-	var config = ZOMBIE_CONFIG.get(zombie_type, {"color": Color(0.4, 0.6, 0.4)})
-	rect.color = config.color if config.has("color") else Color(0.4, 0.6, 0.4)
+	rect.size = sprite_size
+	rect.color = ZOMBIE_CONFIG.get(zombie_type, ZOMBIE_CONFIG["basic"]).color
 	sprite.add_child(rect)
 	add_child(sprite)
 	sprite_node = sprite
+	print("⚠️ 使用备用僵尸素材")
 
 func _setup_collision():
 	var collision = CollisionShape2D.new()
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
-	if is_boss or zombie_type == "boss":
-		shape.radius = 60.0  # 更大的碰撞体
-		shape.height = 140.0
-	else:
-		shape.radius = 25.0
-		shape.height = 70.0
+	shape.radius = 30.0
+	shape.height = 50.0
 	collision.shape = shape
 	add_child(collision)
-
-	# Add Area2D for player detection
+	
 	var area = Area2D.new()
 	area.name = "PlayerDetector"
 	area.monitoring = true
 	area.collision_layer = 2
-	area.collision_mask = 1  # Detect player (layer 1)
+	area.collision_mask = 1
 	area.body_entered.connect(_on_player_detected)
 	add_child(area)
-
-	# Create health bar
+	
 	_create_health_bar()
-
+	
 	print("✅ 碰撞体创建成功")
 
 func _to_screen_position() -> Vector2:
@@ -234,11 +160,7 @@ func _on_player_detected(body):
 
 func _physics_process(delta):
 	frame_count += 1
-
-	# Boss 可见性调试
-	if (is_boss or zombie_type == "boss") and frame_count % 60 == 0:
-		print("👹 Boss调试: 位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ") 可见=" + str(visible))
-
+	
 	var player_node = get_tree().get_first_node_in_group("player")
 	
 	if player_node:
@@ -259,7 +181,7 @@ func _physics_process(delta):
 		# Boss 动画效果（脉冲 + 帧切换）
 		if (is_boss or zombie_type == "boss") and sprite_node:
 			_boss_anim_timer += delta
-			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)  # 脉动效果
+			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)
 			var base_scale = Vector2(1.0, 1.0)
 			sprite_node.scale = base_scale * pulse
 			# Boss 显示所有4帧动画
@@ -267,25 +189,16 @@ func _physics_process(delta):
 				current_frame = (current_frame + 1) % 4
 				var frame_x = (current_frame % 4) * _boss_frame_size
 				var frame_y = 0
-				# 使用正确的帧宽高
 				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_height)
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()
 		var screen_y = screen_pos.y
 		
-		# 调试：每60帧打印一次位置
-		if frame_count % 60 == 0:
-			print("📍 " + zombie_type + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_y)) + ") 可见=" + str(visible))
-		
 		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
 			has_reached_player = true
-			print("")
 			print("🚨 警报！Zombie到达玩家位置！")
-			print("   类型: " + zombie_type)
-			print("   屏幕Y: " + str(int(screen_y)) + " >= " + str(PLAYER_Y_SCREEN))
-			print("")
-
+			
 			if is_boss or zombie_type == "boss":
 				print("👹 Boss到达玩家！游戏失败！")
 				player_node.take_damage(999)
@@ -294,35 +207,31 @@ func _physics_process(delta):
 				print("❌ 僵尸到达玩家！游戏失败！")
 				player_node.take_damage(999)
 				player_node.emit_signal("player_died")
-				emit_signal("zombie_reached_player")
-
+			emit_signal("zombie_reached_player")
+			
 			print("🗑️ Boss/僵尸将被删除: " + zombie_type)
-			queue_free()
-		
-		# 超出屏幕底部也清除
-		if screen_y > SCREEN_HEIGHT + 100:
-			print("🗑️ Boss/僵尸超出屏幕底部，删除: " + zombie_type)
-			queue_free()
-
-func screen_position_y() -> float:
-	return position.y + 640.0
+			_die()
 
 func take_damage(damage: float):
 	current_health -= damage
-	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(current_health) + "/" + str(get_max_health()))
+	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(int(current_health)) + "/" + str(get_max_health()))
 	
 	# 受伤闪烁效果
 	hit_flash_timer = 0.2
-	modulate = Color(1, 0, 0)
+	modulate = Color(1, 0.3, 0.3)
 	var timer = get_tree().create_timer(0.1)
-	timer.timeout.connect(func():
-		modulate = Color(1, 1, 1)
-	)
+	timer.timeout.connect(func(): modulate = Color(1, 1, 1))
+	
+	# 播放受伤音效
+	var audio = get_tree().get_first_node_in_group("audio_manager")
+	if audio:
+		audio.play_hit()
 	
 	# 更新健康条
 	_update_health_bar()
 	
 	if current_health <= 0:
+		print("💀 Zombie死亡: 类型=" + zombie_type)
 		_die()
 
 func get_max_health() -> float:
@@ -350,23 +259,22 @@ func _create_health_bar():
 	health_bar.value = current_health
 	health_bar.position = Vector2(-30, -sprite_size.y / 2 - 5)
 	health_bar.size = Vector2(60, 6)
-	health_bar.modulate = Color(0, 1, 0)  # 绿色
+	health_bar.modulate = Color(0, 1, 0)
 	health_bar.step = 1
 	add_child(health_bar)
 	
-	print("✅ 健康条已创建: 最大血量=" + str(get_max_health()) + " 位置=" + str(health_bar.position))
+	print("✅ 健康条已创建: 最大血量=" + str(get_max_health()))
 
 func _update_health_bar():
 	if health_bar:
 		health_bar.value = current_health
-		# 根据血量改变颜色
 		var pct = float(current_health) / float(get_max_health())
 		if pct > 0.6:
-			health_bar.modulate = Color(0, 1, 0)  # 绿色
+			health_bar.modulate = Color(0, 1, 0)
 		elif pct > 0.3:
-			health_bar.modulate = Color(1, 1, 0)  # 黄色
+			health_bar.modulate = Color(1, 1, 0)
 		else:
-			health_bar.modulate = Color(1, 0, 0)  # 红色
+			health_bar.modulate = Color(1, 0, 0)
 		# 更新背景大小
 		if health_bar_bg:
 			health_bar_bg.size = Vector2(60, 6)
@@ -374,8 +282,15 @@ func _update_health_bar():
 func _die():
 	var player = get_tree().get_first_node_in_group("player")
 	var spawner = get_tree().get_first_node_in_group("spawner")
+	var audio = get_tree().get_first_node_in_group("audio_manager")
+	var stats_mgr = get_tree().get_first_node_in_group("stats_manager")
 	
-	print("💀 Boss/僵尸死亡: 类型=" + zombie_type + " 血量=" + str(current_health))
+	# 播放死亡音效
+	if audio:
+		if is_boss or zombie_type == "boss":
+			audio.play_explode()
+		else:
+			audio.play_explode()
 	
 	if player:
 		player.add_experience(EXPERIENCE_REWARD)
@@ -390,6 +305,11 @@ func _die():
 		emit_signal("boss_died")
 		if player:
 			player.emit_signal("game_won")
+		if stats_mgr:
+			stats_mgr.add_kill(true)
+	
+	if stats_mgr:
+		stats_mgr.add_kill(false)
 	
 	print("💀 Zombie死亡！获得经验:" + str(EXPERIENCE_REWARD))
 	queue_free()

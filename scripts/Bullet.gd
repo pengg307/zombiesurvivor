@@ -1,4 +1,5 @@
-extends Area2D
+extends Node
+class_name Bullet
 
 var damage = 10.0
 var direction = Vector2(0, -1)
@@ -11,7 +12,7 @@ var traveled_distance = 0.0
 func _ready():
 	add_to_group("bullets")
 	collision_layer = 3
-	collision_mask = 2  # Hit zombies (layer 2)
+	collision_mask = 2
 
 func _physics_process(delta):
 	var move = direction * current_speed * delta
@@ -25,7 +26,7 @@ func _on_body_entered(body):
 	if body.is_in_group("zombies"):
 		var final_damage = damage
 		# 暴击判定
-		var is_critical = randf() < 0.15  # 15%暴击率
+		var is_critical = randf() < 0.15
 		if is_critical:
 			final_damage *= 2.0
 		body.take_damage(final_damage)
@@ -34,7 +35,6 @@ func _on_body_entered(body):
 			queue_free()
 
 func _show_damage_number(target, damage, is_critical):
-	# 创建伤害数字节点
 	var number = Label.new()
 	number.text = str(int(damage))
 	if is_critical:
@@ -45,7 +45,6 @@ func _show_damage_number(target, damage, is_critical):
 	number.z_index = 100
 	get_parent().add_child(number)
 	
-	# 动画效果
 	var tween = create_tween()
 	tween.tween_property(number, "position:y", number.position.y - 50, 0.8)
 	tween.tween_property(number, "modulate:a", 0, 0.8)
