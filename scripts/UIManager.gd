@@ -7,12 +7,12 @@ var audio_manager = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	# 连接音频管理器
+	# 連接音頻管理器
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
 		audio_manager = am
 	
-	# 初始化面板可见性
+	# 初始化面板可見性
 	if has_node("StartPanel"):
 		$StartPanel.visible = true
 	if has_node("UpgradePanel"):
@@ -24,17 +24,20 @@ func _ready():
 	if has_node("BossPanel"):
 		$BossPanel.visible = false
 	
-	# 连接按钮
+	# 連接按鈕
 	_connect_buttons()
 	
-	# 添加底部状态栏
+	# 添加底部狀態欄
 	_add_bottom_status_bar()
 	
-	# 添加三发子弹状态显示
+	# 添加三發子彈狀態顯示
 	_add_triple_shot_display()
 	
-	# 添加手雷显示
+	# 添加手雷顯示
 	_add_grenade_display()
+	
+	# 動態創建健康警報面板
+	_create_health_alert_panel()
 	
 	print("✅ UIManager初始化完成")
 
@@ -76,16 +79,17 @@ func _on_player_damaged():
 	_show_health_alert()
 
 func _show_health_alert():
+	# 顯示健康警報
 	if not has_node("HealthAlertPanel"):
 		return
 	var panel = $HealthAlertPanel
 	panel.visible = true
-	# 闪烁效果
+	# 閃爍效果
 	var tween = create_tween()
 	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
 	tween.tween_property(panel, "modulate:a", 0.3, 0.1)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
-	# 2秒后隐藏
+	# 2秒後隱藏
 	var timer = get_tree().create_timer(2.0)
 	timer.timeout.connect(func():
 		if has_node("HealthAlertPanel"):
