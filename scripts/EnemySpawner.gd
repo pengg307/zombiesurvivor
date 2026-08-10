@@ -168,8 +168,12 @@ func add_kill():
 		print("")
 		# 波次完成后重新开始（如果 Boss 还没出现）
 		if not boss_active:
+			print("⏳ 等待2秒后开始下一波...")
 			await get_tree().create_timer(2.0).timeout
+			print("⏰ 开始下一波！")
 			_start_next_wave()
+		else:
+			print("👹 Boss 已在场，等待 Boss 被击败...")
 
 func _spawn_boss():
 	print("")

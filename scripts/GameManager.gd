@@ -62,6 +62,10 @@ func _on_player_died():
 	print("💀 玩家死亡！")
 	if ui:
 		ui.show_game_over(spawner.current_kills if spawner else 0)
+	# 停止生成器
+	if spawner:
+		spawner.spawn_timer.stop()
+		print("⏹️ 生成器已停止")
 
 func _on_boss_spawned():
 	print("👹 Boss已生成！")
@@ -70,6 +74,10 @@ func _on_game_won():
 	print("🏆 胜利！")
 	if ui:
 		ui.show_win(spawner.current_kills if spawner else 0)
+	# 停止生成器
+	if spawner:
+		spawner.spawn_timer.stop()
+		print("⏹️ 生成器已停止")
 
 func _start_game():
 	print("")
