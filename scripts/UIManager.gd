@@ -246,6 +246,9 @@ func _on_start_game():
 		print("  - StartPanel 存在")
 		$StartPanel.visible = false
 		print("  - StartPanel 已隐藏")
+	else:
+		print("❌ [DEBUG] StartPanel 不存在！")
+		return
 
 	if has_node("Panel"):
 		$Panel.modulate = Color(1, 1, 1, 1)  # 恢复不透明
@@ -272,8 +275,6 @@ func _on_start_game():
 		if game_node:
 			var gm2 = game_node.get_node_or_null("GameManager")
 			print("  - GameManager via path: " + str(gm2))
-	else:
-		print("❌ [DEBUG] StartPanel 不存在！")
 
 func _on_restart_game():
 	print("🔄 [RESTART] 重新开始游戏被点击!")
