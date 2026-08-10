@@ -72,7 +72,6 @@ func _on_game_won():
 		ui.show_win(spawner.current_kills if spawner else 0)
 
 func _start_game():
-	print("🎮 [DEBUG] GameManager._start_game 被调用！")
 	if not spawner or not ui:
 		print("ERROR: 缺少必要节点")
 		return
