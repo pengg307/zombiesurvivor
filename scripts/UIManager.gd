@@ -167,17 +167,23 @@ func _update_health():
 	if has_node("HealthAlertPanel"):
 		var panel = $HealthAlertPanel
 		var health_pct = float(player.current_health) / float(player.MAX_HEALTH) * 100
-		if has_node("HealthAlertPanel/HealthAlertContainer/HealthBar"):
-			$HealthAlertPanel/HealthAlertContainer/HealthBar.value = health_pct
+		# 更新健康条
+		if has_node("HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthBar"):
+			$HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthBar.value = player.current_health
+		# 更新文字
 		if has_node("HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthTextLabel"):
 			$HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthTextLabel.text = "HP: %d/%d" % [player.current_health, player.MAX_HEALTH]
 		# 根据血量改变颜色
-		if health_pct > 60:
-			panel.modulate = Color(0, 1, 0, 1)  # 绿色
-		elif health_pct > 30:
-			panel.modulate = Color(1, 1, 0, 1)  # 黄色
-		else:
-			panel.modulate = Color(1, 0, 0, 1)  # 红色
+		var bar
+		if has_node("HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthBar"):
+			bar = $HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthBar
+		if bar:
+			if health_pct > 60:
+				bar.modulate = Color(0, 1, 0)  # 绿色
+			elif health_pct > 30:
+				bar.modulate = Color(1, 1, 0)  # 黄色
+			else:
+				bar.modulate = Color(1, 0, 0)  # 红色
 
 func _update_level():
 	if player and has_node("Panel/LevelLabel"):
@@ -388,10 +394,10 @@ func _add_grenade_display():
 	add_child(grenade_label)
 
 func _create_health_alert_panel():
-	# 動態創建底部健康警報面板
+	# 动态创建底部健康警报面板
 	var panel = Panel.new()
 	panel.name = "HealthAlertPanel"
-	panel.visible = true  # 始終可見
+	panel.visible = true  # 始终可见
 	panel.layout_mode = 1  # Anchor mode
 	panel.anchor_left = 0.0
 	panel.anchor_top = 1.0
@@ -400,31 +406,42 @@ func _create_health_alert_panel():
 	panel.offset_left = 0.0
 	panel.offset_top = 0.0
 	panel.offset_right = 0.0
-	panel.offset_bottom = -150.0  # 150px 高
-	panel.modulate = Color(1, 1, 1, 1)
+	panel.offset_bottom = -120.0  # 120px 高
+	panel.modulate = Color(1, 1, 1, 0.8)  # 半透明
 	add_child(panel)
 	
 	# 容器
 	var container = VBoxContainer.new()
 	container.name = "HealthAlertContainer"
 	container.alignment = BoxContainer.ALIGNMENT_CENTER
+	container.custom_minimum_size = Vector2(0, 100)
 	panel.add_child(container)
 	
-	# 標題
+	# 标题
 	var label = Label.new()
 	label.name = "HealthAlertLabel"
-	label.text = "💥 受傷！"
-	label.add_theme_font_size_override("font_size", 36)
+	label.text = "❤️ 玩家健康"
+	label.add_theme_font_size_override("font_size", 28)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.modulate = Color(1, 0.3, 0.3)
 	container.add_child(label)
 	
-	# 健康條容器
+	# 健康条容器
 	var bar_container = HBoxContainer.new()
 	bar_container.name = "HealthBarContainer"
-	bar_container.custom_minimum_size = Vector2(0, 40)
+	bar_container.custom_minimum_size = Vector2(0, 50)
+	bar_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(bar_container)
 	
-	# 健康條
+	# 健康文字
+	var text_label = Label.new()
+	text_label.name = "HealthTextLabel"
+	text_label.text = "HP: 100/100"
+	text_label.add_theme_font_size_override("font_size", 24)
+	text_label.modulate = Color(1, 1, 1)
+	bar_container.add_child(text_label)
+	
+	# 健康条
 	var bar = ProgressBar.new()
 	bar.name = "HealthBar"
 	bar.value = 100.0
@@ -432,17 +449,10 @@ func _create_health_alert_panel():
 	bar.max_value = 100.0
 	bar.size_flags_horizontal = Control.SIZE_FILL
 	bar.add_theme_constant_override("separation", 10)
+	bar.modulate = Color(0, 1, 0)  # 初始绿色
 	bar_container.add_child(bar)
 	
-	# 健康文字
-	var text_label = Label.new()
-	text_label.name = "HealthTextLabel"
-	text_label.text = "HP: 100/100"
-	text_label.add_theme_font_size_override("font_size", 24)
-	text_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	bar_container.add_child(text_label)
-	
-	print("✅ 健康警報面板已創建")
+	print("✅ 健康警报面板已创建")
 
 func _add_coordinate_markers():
 	var marker_label = Label.new()

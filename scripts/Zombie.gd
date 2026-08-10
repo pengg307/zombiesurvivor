@@ -300,17 +300,67 @@ func screen_position_y() -> float:
 
 func take_damage(damage: float):
 	current_health -= damage
-	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(current_health))
+	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(current_health) + "/" + str(get_max_health()))
 	
-	hit_flash_timer = 0.3
+	# 受伤闪烁效果
+	hit_flash_timer = 0.2
 	modulate = Color(1, 0, 0)
-	var timer = get_tree().create_timer(0.15)
+	var timer = get_tree().create_timer(0.1)
 	timer.timeout.connect(func():
 		modulate = Color(1, 1, 1)
 	)
 	
+	# 更新健康条
+	_update_health_bar()
+	
 	if current_health <= 0:
 		_die()
+
+func get_max_health() -> float:
+	if zombie_type == "boss":
+		return BOSS_HEALTH
+	elif zombie_type == "fast":
+		return FAST_HEALTH
+	else:
+		return BASE_HEALTH
+
+func _create_health_bar():
+	# 健康条背景
+	health_bar_bg = ColorRect.new()
+	health_bar_bg.name = "HealthBarBG"
+	health_bar_bg.color = Color(0.2, 0.2, 0.2, 0.8)
+	health_bar_bg.position = Vector2(-30, -sprite_size.y - 10)
+	health_bar_bg.size = Vector2(60, 8)
+	add_child(health_bar_bg)
+	
+	# 健康条前景
+	health_bar = ProgressBar.new()
+	health_bar.name = "HealthBar"
+	health_bar.min_value = 0
+	health_bar.max_value = get_max_health()
+	health_bar.value = current_health
+	health_bar.position = Vector2(-30, -sprite_size.y - 10)
+	health_bar.size = Vector2(60, 8)
+	health_bar.modulate = Color(0, 1, 0)  # 绿色
+	health_bar.step = 1
+	add_child(health_bar)
+	
+	print("✅ 健康条已创建: 最大血量=" + str(get_max_health()))
+
+func _update_health_bar():
+	if health_bar:
+		health_bar.value = current_health
+		# 根据血量改变颜色
+		var pct = float(current_health) / float(get_max_health())
+		if pct > 0.6:
+			health_bar.modulate = Color(0, 1, 0)  # 绿色
+		elif pct > 0.3:
+			health_bar.modulate = Color(1, 1, 0)  # 黄色
+		else:
+			health_bar.modulate = Color(1, 0, 0)  # 红色
+		# 更新背景大小
+		if health_bar_bg:
+			health_bar_bg.size = Vector2(60, 8)
 
 func _die():
 	var player = get_tree().get_first_node_in_group("player")
