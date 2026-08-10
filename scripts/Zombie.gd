@@ -201,7 +201,7 @@ func _setup_collision():
 		shape.height = 70.0
 	collision.shape = shape
 	add_child(collision)
-	
+
 	# Add Area2D for player detection
 	var area = Area2D.new()
 	area.name = "PlayerDetector"
@@ -210,7 +210,10 @@ func _setup_collision():
 	area.collision_mask = 1  # Detect player (layer 1)
 	area.body_entered.connect(_on_player_detected)
 	add_child(area)
-	
+
+	# Create health bar
+	_create_health_bar()
+
 	print("✅ 碰撞体创建成功")
 
 func _to_screen_position() -> Vector2:
