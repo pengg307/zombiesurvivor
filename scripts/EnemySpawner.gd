@@ -159,7 +159,6 @@ func add_kill():
 		boss_spawned_this_game = true
 		_spawn_boss()
 		emit_signal("boss_spawned")  # 发射 Boss 生成信号
-		emit_signal("boss_spawned")  # 发射 Boss 生成信号
 	
 	# 波次完成检测
 	if zombies_in_wave <= 0 and not boss_active:
