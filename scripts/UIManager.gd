@@ -465,15 +465,15 @@ func _create_health_alert_panel():
 	panel.offset_left = 0.0
 	panel.offset_top = 0.0
 	panel.offset_right = 0.0
-	panel.offset_bottom = -120.0  # 120px 高
-	panel.modulate = Color(1, 1, 1, 0.8)  # 半透明
+	panel.offset_bottom = -150.0  # 150px 高
+	panel.modulate = Color(1, 1, 1, 0.9)
 	add_child(panel)
 	
 	# 容器
 	var container = VBoxContainer.new()
 	container.name = "HealthAlertContainer"
 	container.alignment = BoxContainer.ALIGNMENT_CENTER
-	container.custom_minimum_size = Vector2(0, 100)
+	container.custom_minimum_size = Vector2(0, 120)
 	panel.add_child(container)
 	
 	# 标题
@@ -488,7 +488,7 @@ func _create_health_alert_panel():
 	# 健康条容器
 	var bar_container = HBoxContainer.new()
 	bar_container.name = "HealthBarContainer"
-	bar_container.custom_minimum_size = Vector2(0, 50)
+	bar_container.custom_minimum_size = Vector2(0, 60)
 	bar_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(bar_container)
 	
