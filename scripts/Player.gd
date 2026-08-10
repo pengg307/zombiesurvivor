@@ -45,6 +45,7 @@ var bullet_count: int = 1
 var regen_rate: float = 0.0
 var exp_multiplier: float = 1.0
 var shield: int = 0
+var game_over = false
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
@@ -57,6 +58,7 @@ signal upgrade_available
 func _ready():
 	set_process_input(true)
 	input_mode = "keyboard"
+	game_over = false
 	
 	collision_layer = 1
 	collision_mask = 2
@@ -117,7 +119,9 @@ func _setup_collision():
 	print("✅ 玩家碰撞体创建成功")
 
 func _on_zombie_detected(body):
-	if body.is_in_group("zombies"):
+	if body.is_in_group("zombies") and not game_over:
+		print("💥 僵尸碰到玩家！")
+		game_over = true
 		current_health = 0
 		emit_signal("player_died")
 
@@ -136,7 +140,7 @@ func _setup_audio():
 		print("🎵 音频管理器已连接")
 
 func _unhandled_input(event):
-	if get_tree().paused:
+	if get_tree().paused or game_over:
 		return
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D:
@@ -159,12 +163,12 @@ func _unhandled_input(event):
 			_simulate_kill()
 		elif event.keycode == KEY_R and debug_mode:
 			get_tree().reload_current_scene()
-		elif event.keycode == KEY_SPACE and grenades > 0 and grenade_cooldown <= 0:
+		elif event.keycode == KEY_SPACE and grenades > 0 and grenade_cooldown <= 0 and not game_over:
 			_throw_grenade()
 		elif event.keycode == KEY_ESCAPE:
 			get_tree().quit()
 	
-	elif event is InputEventScreenTouch:
+	elif event is InputEventScreenTouch and not game_over:
 		var viewport_width = get_viewport().get_visible_rect().size.x
 		if event.position.x < viewport_width / 2.0:
 			touch_left = event.pressed
@@ -172,7 +176,7 @@ func _unhandled_input(event):
 		else:
 			touch_right = event.pressed
 			touch_left = false
-	elif event is InputEventScreenDrag:
+	elif event is InputEventScreenDrag and not game_over:
 		var viewport_width = get_viewport().get_visible_rect().size.x
 		if event.position.x < viewport_width / 2.0:
 			touch_left = true
@@ -181,16 +185,17 @@ func _unhandled_input(event):
 			touch_right = true
 			touch_left = false
 	
-	elif event is InputEventMouseButton:
+	elif event is InputEventMouseButton and not game_over:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			mouse_left = event.pressed
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			mouse_right = event.pressed
-		elif event.button_index == MOUSE_BUTTON_MIDDLE:
-			if event.pressed and grenades > 0 and grenade_cooldown <= 0:
-				_throw_grenade()
+		elif event.button_index == MOUSE_BUTTON_MIDDLE and grenades > 0 and grenade_cooldown <= 0:
+			_throw_grenade()
 
 func _physics_process(delta):
+	if game_over:
+		return
 	_move(delta)
 	_shoot(delta)
 	_handle_grenade(delta)
@@ -243,6 +248,8 @@ func _move(delta):
 	position.y = clamp(position.y, BASE_Y - 100, BASE_Y + 50)
 
 func _shoot(delta):
+	if game_over:
+		return
 	shoot_debug_counter += delta
 	if shoot_debug_counter >= 5.0:
 		shoot_debug_counter = 0.0
@@ -256,6 +263,8 @@ func _shoot(delta):
 		_attack()
 
 func _attack():
+	if game_over:
+		return
 	var enemies = get_tree().get_nodes_in_group("zombies")
 	
 	if enemies.size() > 0:
@@ -300,6 +309,8 @@ func _spawn_triple_bullet():
 	_spawn_bullet(dir_right)
 
 func _spawn_bullet(direction: Vector2):
+	if game_over:
+		return
 	var bullet = load("res://scripts/Bullet.gd").new()
 	bullet.position = position
 	bullet.position.y -= 50
@@ -318,7 +329,7 @@ func _handle_grenade(delta):
 		grenade_cooldown = max(0.0, grenade_cooldown - delta)
 
 func _throw_grenade():
-	if grenades > 0 and grenade_cooldown <= 0:
+	if grenades > 0 and grenade_cooldown <= 0 and not game_over:
 		grenades -= 1
 		grenade_cooldown = 1.0
 		var grenade = load("res://scripts/Grenade.gd").new()
@@ -364,15 +375,20 @@ func apply_ammo_boost(type: int):
 	emit_signal("ammo_boost_applied", ammo_boost_level)
 
 func take_damage(damage: float):
+	if game_over:
+		return
 	current_health = max(0.0, current_health - damage)
 	if audio_manager:
 		audio_manager.play_hit()
 	emit_signal("player_damaged")
 	if current_health <= 0:
+		game_over = true
 		emit_signal("player_died")
 	print("💥 [受伤] 生命值:" + str(int(current_health)))
 
 func add_kill():
+	if game_over:
+		return
 	kills += 1
 	kills_for_speed = kills
 	level += 1
@@ -398,6 +414,8 @@ func add_kill():
 	emit_signal("kill_count_changed")
 
 func add_experience(amount: int):
+	if game_over:
+		return
 	experience += amount
 	level = 1 + experience / 100
 
@@ -413,6 +431,7 @@ func _update_debug_info():
 		print("   - 子弹速度: " + str(bullet_speed))
 		print("   - 射速: " + str(fire_rate))
 		print("   - 伤害: " + str(damage_per_shot))
+		print("   - 游戏结束: " + str(game_over))
 
 func _spawn_debug_ammo_barrel():
 	var barrel_scene = load("res://scripts/AmmoBarrel.gd")

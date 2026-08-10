@@ -35,6 +35,7 @@ var player_node = null
 var health_bar: ProgressBar = null
 var health_bar_bg: ColorRect = null
 var sprite_size = Vector2(64, 64)
+var dead = false
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -96,7 +97,6 @@ func _setup_boss_sprite():
 	if boss_texture:
 		sprite.texture = boss_texture
 		sprite.region_enabled = true
-		# Boss 4x1 布局，每帧166x374
 		_boss_frame_size = 166
 		_boss_frame_height = 374
 		sprite.region_rect = Rect2(0, 0, _boss_frame_size, _boss_frame_height)
@@ -146,19 +146,20 @@ func _to_screen_position() -> Vector2:
 	return position + Vector2(360, 640)
 
 func _on_player_detected(body):
-	if body.is_in_group("player"):
+	if body.is_in_group("player") and not dead:
 		print("💥 Zombie 碰到玩家！类型=" + zombie_type)
-		if player_node:
-			player_node.take_damage(999)
-			player_node.emit_signal("player_died")
-		else:
-			player_node = get_tree().get_first_node_in_group("player")
-			if player_node:
-				player_node.take_damage(999)
-				player_node.emit_signal("player_died")
-		emit_signal("zombie_reached_player")
+		if not dead:
+			dead = true
+			var player = get_tree().get_first_node_in_group("player")
+			if player:
+				player.take_damage(999)
+				player.emit_signal("player_died")
+			emit_signal("zombie_reached_player")
 
 func _physics_process(delta):
+	if dead:
+		return
+	
 	frame_count += 1
 	
 	var player_node = get_tree().get_first_node_in_group("player")
@@ -195,24 +196,23 @@ func _physics_process(delta):
 		var screen_pos = _to_screen_position()
 		var screen_y = screen_pos.y
 		
-		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
+		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player and not dead:
 			has_reached_player = true
+			dead = true
 			print("🚨 警报！Zombie到达玩家位置！")
 			
-			if is_boss or zombie_type == "boss":
-				print("👹 Boss到达玩家！游戏失败！")
-				player_node.take_damage(999)
-				player_node.emit_signal("player_died")
-			else:
-				print("❌ 僵尸到达玩家！游戏失败！")
-				player_node.take_damage(999)
-				player_node.emit_signal("player_died")
+			var player = get_tree().get_first_node_in_group("player")
+			if player:
+				player.take_damage(999)
+				player.emit_signal("player_died")
 			emit_signal("zombie_reached_player")
 			
 			print("🗑️ Boss/僵尸将被删除: " + zombie_type)
 			_die()
 
 func take_damage(damage: float):
+	if dead:
+		return
 	current_health -= damage
 	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(int(current_health)) + "/" + str(get_max_health()))
 	
@@ -280,6 +280,10 @@ func _update_health_bar():
 			health_bar_bg.size = Vector2(60, 6)
 
 func _die():
+	if dead:
+		return
+	dead = true
+	
 	var player = get_tree().get_first_node_in_group("player")
 	var spawner = get_tree().get_first_node_in_group("spawner")
 	var audio = get_tree().get_first_node_in_group("audio_manager")
@@ -287,10 +291,7 @@ func _die():
 	
 	# 播放死亡音效
 	if audio:
-		if is_boss or zombie_type == "boss":
-			audio.play_explode()
-		else:
-			audio.play_explode()
+		audio.play_explode()
 	
 	if player:
 		player.add_experience(EXPERIENCE_REWARD)

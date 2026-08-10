@@ -7,6 +7,7 @@ var audio_manager = null
 var stats_manager = null
 var settings_manager = null
 var tutorial_manager = null
+var game_ended = false
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -28,6 +29,8 @@ func _ready():
 	_add_mobile_controls()
 	_add_settings_button()
 	_add_stats_button()
+	
+	game_ended = false
 	
 	print("")
 	print("✅ UIManager初始化完成")
@@ -66,17 +69,33 @@ func set_spawner(spawner_node):
 	print("✅ Spawner引用已设置")
 
 func _connect_buttons():
-	if has_node("StartPanel"):
-		if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
-			var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
-			start_btn.pressed.connect(_on_start_game)
-			print("  ✅ StartButton 已连接")
+	# 连接开始按钮
+	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
+		var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
+		start_btn.pressed.connect(_on_start_game)
+		print("  ✅ StartButton 已连接")
+	
+	# 连接重新开始按钮
+	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
+		var restart_btn = $GameOverPanel/PanelContainer/VBoxContainer/RestartButton
+		restart_btn.pressed.connect(_on_restart_game)
+		print("  ✅ GameOver RestartButton 已连接")
+	
+	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
+		var restart_btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
+		restart_btn.pressed.connect(_on_restart_game)
+		print("  ✅ Win RestartButton 已连接")
 
 func _on_start_game():
+	if game_ended:
+		return
+	
 	print("")
 	print("========================================")
 	print("🎮 [DEBUG] 游戏开始！")
 	print("========================================")
+	
+	game_ended = false
 	
 	if audio_manager:
 		audio_manager.play_levelup()
@@ -93,7 +112,14 @@ func _on_start_game():
 	if has_node("StartPanel"):
 		$StartPanel.visible = false
 	
-	$Panel/TopPanel.visible = true
+	if has_node("Panel/TopPanel"):
+		$Panel/TopPanel.visible = true
+	
+	# 隐藏结束面板
+	if has_node("GameOverPanel"):
+		$GameOverPanel.visible = false
+	if has_node("WinPanel"):
+		$WinPanel.visible = false
 	
 	# 启动教程
 	if tutorial_manager:
@@ -102,6 +128,10 @@ func _on_start_game():
 	print("🎮 游戏开始！")
 
 func show_game_over(kills):
+	if game_ended:
+		return
+	game_ended = true
+	
 	print("💀 [GAME_OVER] 游戏结束")
 	
 	if audio_manager:
@@ -110,6 +140,10 @@ func show_game_over(kills):
 	if stats_manager:
 		stats_manager.end_game(false)
 	
+	# 隐藏其他面板
+	if has_node("WinPanel"):
+		$WinPanel.visible = false
+	
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.text = "💀 LOST 💀"
@@ -117,6 +151,10 @@ func show_game_over(kills):
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 
 func show_win(kills):
+	if game_ended:
+		return
+	game_ended = true
+	
 	print("🏆 [WIN] 游戏胜利！")
 	
 	if audio_manager:
@@ -124,6 +162,10 @@ func show_win(kills):
 	
 	if stats_manager:
 		stats_manager.end_game(true)
+	
+	# 隐藏其他面板
+	if has_node("GameOverPanel"):
+		$GameOverPanel.visible = false
 	
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
@@ -140,6 +182,8 @@ func _on_restart_game():
 	get_tree().reload_current_scene()
 
 func show_upgrade_panel():
+	if game_ended:
+		return
 	print("🎁 [升级] 显示升级面板")
 	
 	if audio_manager:
@@ -279,6 +323,8 @@ func _create_health_alert_panel():
 func _show_health_alert():
 	if not has_node("HealthAlertPanel"):
 		return
+	if game_ended:
+		return
 	var panel = $HealthAlertPanel
 	panel.visible = true
 	var tween = create_tween()
@@ -287,12 +333,12 @@ func _show_health_alert():
 	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
 	var timer = get_tree().create_timer(0.5)
 	timer.timeout.connect(func():
-		if has_node("HealthAlertPanel"):
+		if has_node("HealthAlertPanel") and not game_ended:
 			_update_health()
 	)
 
 func _update_health():
-	if not player:
+	if not player or game_ended:
 		return
 	if has_node("HealthAlertPanel/HealthAlertContainer"):
 		var panel = $HealthAlertPanel
@@ -328,11 +374,11 @@ func _add_mobile_controls():
 	print("✅ 移动端控制已添加")
 
 func _on_joystick_moved(direction: Vector2):
-	if player:
+	if player and not game_ended:
 		player.move_direction = direction
 
 func _on_grenade_pressed():
-	if player and player.grenades > 0:
+	if player and not game_ended and player.grenades > 0:
 		player._throw_grenade()
 
 func _add_settings_button():
