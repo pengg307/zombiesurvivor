@@ -9,6 +9,7 @@ const BOSS_HEALTH = 500.0
 const SPAWN_LEFT_X = -80.0
 const SPAWN_RIGHT_X = 80.0
 const SPAWN_TOP_Y = -100.0
+const SPAWN_BOTTOM_Y = 100.0  # 添加底部生成范围
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -41,6 +42,8 @@ var zombies_in_wave = 0
 var audio_manager = null
 var game_manager = null
 var weapon_upgrade_sys = null
+var game_started = false  # 游戏是否已开始
+var safety_timer = 0.0  # 安全延迟
 
 signal boss_spawned
 signal game_over
@@ -66,7 +69,13 @@ func _ready():
 	print("📊 生成模式: 矩阵")
 	print("📊 僵尸类型: basic, fast, tank, explorer")
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
+	print("🛡️  安全延迟: 2秒")
 	print("============================================================")
+
+func _physics_process(delta):
+	# 游戏开始后的安全延迟，让玩家可以先移动
+	if game_started and safety_timer > 0:
+		safety_timer -= delta
 
 func _on_spawn_timer_timeout():
 	print("⏰ [定时器] 触发！当前波次: " + str(wave_number))
@@ -148,9 +157,12 @@ func _spawn_zombie(index, config):
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
 		var x_pos = SPAWN_LEFT_X + index * SQUARE_SPACING if spawn_side == 0 else SPAWN_RIGHT_X + index * SQUARE_SPACING
-		zombie.position = Vector2(x_pos, SPAWN_TOP_Y)
+		# 使用更大的Y范围生成僵尸，避免立即碰撞
+		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
+		zombie.position = Vector2(x_pos, y_pos)
+		zombie.spawn_time = Time.get_ticks_msec() / 1000.0  # 记录生成时间
 		add_child(zombie)
-		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1))
+		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 位置=(" + str(int(x_pos)) + ", " + str(int(y_pos)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
@@ -174,16 +186,21 @@ func _spawn_boss():
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
-		boss.position = Vector2(0, -300)
+		boss.position = Vector2(0, -200)  # Boss从更上方生成
+		boss.spawn_time = Time.get_ticks_msec() / 1000.0
 		add_child(boss)
 		print("👹 Boss已生成！")
 		emit_signal("boss_spawned")
 
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
+	print("  - 游戏开始，启动安全延迟2秒")
+	game_started = true
+	safety_timer = 2.0  # 2秒安全延迟
 	spawn_timer.start()
 	print("⏰ Timer已启动，等待首次生成...")
 
 func stop():
 	print("⏹️ 生成器停止！")
 	spawn_timer.stop()
+	game_started = false

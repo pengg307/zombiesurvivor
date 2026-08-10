@@ -7,145 +7,162 @@ const FAST_HEALTH = 8.0
 const FAST_SPEED = 70.0
 const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 30.0
-const DAMAGE = 10.0
+const DAMAGE_PER_SECOND = 5.0
 const EXPERIENCE_REWARD = 10
-const SCREEN_HEIGHT = 1280.0
-const PLAYER_Y_SCREEN = 1100.0
 
-signal boss_died
-signal zombie_reached_player
-
-@export var zombie_type: String = "basic"
 @export var is_boss: bool = false
-
-var current_health = BASE_HEALTH
-var base_speed = BASE_SPEED
-var target_x = 0.0
-var side = "左侧"
-var frame_count = 0
-var sprite_node: Sprite2D = null
-var walk_timer = 0.0
-var current_frame = 0
-var hit_flash_timer = 0.0
-var has_reached_player = false
-var _boss_anim_timer = 0.0
-var _boss_frame_size = 166
-var _boss_frame_height = 374
-var player_node = null
-var health_bar: ProgressBar = null
-var health_bar_bg: ColorRect = null
-var sprite_size = Vector2(64, 64)
+var zombie_type = "basic"
+var current_health: float
+var base_speed: float
 var dead = false
+var damage_timer = 0.0
+var sprite_node: Sprite2D = null
+var health_bar: ProgressBar = null
+var frame_count = 0
+var current_frame = 0
+var boss_anim_timer = 0.0
+var spawn_time = 0.0  # 生成时间，用于安全延迟
 
-const ZOMBIE_CONFIG = {
-	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
-	"fast": {"health": 8.0, "speed": 70.0, "color": Color(0.5, 0.3, 0.5)},
-	"boss": {"health": 500.0, "speed": 30.0, "color": Color(0.8, 0.2, 0.2)}
-}
+signal zombie_reached_player
+signal zombie_spawned
 
 func _ready():
-	current_health = BASE_HEALTH
 	add_to_group("zombies")
 	
-	collision_layer = 2
-	collision_mask = 1
+	_setup_sprite()
+	_setup_collision()
 	
-	call_deferred("_setup_collision")
-	
+	# 初始化健康值
 	if is_boss or zombie_type == "boss":
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
-		_setup_boss_sprite()
-		print("👹 Boss创建完成: 位置=( " + str(int(position.x)) + "," + str(int(position.y)) + ")")
-	elif zombie_type == "fast":
-		base_speed = 70.0
-		_setup_sprite()
+		print("")
+		print("👹 Boss已创建！生命值=" + str(current_health) + " 速度=" + str(base_speed))
 	else:
-		_setup_sprite()
+		if zombie_type == "fast":
+			current_health = FAST_HEALTH
+			base_speed = FAST_SPEED
+		else:
+			current_health = BASE_HEALTH
+			base_speed = BASE_SPEED
 	
-	print("✅ Zombie创建: 类型=" + zombie_type)
+	print("")
+	print("============================================================")
+	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + " 速度=" + str(int(base_speed)))
+	print("   位置=(" + str(int(position.x)) + ", " + str(int(position.y)) + ") 游戏开始前2秒安全")
+	print("============================================================")
+	
+	emit_signal("zombie_spawned")
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
+	sprite.centered = true
+	sprite.z_index = 10
 	
-	var texture_path = "res://assets/downloads/zombie_front_4frames_game.png"
-	var texture = load(texture_path)
-	
-	if texture:
-		sprite.texture = texture
-		sprite.region_enabled = true
-		sprite.region_rect = Rect2(0, 0, 64, 64)
-		sprite.centered = true
-		sprite.position = Vector2(0, 0)
-		add_child(sprite)
-		sprite_node = sprite
-		sprite_size = Vector2(64, 64)
-		print("🎨 僵尸素材加载成功")
+	if is_boss or zombie_type == "boss":
+		var boss_texture = load("res://assets/downloads/biggerboss.png")
+		if boss_texture:
+			sprite.texture = boss_texture
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, 0, 167, 374)
+			sprite.scale = Vector2(2.0, 2.0)
+			print("🎨 Boss素材加载成功: 167x374, 缩放2x")
+		else:
+			_setup_fallback_sprite(Color(1, 0, 0), Vector2(2, 2))
 	else:
-		_setup_fallback_sprite()
+		var zombie_texture = load("res://assets/kenney_top-down-shooter/PNG/Hitman 1/hitman1_hit.png")
+		if zombie_texture:
+			sprite.texture = zombie_texture
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, 0, 64, 64)
+			print("🎨 僵尸素材加载成功")
+		else:
+			_setup_fallback_sprite(Color(0, 0.5, 0), Vector2(1, 1))
+	
+	add_child(sprite)
+	sprite_node = sprite
 
-func _setup_boss_sprite():
+func _setup_fallback_sprite(color: Color, scale: Vector2):
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
-	sprite.z_index = 50
-	sprite.visible = true
-	
-	var boss_texture_path = "res://assets/downloads/biggerboss.png"
-	var boss_texture = load(boss_texture_path)
-	
-	if boss_texture:
-		sprite.texture = boss_texture
-		sprite.region_enabled = true
-		_boss_frame_size = 166
-		_boss_frame_height = 374
-		sprite.region_rect = Rect2(0, 0, _boss_frame_size, _boss_frame_height)
-		sprite.centered = true
-		sprite.position = Vector2(0, 0)
-		add_child(sprite)
-		sprite_node = sprite
-		sprite_size = Vector2(_boss_frame_size, _boss_frame_height)
-		print("🎨 Boss素材加载成功: " + str(boss_texture.get_width()) + "x" + str(boss_texture.get_height()))
-	else:
-		_setup_fallback_sprite()
-		print("⚠️ 无法加载Boss素材")
-
-func _setup_fallback_sprite():
-	var sprite = Sprite2D.new()
-	sprite.name = "Sprite"
+	sprite.centered = true
+	sprite.z_index = 10
 	var rect = ColorRect.new()
-	rect.size = sprite_size
-	rect.color = ZOMBIE_CONFIG.get(zombie_type, ZOMBIE_CONFIG["basic"]).color
+	rect.size = Vector2(64, 64)
+	rect.color = color
 	sprite.add_child(rect)
+	sprite.scale = scale
 	add_child(sprite)
 	sprite_node = sprite
 	print("⚠️ 使用备用僵尸素材")
 
 func _setup_collision():
-	var collision = CollisionShape2D.new()
-	collision.name = "Collision"
-	var shape = CapsuleShape2D.new()
-	shape.radius = 30.0
-	shape.height = 50.0
-	collision.shape = shape
-	add_child(collision)
-	
 	var area = Area2D.new()
-	area.name = "PlayerDetector"
-	area.monitoring = true
+	area.name = "ZombieArea"
 	area.collision_layer = 2
-	area.collision_mask = 1
+	area.collision_mask = 1  # 只检测玩家
 	area.body_entered.connect(_on_player_detected)
 	add_child(area)
+	
+	var collision = CollisionShape2D.new()
+	collision.name = "CollisionShape"
+	var shape = CircleShape2D.new()
+	shape.radius = 30.0
+	collision.shape = shape
+	area.add_child(collision)
 	
 	_create_health_bar()
 	
 	print("✅ 碰撞体创建成功")
 
+func _create_health_bar():
+	if is_boss or zombie_type == "boss":
+		var bar_bg = ColorRect.new()
+		bar_bg.name = "HealthBarBg"
+		bar_bg.color = Color(0.5, 0, 0)
+		bar_bg.size = Vector2(100, 10)
+		bar_bg.position = Vector2(-50, -80)
+		add_child(bar_bg)
+		
+		var bar_fg = ColorRect.new()
+		bar_fg.name = "HealthBarFg"
+		bar_fg.color = Color(1, 0, 0)
+		bar_fg.size = Vector2(100, 10)
+		bar_fg.position = Vector2(-50, -80)
+		add_child(bar_fg)
+		
+		print("✅ Boss健康条已创建")
+	else:
+		var bar_container = VBoxContainer.new()
+		bar_container.name = "HealthBarContainer"
+		bar_container.position = Vector2(0, -50)
+		add_child(bar_container)
+		
+		var bar_bg = ColorRect.new()
+		bar_bg.name = "HealthBarBg"
+		bar_bg.color = Color(0.5, 0, 0)
+		bar_bg.size = Vector2(60, 6)
+		bar_container.add_child(bar_bg)
+		
+		var bar_fg = ColorRect.new()
+		bar_fg.name = "HealthBarFg"
+		bar_fg.color = Color(0, 1, 0)
+		bar_fg.size = Vector2(60, 6)
+		bar_container.add_child(bar_fg)
+		
+		print("✅ 僵尸健康条已创建")
+
 func _to_screen_position() -> Vector2:
 	return position + Vector2(360, 640)
 
 func _on_player_detected(body):
+	# 检查是否在安全延迟期间
+	var safety_time = Time.get_ticks_msec() / 1000.0 - spawn_time
+	if safety_time < 2.0:
+		print("  🔒 僵尸在安全期内，不攻击玩家 (剩余: " + str(2.0 - safety_time) + "秒)")
+		return
+	
 	if body.is_in_group("player") and not dead:
 		print("💥 Zombie 碰到玩家！类型=" + zombie_type)
 		if not dead:
@@ -153,7 +170,6 @@ func _on_player_detected(body):
 			var player = get_tree().get_first_node_in_group("player")
 			if player:
 				player.take_damage(999)
-				player.emit_signal("player_died")
 			emit_signal("zombie_reached_player")
 
 func _physics_process(delta):
@@ -161,6 +177,11 @@ func _physics_process(delta):
 		return
 	
 	frame_count += 1
+	
+	# 检查安全延迟
+	var safety_time = Time.get_ticks_msec() / 1000.0 - spawn_time
+	if safety_time < 2.0:
+		return  # 还在安全期内，不移动
 	
 	var player_node = get_tree().get_first_node_in_group("player")
 	
@@ -181,103 +202,68 @@ func _physics_process(delta):
 		
 		# Boss 动画效果（脉冲 + 帧切换）
 		if (is_boss or zombie_type == "boss") and sprite_node:
-			_boss_anim_timer += delta
-			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)
+			boss_anim_timer += delta
+			var pulse = 1.0 + 0.1 * sin(boss_anim_timer * 3.0)
 			var base_scale = Vector2(1.0, 1.0)
 			sprite_node.scale = base_scale * pulse
 			# Boss 显示所有4帧动画
 			if frame_count % 8 == 0:
-				current_frame = (current_frame + 1) % 4
-				var frame_x = (current_frame % 4) * _boss_frame_size
-				var frame_y = 0
-				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_height)
+				var frame = (current_frame % 4) * 167
+				sprite_node.region_rect = Rect2(frame, 0, 167, 374)
 		
-		# 检查是否到达玩家位置
+		# 更新位置标签
 		var screen_pos = _to_screen_position()
-		var screen_y = screen_pos.y
-		
-		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player and not dead:
-			has_reached_player = true
-			dead = true
-			print("🚨 警报！Zombie到达玩家位置！")
-			
-			var player = get_tree().get_first_node_in_group("player")
-			if player:
-				player.take_damage(999)
-				player.emit_signal("player_died")
-			emit_signal("zombie_reached_player")
-			
-			print("🗑️ Boss/僵尸将被删除: " + zombie_type)
-			_die()
+		if has_node("PositionLabel"):
+			$PositionLabel.text = "位置:" + str(int(screen_pos.x)) + "," + str(int(screen_pos.y))
+		else:
+			var label = Label.new()
+			label.name = "PositionLabel"
+			label.text = "位置:" + str(int(screen_pos.x)) + "," + str(int(screen_pos.y))
+			label.add_theme_font_size_override("font_size", 10)
+			add_child(label)
+	
+	# Boss 伤害检测
+	if (is_boss or zombie_type == "boss") and player_node:
+		damage_timer += delta
+		if damage_timer >= 1.0:
+			damage_timer = 0.0
+			var player_health = player_node.current_health if player_node.has_method("take_damage") else 100
+			if player_health > 0:
+				player_node.take_damage(DAMAGE_PER_SECOND)
+				print("💥 Boss攻击玩家！伤害=" + str(DAMAGE_PER_SECOND) + " 剩余HP=" + str(int(player_health - DAMAGE_PER_SECOND)))
 
 func take_damage(damage: float):
 	if dead:
 		return
+	
 	current_health -= damage
-	print("💥 Zombie受伤: 类型=" + zombie_type + " 血量=" + str(int(current_health)) + "/" + str(get_max_health()))
-	
-	# 受伤闪烁效果
-	hit_flash_timer = 0.2
-	modulate = Color(1, 0.3, 0.3)
-	var timer = get_tree().create_timer(0.1)
-	timer.timeout.connect(func(): modulate = Color(1, 1, 1))
-	
-	# 播放受伤音效
-	var audio = get_tree().get_first_node_in_group("audio_manager")
-	if audio:
-		audio.play_hit()
-	
-	# 更新健康条
 	_update_health_bar()
 	
+	print("💥 Zombie受伤: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + "/" + str(int(get_max_health())))
+	
 	if current_health <= 0:
-		print("💀 Zombie死亡: 类型=" + zombie_type)
 		_die()
 
+func _update_health_bar():
+	if is_boss or zombie_type == "boss":
+		if has_node("HealthBarFg"):
+			var bar = $HealthBarFg
+			var max_health = get_max_health()
+			bar.size.x = 100.0 * (current_health / max_health)
+	else:
+		var health_bar_container = get_node_or_null("HealthBarContainer")
+		if health_bar_container and health_bar_container.has_node("HealthBarFg"):
+			var bar = health_bar_container.get_node("HealthBarFg")
+			var max_health = get_max_health()
+			bar.size.x = 60.0 * (current_health / max_health)
+
 func get_max_health() -> float:
-	if zombie_type == "boss":
+	if is_boss or zombie_type == "boss":
 		return BOSS_HEALTH
 	elif zombie_type == "fast":
 		return FAST_HEALTH
 	else:
 		return BASE_HEALTH
-
-func _create_health_bar():
-	# 健康条背景 - 更窄更靠下
-	health_bar_bg = ColorRect.new()
-	health_bar_bg.name = "HealthBarBG"
-	health_bar_bg.color = Color(0.2, 0.2, 0.2, 0.8)
-	health_bar_bg.position = Vector2(-30, -sprite_size.y / 2 - 5)
-	health_bar_bg.size = Vector2(60, 6)
-	add_child(health_bar_bg)
-	
-	# 健康条前景 - 更窄更靠下
-	health_bar = ProgressBar.new()
-	health_bar.name = "HealthBar"
-	health_bar.min_value = 0
-	health_bar.max_value = get_max_health()
-	health_bar.value = current_health
-	health_bar.position = Vector2(-30, -sprite_size.y / 2 - 5)
-	health_bar.size = Vector2(60, 6)
-	health_bar.modulate = Color(0, 1, 0)
-	health_bar.step = 1
-	add_child(health_bar)
-	
-	print("✅ 健康条已创建: 最大血量=" + str(get_max_health()))
-
-func _update_health_bar():
-	if health_bar:
-		health_bar.value = current_health
-		var pct = float(current_health) / float(get_max_health())
-		if pct > 0.6:
-			health_bar.modulate = Color(0, 1, 0)
-		elif pct > 0.3:
-			health_bar.modulate = Color(1, 1, 0)
-		else:
-			health_bar.modulate = Color(1, 0, 0)
-		# 更新背景大小
-		if health_bar_bg:
-			health_bar_bg.size = Vector2(60, 6)
 
 func _die():
 	if dead:
