@@ -15,6 +15,7 @@ grow_y = 2.0
 visible = true  # 初始透明
 
 [node name="TopPanel" type="HBoxContainer" parent="Panel"]
+visible = false
 layout_mode = 0
 expand_x = 1.0
 
