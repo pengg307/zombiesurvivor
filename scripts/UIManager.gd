@@ -429,7 +429,7 @@ func _create_health_alert_panel():
 	bar.value = 100.0
 	bar.min_value = 0.0
 	bar.max_value = 100.0
-	bar.horizontal_size_flags = SizeFlags.FLAG_EXPAND_FILL
+	bar.size_flags_horizontal = Control.SIZE_FILL
 	bar.add_theme_constant_override("separation", 10)
 	bar_container.add_child(bar)
 	
@@ -438,7 +438,7 @@ func _create_health_alert_panel():
 	text_label.name = "HealthTextLabel"
 	text_label.text = "HP: 100/100"
 	text_label.add_theme_font_size_override("font_size", 24)
-	text_label.size_flags_horizontal = SizeFlags.FLAG_SHIFT_BEGIN
+	text_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	bar_container.add_child(text_label)
 	
 	print("✅ 健康警報面板已創建")
