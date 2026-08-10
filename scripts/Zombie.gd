@@ -83,21 +83,34 @@ func _setup_boss_sprite():
 	sprite.z_index = 50  # Boss should be on top
 	sprite.visible = true
 	
-	# 使用 bigboss.png 作为 Boss 纹理
+	# 使用 bigboss.png 作为 Boss 纹理（4帧精灵图）
 	var boss_texture_path = "res://assets/downloads/bigboss.png"
 	var boss_texture = load(boss_texture_path)
 	
 	if boss_texture:
 		sprite.texture = boss_texture
 		sprite.centered = true
-		# 根据屏幕尺寸调整 scale：boss 1312x736，目标显示 ~200x112
-		var target_width = 200.0
-		var target_height = 112.0
-		var scaleX = target_width / 1312.0
-		var scaleY = target_height / 736.0
-		sprite.scale = Vector2(scaleX * 2.5, scaleY * 2.5)
+		sprite.region_enabled = true
+		
+		# 根据图片尺寸自动计算帧大小 (假设 4帧: 2x2 或 4x1)
+		var tex_width = 1312.0
+		var tex_height = 736.0
+		
+		# 尝试 2x2 布局 (4帧)
+		var frame_w = tex_width / 2.0
+		var frame_h = tex_height / 2.0
+		
+		sprite.region_rect = Rect2(0, 0, frame_w, frame_h)
+		_boss_frame_size = int(frame_w)
+		
+		# 缩放：目标显示 ~200x200 (正方形Boss)
+		var target_size = 200.0
+		var scale = target_size / frame_w
+		sprite.scale = Vector2(scale, scale)
+		
 		print("🎨 Boss 纹理加载成功: " + boss_texture_path)
-		print("  - 原始尺寸: 1312x736")
+		print("  - 原始尺寸: " + str(int(tex_width)) + "x" + str(int(tex_height)))
+		print("  - 帧尺寸: " + str(int(frame_w)) + "x" + str(int(frame_h)))
 		print("  - 缩放: " + str(sprite.scale))
 	else:
 		print("❌ 无法加载 Boss 纹理: " + boss_texture_path)
