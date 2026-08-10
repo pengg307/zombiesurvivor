@@ -94,6 +94,7 @@ func _on_start_game():
 	print("========================================")
 	print("🎮 [DEBUG] 游戏开始！")
 	print("========================================")
+	print("  - Spawner引用: " + str(spawner))
 	
 	game_ended = false
 	
@@ -104,7 +105,10 @@ func _on_start_game():
 		stats_manager.start_game()
 	
 	if spawner:
+		print("  - 调用spawner.start()")
 		spawner.start()
+	else:
+		print("  - ❌ Spawner引用为空！")
 	
 	if has_node("Panel"):
 		$Panel.modulate = Color(1, 1, 1, 1)
@@ -214,14 +218,14 @@ func _show_upgrade_options(options):
 		$UpgradePanel/PanelContainer/VBoxContainer/OptionsContainer.add_child(btn)
 
 func get_upgrade_name(key):
-	var upgrade_sys = get_node_or_null("/root/UpgradeSystem")
+	var upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
 	if upgrade_sys and key in upgrade_sys.UPGRADE_OPTIONS:
 		return upgrade_sys.UPGRADE_OPTIONS[key].name
 	return key
 
 func _on_upgrade_selected(option_key):
 	print("🎯 [强化选择] " + get_upgrade_name(option_key))
-	var upgrade_sys = get_node_or_null("/root/UpgradeSystem")
+	var upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
 	if upgrade_sys and player:
 		upgrade_sys.apply_upgrade(player, option_key)
 	hide_upgrade_panel()

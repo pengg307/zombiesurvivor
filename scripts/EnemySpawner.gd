@@ -69,10 +69,13 @@ func _ready():
 	print("============================================================")
 
 func _on_spawn_timer_timeout():
+	print("⏰ [定时器] 触发！当前波次: " + str(wave_number))
 	var config = WAVE_CONFIG[min(wave_number + 1, WAVE_CONFIG.size())]
 	if config:
 		spawn_timer.wait_time = config.interval
-	_start_next_wave()
+		_start_next_wave()
+	else:
+		print("❌ 无法获取波次配置")
 
 func _start_next_wave():
 	wave_number += 1
@@ -177,8 +180,9 @@ func _spawn_boss():
 		emit_signal("boss_spawned")
 
 func start():
-	print("🎮 生成器启动！")
+	print("🎮 [EnemySpawner] 开始生成！")
 	spawn_timer.start()
+	print("⏰ Timer已启动，等待首次生成...")
 
 func stop():
 	print("⏹️ 生成器停止！")
