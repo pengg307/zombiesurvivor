@@ -96,10 +96,10 @@ func _spawn_matrix():
 	var spawned_count = 0
 	for row in range(SPAWN_MATRIX_SIZE):
 		for col in range(SPAWN_MATRIX_SIZE):
-			var zombie_scene = load("res://scripts/Zombie.gd")
+			var zombie_scene = load("res://scenes/Zombie.tscn")
 			if zombie_scene:
 				var zombie_type = _get_random_type()
-				var zombie = zombie_scene.new()
+				var zombie = zombie_scene.instantiate()
 				zombie.zombie_type = zombie_type
 				var x = start_x + col * SQUARE_SPACING
 				var y = SPAWN_TOP_Y + row * SQUARE_SPACING
@@ -156,9 +156,9 @@ func _spawn_boss():
 	# if audio_manager:
 	# 	audio_manager.play_boss_spawn()
 	
-	var zombie_scene = load("res://scripts/Zombie.gd")
+	var zombie_scene = load("res://scenes/Zombie.tscn")
 	if zombie_scene:
-		var boss = zombie_scene.new()
+		var boss = zombie_scene.instantiate()
 		boss.zombie_type = "boss"
 		boss.is_boss = true
 		boss.position = Vector2(0, SPAWN_TOP_Y)
