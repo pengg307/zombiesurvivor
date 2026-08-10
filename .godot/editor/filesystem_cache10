@@ -111,9 +111,10 @@ hit.wav::AudioStreamWAV::4419842214493573557::1785890599::1785891017::1::::<><><
 shoot.wav::AudioStreamWAV::4001712551907341126::1785890599::1785891017::1::::<><><>0<>0<>7b4d5f8eb1a4caf34258bdb320e8678c<>res://.godot/imported/shoot.wav-f3ce9b4ae60220ecd3cf78df7278a10f.sample::
 upgrade.wav::AudioStreamWAV::4839145273963342343::1785890599::1785891017::1::::<><><>0<>0<>05dd177a7aa94d92f0f2de0de04ce449<>res://.godot/imported/upgrade.wav-4e2f0db1abec02e3896190e246baac57.sample::
 victory.wav::AudioStreamWAV::562472178354442375::1785890599::1785891017::1::::<><><>0<>0<>4ab44926d708d69923d5efc2fb0b76e5<>res://.godot/imported/victory.wav-d747c65c83bb1dc7254ad538b97f6989.sample::
-::res://assets/downloads/::1786338527
+::res://assets/downloads/::1786341336
 bigboss.jpg::CompressedTexture2D::3772472107715099601::1786336596::1786338642::1::::<><><>0<>0<>1fb4d0200101a73f3a0088c63023c73b<>res://.godot/imported/bigboss.jpg-60e00fa8ad0a4a4110b21cb6c7d6a51e.ctex::
 bigboss.png::CompressedTexture2D::75320689779288::1786337296::1786338642::1::::<><><>0<>0<>c2790eae6af7cc5b69ec00f60f330966<>res://.godot/imported/bigboss.png-ac1aca1f28557551c13c7d7e93466380.ctex::
+biggerboss.png::CompressedTexture2D::2960690039556569260::1786340994::1786341412::1::::<><><>0<>0<>602d779c6a19c69b00f8af9d6f8492a8<>res://.godot/imported/biggerboss.png-8b9aafac1235a62953b8b043b9d40875.ctex::
 boss.png::CompressedTexture2D::2205679660::1786186266::1786292732::1::::<><><>0<>0<>3dec93b10121b562172c10ee661701e3<>res://.godot/imported/boss.png-de0ca678aab2f3a8198364e9dd239d25.ctex::
 littleboss.png::CompressedTexture2D::8631349637563088458::1786004974::1786292732::1::::<><><>0<>0<>6b49252614a386652ac7c2ae85e1d141<>res://.godot/imported/littleboss.png-1f05135157d6dc2cb03ff58d72f70f60.ctex::
 littleboss_rgba.png::CompressedTexture2D::3249450769538832806::1786186145::1786292734::1::::<><><>0<>0<>2851e880b1942346b6d8bddd3af9ea4b<>res://.godot/imported/littleboss_rgba.png-00e46c81b8cc457d9268b50d2de2f7d6.ctex::
@@ -750,7 +751,7 @@ ui-display-patterns.md::TextFile::-1::1786179012::0::1::::<><><>0<>0<><>::
 Game.gd::GDScript::4470888361617985607::1785865695::0::1::::<>Node2D<><>0<>0<><>::
 Game.tscn::PackedScene::-1::1786252778::0::1::::<><><>0<>0<><>::res://scripts/Player.gd<>res://scripts/EnemySpawner.gd<>res://scripts/UIManager.gd<>res://scripts/GameManager.gd<>res://scripts/Background2D.gd<>res://scripts/Bullet.gd<>res://scripts/AudioManager.gd<>res://scenes/UI.tscn
 UI.tscn::PackedScene::-1::1786286682::0::1::::<><><>0<>0<><>::res://scripts/UIManager.gd
-::res://scripts/::1786337644
+::res://scripts/::1786341322
 AmmoBarrel.gd::GDScript::4320412084000705971::1786167354::0::1::::AmmoBarrel<>Area2D<><>0<>0<><>::
 AudioManager.gd::GDScript::4314813358333360349::1786253491::0::1::::AudioManager<>Node<><>0<>0<><>::
 Background2D.gd::GDScript::1391013446138300957::1786033576::0::1::::<>Node2D<><>0<>0<><>::
@@ -763,4 +764,4 @@ particle_shader.gdshader::Shader::6997315370564895066::1786113471::0::1::::<><><
 Player.gd::GDScript::4957594735596598925::1786290124::0::1::::Player<>CharacterBody2D<><>0<>0<><>::
 UIManager.gd::GDScript::4315250497287761806::1786295364::0::1::::UIManager<>CanvasLayer<><>0<>0<><>::
 Weapon.gd::GDScript::6464867827286573698::1785865677::0::1::::Weapon<>Node2D<><>0<>0<><>::
-Zombie.gd::GDScript::1693714664075805002::1786337524::0::1::::Zombie<>CharacterBody2D<><>0<>0<><>::
+Zombie.gd::GDScript::1693714664075805002::1786341321::0::1::::Zombie<>CharacterBody2D<><>0<>0<><>::
