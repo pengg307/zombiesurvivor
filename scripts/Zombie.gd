@@ -81,49 +81,48 @@ func _setup_sprite():
 func _setup_boss_sprite():
 	var sprite = Sprite2D.new()
 	sprite.name = "Sprite"
-	sprite.z_index = 50  # Boss should be on top
+	sprite.z_index = 50
 	sprite.visible = true
-	
+
 	# 使用 biggerboss.png 作为 Boss 纹理
 	var boss_texture_path = "res://assets/downloads/biggerboss.png"
 	var boss_texture = load(boss_texture_path)
-	
+
 	if boss_texture:
 		sprite.texture = boss_texture
 		sprite.centered = true
 		sprite.region_enabled = true
-		
+
 		# 自动检测图片尺寸
 		var tex_width = boss_texture.get_width()
 		var tex_height = boss_texture.get_height()
-		
+
 		# 图片是 4帧横排布局 (4x1)，每帧宽度 = 总宽度 / 4
 		var frame_cols = 4
 		var frame_rows = 1
 		var frame_w = tex_width / frame_cols
 		var frame_h = tex_height / frame_rows
-		
+
 		# 只显示第1帧（最左边的帧）
 		sprite.region_rect = Rect2(0, 0, frame_w, frame_h)
 		_boss_frame_size = int(frame_w)
-		
+
 		# 缩放：让 Boss 显示得和僵尸差不多大小
 		var target_frame_size = 150.0
 		var scale = target_frame_size / frame_w
 		sprite.scale = Vector2(scale, scale)
-		
+
 		print("🎨 Boss 纹理加载成功: " + boss_texture_path)
 		print("  - 原始尺寸: " + str(int(tex_width)) + "x" + str(int(tex_height)))
 		print("  - 帧布局: " + str(frame_cols) + "x" + str(frame_rows))
 		print("  - 帧尺寸: " + str(int(frame_w)) + "x" + str(int(frame_h)))
 		print("  - 显示帧: 第1帧 (最左边)")
 		print("  - 缩放: " + str(sprite.scale))
+		add_child(sprite)
+		sprite_node = sprite
 	else:
 		print("❌ 无法加载 Boss 纹理: " + boss_texture_path)
 		_setup_fallback_sprite()
-	
-	add_child(sprite)
-	sprite_node = sprite
 
 func _setup_programmatic_boss(sprite: Sprite2D):
 	# 创建4帧程序化Boss纹理 (128x128每帧)

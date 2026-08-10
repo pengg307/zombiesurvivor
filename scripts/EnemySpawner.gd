@@ -59,6 +59,7 @@ func _ready():
 	# 不自动开始，等待玩家点击"开始游戏"
 
 func _on_spawn_timer_timeout():
+	print("⏰ [DEBUG] spawn_timer 触发！")
 	_start_next_wave()
 
 func _start_next_wave():
@@ -110,6 +111,12 @@ func _spawn_matrix():
 	print("✅ 已生成" + str(spawned_count) + "个僵尸")
 	print("----------------------------------------")
 	print("")
+		
+	# 调试：检查生成的僵尸
+	var all_zombies = get_tree().get_nodes_in_group("zombies")
+	print("📊 当前僵尸数量: " + str(all_zombies.size()))
+	for z in all_zombies:
+		print("  - " + z.name + " 位置=(" + str(int(z.position.x)) + "," + str(int(z.position.y)) + ") 屏幕=(" + str(int(z.position.x + 360)) + "," + str(int(z.position.y + 640)) + ")")
 	
 	# 每3波生成一个弹药桶
 	if wave_number % 3 == 0 and not boss_active:
