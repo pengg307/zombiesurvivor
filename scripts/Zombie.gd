@@ -211,16 +211,18 @@ func _physics_process(delta):
 			current_frame = (current_frame + 1) % 4
 			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 		
-		# Boss 动画效果（脉冲）
+		# Boss 动画效果（脉冲 + 帧切换）
 		if (is_boss or zombie_type == "boss") and sprite_node:
 			_boss_anim_timer += delta
 			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)  # 脉动效果
-			var base_scale = Vector2(2.0, 2.0)
+			var base_scale = Vector2(1.0, 1.0)
 			sprite_node.scale = base_scale * pulse
-			# 同时切换帧
+			# 同时切换帧 (2x2 布局)
 			if frame_count % 8 == 0:
 				current_frame = (current_frame + 1) % 4
-				sprite_node.region_rect = Rect2(current_frame * _boss_frame_size, 0, _boss_frame_size, _boss_frame_size)
+				var frame_x = (current_frame % 2) * _boss_frame_size
+				var frame_y = (current_frame / 2) * _boss_frame_size
+				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_size)
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()
