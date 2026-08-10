@@ -7,22 +7,39 @@ const SQUARE_SPACING = 80.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
 
-# 2x2 matrix spawn
-const SPAWN_MATRIX_SIZE = 2
-const SPAWN_LEFT_X = -80.0
-const SPAWN_RIGHT_X = 80.0
-const SPAWN_TOP_Y = -100.0
+# 难度曲线配置
+const WAVE_CONFIG = {
+	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
+	2: {"zombies": 4, "interval": 2.3, "types": ["basic", "fast"]},
+	3: {"zombies": 6, "interval": 2.0, "types": ["basic", "fast", "tank"]},
+	4: {"zombies": 6, "interval": 1.8, "types": ["basic", "fast", "tank"]},
+	5: {"zombies": 8, "interval": 1.5, "types": ["basic", "fast", "tank", "explorer"]},
+	6: {"zombies": 8, "interval": 1.3, "types": ["basic", "fast", "tank", "explorer"]},
+	7: {"zombies": 10, "interval": 1.0, "types": ["basic", "fast", "tank", "explorer"]},
+	8: {"zombies": 10, "interval": 0.8, "types": ["basic", "fast", "tank", "explorer"]},
+	9: {"zombies": 12, "interval": 0.7, "types": ["basic", "fast", "tank", "explorer"]},
+	10: {"zombies": 12, "interval": 0.6, "types": ["basic", "fast", "tank", "explorer"]}
+}
+
+# 僵尸类型权重
+const ZOMBIE_WEIGHTS = {
+	"basic": 65,
+	"fast": 35,
+	"tank": 10,
+	"explorer": 5
+}
 
 var spawn_timer = Timer.new()
 var wave_active = false
 var current_kills = 0
 var boss_active = false
-var boss_spawned_this_game = false  # Boss只能生成一次
+var boss_spawned_this_game = false
 var wave_number = 0
 var spawn_side = 0
 var zombies_in_wave = 0
 var audio_manager = null
 var game_manager = null
+var weapon_upgrade_sys = null
 
 signal boss_spawned
 signal game_over
@@ -30,64 +47,50 @@ signal game_won
 signal wave_complete
 
 func _ready():
-	add_to_group("audio_manager")
 	add_to_group("spawner")
 	add_child(spawn_timer)
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
-	# 不自动启动，等待 GameManager._start_game() 调用
-	
-	var am = get_tree().get_first_node_in_group("audio_manager")
-	if am:
-		audio_manager = am
 	
 	var gm = get_tree().get_first_node_in_group("game_manager")
 	if gm:
 		game_manager = gm
 	
+	# 获取武器升级系统
+	weapon_upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
+	
 	print("")
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
 	print("============================================================")
-	print("📊 生成模式: " + str(SPAWN_MATRIX_SIZE) + "x" + str(SPAWN_MATRIX_SIZE) + "矩阵")
-	print("📊 僵尸类型分布:")
-	print("   - basic: 65% (10血, 50速)")
-	print("   - fast: 35% (8血, 70速)")
-	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现 (500血，只出现一次)")
+	print("📊 生成模式: 矩阵")
+	print("📊 僵尸类型: basic, fast, tank, explorer")
+	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("============================================================")
-	print("")
-	# 不自动开始，等待玩家点击"开始游戏"
 
 func _on_spawn_timer_timeout():
-	print("")
-	print("========================================")
-	print("⏰ [DEBUG] spawn_timer 触发！时间=" + str(Time.get_ticks_msec()))
-	print("========================================")
-	print("  - wave_number: " + str(wave_number))
-	print("  - boss_active: " + str(boss_active))
+	var config = WAVE_CONFIG[min(wave_number + 1, WAVE_CONFIG.size())]
+	if config:
+		spawn_timer.wait_time = config.interval
 	_start_next_wave()
 
 func _start_next_wave():
 	wave_number += 1
 	wave_active = true
-	zombies_in_wave = SPAWN_MATRIX_SIZE * SPAWN_MATRIX_SIZE
+	
+	var config = WAVE_CONFIG[min(wave_number, WAVE_CONFIG.size())]
+	zombies_in_wave = config.zombies
 	
 	print("")
 	print("========================================")
 	print("🌊 第" + str(wave_number) + "波开始！")
-	print("📐 生成" + str(zombies_in_wave) + "个僵尸（" + str(SPAWN_MATRIX_SIZE) + "x" + str(SPAWN_MATRIX_SIZE) + "矩阵）")
+	print("📐 生成" + str(zombies_in_wave) + "个僵尸")
+	print("⏱️ 间隔: " + str(config.interval) + "s")
 	print("========================================")
-	print("  - boss_active: " + str(boss_active))
-	print("  - current_kills: " + str(current_kills))
-	if boss_active:
-		print("👹 Boss已在场！生成普通僵尸支援！")
-	else:
-		print("📐 生成" + str(zombies_in_wave) + "个僵尸（5x5矩阵）")
-	print("")
 	
-	_spawn_matrix()
+	_spawn_matrix(config)
 
-func _spawn_matrix():
+func _spawn_matrix(config):
 	print("----------------------------------------")
 	
 	var start_x: float
@@ -96,121 +99,92 @@ func _spawn_matrix():
 	if spawn_side == 0:
 		start_x = SPAWN_LEFT_X
 		side = "左侧"
-		print("🎯 从左侧生成: x=" + str(int(start_x)) + " ~ " + str(int(start_x + (SPAWN_MATRIX_SIZE-1) * SQUARE_SPACING)))
+		var end_x = start_x + (zombies_in_wave - 1) * SQUARE_SPACING
+		print("🎯 从左侧生成: x=" + str(int(start_x)) + " ~ " + str(int(end_x)))
 	else:
 		start_x = SPAWN_RIGHT_X
 		side = "右侧"
-		print("🎯 从右侧生成: x=" + str(int(start_x)) + " ~ " + str(int(start_x + (SPAWN_MATRIX_SIZE-1) * SQUARE_SPACING)))
+		var end_x = start_x + (zombies_in_wave - 1) * SQUARE_SPACING
+		print("🎯 从右侧生成: x=" + str(int(start_x)) + " ~ " + str(int(end_x)))
+	print("========================================")
 	
+	# 根据配置生成僵尸
+	for i in range(zombies_in_wave):
+		_spawn_zombie(i, config)
+	
+	# 切换生成侧
 	spawn_side = 1 - spawn_side
-	
-	var spawned_count = 0
-	for row in range(SPAWN_MATRIX_SIZE):
-		for col in range(SPAWN_MATRIX_SIZE):
-			var zombie_type = _get_random_type()
-			var zombie = Zombie.new()
-			zombie.zombie_type = zombie_type
-			var x = start_x + col * SQUARE_SPACING
-			var y = SPAWN_TOP_Y + row * SQUARE_SPACING
-			zombie.position = Vector2(x, y)
-			zombie.z_index = 100
-			zombie.side = side
-			print("🧟 创建僵尸: 类型=" + zombie_type + " 位置=(" + str(int(x)) + "," + str(int(y)) + ")")
-			add_child(zombie)
-			print("  - add_child 后僵尸数量: " + str(get_tree().get_nodes_in_group("zombies").size()))
-			spawned_count += 1
-	
-	print("✅ 已生成" + str(spawned_count) + "个僵尸")
-	print("----------------------------------------")
-	print("")
 
-	# 调试：检查生成的僵尸
-	var all_zombies = get_tree().get_nodes_in_group("zombies")
-	print("📊 当前僵尸数量: " + str(all_zombies.size()))
-	for z in all_zombies:
-		print("  - " + z.name + " 类型=" + z.zombie_type + " 位置=(" + str(int(z.position.x)) + "," + str(int(z.position.y)) + ") 屏幕=(" + str(int(z.position.x + 360)) + "," + str(int(z.position.y + 640)) + ")")
+func _spawn_zombie(index, config):
+	var zombie_scene
+	var zombie_type
 	
-	# 每3波生成一个弹药桶
-	if wave_number % 3 == 0 and not boss_active:
-		_spawn_ammo_barrel(start_x)
-
-func _get_random_type() -> String:
-	# Boss只在击杀数达到要求时生成，且只生成一次
-	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active and not boss_spawned_this_game:
-		return "boss"
+	# 随机选择僵尸类型
+	var rand_val = randi() % 100
+	var cumulative = 0
+	var available_types = config.types if config else ["basic", "fast"]
 	
-	# 普通僵尸类型
-	var rand = randi() % 100
-	if rand < 65:
-		return "basic"
+	for type_name in available_types:
+		cumulative += ZOMBIE_WEIGHTS.get(type_name, 0)
+		if rand_val < cumulative:
+			zombie_type = type_name
+			break
+		else:
+			zombie_type = "basic"
+	
+	# 生成僵尸
+	match zombie_type:
+		"basic":
+			zombie_scene = load("res://scripts/Zombie.gd")
+		"fast":
+			zombie_scene = load("res://scripts/Zombie.gd")
+		"tank":
+			zombie_scene = load("res://scripts/TankZombie.gd")
+		"explorer":
+			zombie_scene = load("res://scripts/ExplorerZombie.gd")
+		_:
+			zombie_scene = load("res://scripts/Zombie.gd")
+	
+	if zombie_scene:
+		var zombie = zombie_scene.new()
+		zombie.zombie_type = zombie_type
+		var x_pos = SPAWN_LEFT_X + index * SQUARE_SPACING if spawn_side == 0 else SPAWN_RIGHT_X + index * SQUARE_SPACING
+		zombie.position = Vector2(x_pos, SPAWN_TOP_Y)
+		add_child(zombie)
+		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1))
 	else:
-		return "fast"
+		print("  ❌ 加载僵尸场景失败")
 
 func add_kill():
 	current_kills += 1
-	zombies_in_wave = max(0, zombies_in_wave - 1)
+	print("📊 击杀数: " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
 	
-	print("")
-	print("💀 [击杀数] " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
-	print("📊 本波剩余: " + str(zombies_in_wave))
-	
-	# Boss生成条件（只生成一次）
-	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active and not boss_spawned_this_game:
-		boss_spawned_this_game = true
+	# 检查Boss生成
+	if current_kills >= BOSS_KILLS_REQUIRED and not boss_spawned_this_game:
 		_spawn_boss()
-		emit_signal("boss_spawned")  # 发射 Boss 生成信号
-	
-	# 波次完成检测
-	if zombies_in_wave <= 0 and not boss_active:
-		print("")
-		print("✅ 第" + str(wave_number) + "波完成！")
-		print("📋 等待下一波生成...")
-		print("")
-		# 波次完成后重新开始（如果 Boss 还没出现）
-		if not boss_active:
-			print("⏳ 等待2秒后开始下一波...")
-			await get_tree().create_timer(2.0).timeout
-			print("⏰ 开始下一波！")
-			_start_next_wave()
-		else:
-			print("👹 Boss 已在场，等待 Boss 被击败...")
 
 func _spawn_boss():
-	print("")
-	print("👹 Boss生成！")
-	# 不播放音效，避免错误
-	# if audio_manager:
-	# 	audio_manager.play_boss_spawn()
-
-	var boss = Zombie.new()
-	boss.zombie_type = "boss"
-	boss.is_boss = true
-	# Boss 生成在更靠前的位置，避免与僵尸重叠
-	boss.position = Vector2(0, SPAWN_TOP_Y - 200)
-	add_child(boss)
 	boss_active = true
-	print("✅ Boss已生成！血量=" + str(BOSS_HEALTH) + " 位置=(" + str(int(boss.position.x)) + "," + str(int(boss.position.y)) + ")")
+	boss_spawned_this_game = true
 	print("")
+	print("👹 ========================================")
+	print("👹 Boss即将出现！")
+	print("👹 ========================================")
+	
+	var boss_scene = load("res://scripts/Zombie.gd")
+	if boss_scene:
+		var boss = boss_scene.new()
+		boss.is_boss = true
+		boss.zombie_type = "boss"
+		boss.position = Vector2(0, -300)  # Boss从上方出现
+		add_child(boss)
+		print("👹 Boss已生成！")
+		emit_signal("boss_spawned")
 
-func get_current_kills() -> int:
-	return current_kills
+func start():
+	print("🎮 生成器启动！")
+	spawn_timer.start()
 
-func is_boss_active() -> bool:
-	return boss_active
-
-func _spawn_ammo_barrel(start_x: float) -> bool:
-	if boss_active:
-		return false
-	print("🛢️ 生成弹药桶！")
-	var barrel_scene = load("res://scripts/AmmoBarrel.gd")
-	if barrel_scene:
-		var barrel = barrel_scene.new()
-		barrel.position = Vector2(start_x, SPAWN_TOP_Y + 100)
-		barrel.barrel_type = randi() % 3
-		barrel.z_index = 50
-		add_child(barrel)
-		print("✅ 弹药桶生成成功！类型=" + str(barrel.barrel_type))
-		return true
-	else:
-		print("❌ 无法加载AmmoBarrel脚本！")
-		return false
+func stop():
+	print("⏹️ 生成器停止！")
+	spawn_timer.stop()
