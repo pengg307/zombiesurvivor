@@ -420,7 +420,7 @@ func _create_health_alert_panel():
 	# 健康條容器
 	var bar_container = HBoxContainer.new()
 	bar_container.name = "HealthBarContainer"
-	bar_container.child_min_height = 40
+	bar_container.custom_minimum_size = Vector2(0, 40)
 	panel.add_child(bar_container)
 	
 	# 健康條
