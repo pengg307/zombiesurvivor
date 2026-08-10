@@ -66,6 +66,31 @@ func _input(event):
 func set_player(player_node):
 	player = player_node
 	print("✅ Player引用已设置")
+	# 连接受伤信号
+	if player.has_signal("player_damaged"):
+		player.player_damaged.connect(_on_player_damaged)
+		print("✅ 已连接 player_damaged 信号")
+
+func _on_player_damaged():
+	# 显示健康警报
+	_show_health_alert()
+
+func _show_health_alert():
+	if not has_node("HealthAlertPanel"):
+		return
+	var panel = $HealthAlertPanel
+	panel.visible = true
+	# 闪烁效果
+	var tween = create_tween()
+	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
+	tween.tween_property(panel, "modulate:a", 0.3, 0.1)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
+	# 2秒后隐藏
+	var timer = get_tree().create_timer(2.0)
+	timer.timeout.connect(func():
+		if has_node("HealthAlertPanel"):
+			$HealthAlertPanel.visible = false
+	)
 
 func set_spawner(spawner_node):
 	spawner = spawner_node
@@ -131,10 +156,23 @@ func _connect_buttons():
 	_add_upgrade_buttons()
 
 func _update_health():
-	if player and has_node("Panel/HealthBarContainer/HealthBar"):
+	if not player:
+		return
+	# 更新底部警报面板
+	if has_node("HealthAlertPanel"):
+		var panel = $HealthAlertPanel
 		var health_pct = float(player.current_health) / float(player.MAX_HEALTH) * 100
-		$Panel/HealthBarContainer/HealthBar.value = health_pct
-		$Panel/HealthBarContainer/HealthLabel.text = "HP: %d/%d" % [player.current_health, player.MAX_HEALTH]
+		if has_node("HealthAlertPanel/HealthAlertContainer/HealthBar"):
+			$HealthAlertPanel/HealthAlertContainer/HealthBar.value = health_pct
+		if has_node("HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthTextLabel"):
+			$HealthAlertPanel/HealthAlertContainer/HealthBarContainer/HealthTextLabel.text = "HP: %d/%d" % [player.current_health, player.MAX_HEALTH]
+		# 根据血量改变颜色
+		if health_pct > 60:
+			panel.modulate = Color(0, 1, 0, 1)  # 绿色
+		elif health_pct > 30:
+			panel.modulate = Color(1, 1, 0, 1)  # 黄色
+		else:
+			panel.modulate = Color(1, 0, 0, 1)  # 红色
 
 func _update_level():
 	if player and has_node("Panel/LevelLabel"):
