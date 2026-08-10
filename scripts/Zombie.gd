@@ -49,6 +49,7 @@ func _ready():
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
 		_setup_boss_sprite()
+		print("👹 Boss创建完成: 位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ") 可见=" + str(visible))
 	elif zombie_type == "fast":
 		base_speed = 70.0
 		_setup_sprite()
@@ -233,6 +234,10 @@ func _physics_process(delta):
 		var screen_pos = _to_screen_position()
 		var screen_y = screen_pos.y
 		
+		# 调试：每60帧打印一次位置
+		if frame_count % 60 == 0:
+			print("📍 " + zombie_type + " 位置: 中心=(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕=(" + str(int(screen_pos.x)) + "," + str(int(screen_y)) + ") 可见=" + str(visible))
+		
 		if screen_y >= PLAYER_Y_SCREEN and not has_reached_player:
 			has_reached_player = true
 			print("")
@@ -251,10 +256,12 @@ func _physics_process(delta):
 				player_node.emit_signal("player_died")
 				emit_signal("zombie_reached_player")
 			
+			print("🗑️ Boss/僵尸将被删除: " + zombie_type)
 			queue_free()
 		
 		# 超出屏幕底部也清除
 		if screen_y > SCREEN_HEIGHT + 100:
+			print("🗑️ Boss/僵尸超出屏幕底部，删除: " + zombie_type)
 			queue_free()
 
 func screen_position_y() -> float:
