@@ -1,108 +1,145 @@
 extends Node
 class_name AudioManager
 
-# 音效资源
-@export var shoot_sound: AudioStream
-@export var explosion_sound: AudioStream
-@export var hit_sound: AudioStream
-@export var grenade_sound: AudioStream
-@export var upgrade_sound: AudioStream
-@export var level_up_sound: AudioStream
-@export var boss_spawn_sound: AudioStream
-@export var game_over_sound: AudioStream
-@export var victory_sound: AudioStream
+# 音效路径
+const SOUND_PATHS = {
+	"shoot": "res://assets/audio/shoot.wav",
+	"hit": "res://assets/audio/hit.wav",
+	"explode": "res://assets/audio/explode.wav",
+	"levelup": "res://assets/audio/levelup.wav",
+	"pickup": "res://assets/audio/pickup.wav",
+	"boss_appear": "res://assets/audio/boss_appear.wav",
+	"gameover": "res://assets/audio/gameover.wav",
+	"victory": "res://assets/audio/victory.wav",
+	"grenade_throw": "res://assets/audio/grenade_throw.wav",
+	"grenade_explode": "res://assets/audio/grenade_explode.wav"
+}
 
-# 背景音乐
-@export var bgm: AudioStream
-@export var bgm_volume: float = 0.3
+# BGM路径
+const BGM_PATHS = {
+	"normal": "res://assets/audio/bgm_normal.ogg",
+	"boss": "res://assets/audio/bgm_boss.ogg"
+}
 
-# 音效通道索引
-var sfx_bus_idx: int = -1
-var music_bus_idx: int = -1
-@onready var bgm_player: AudioStreamPlayer = null
+var sound_effects = {}
+var bgm_player = null
+var music_enabled = true
+var sfx_enabled = true
+var master_volume = 0.8
+var music_volume = 0.6
+var sfx_volume = 0.7
 
 func _ready():
 	add_to_group("audio_manager")
-	# 确保音效和音乐通道存在
-	var bus_count = AudioServer.get_bus_count()
-	sfx_bus_idx = -1
-	music_bus_idx = -1
-	for i in range(bus_count):
-		var bus_name = AudioServer.get_bus_name(i)
-		if bus_name == "SFX":
-			sfx_bus_idx = i
-		elif bus_name == "Music":
-			music_bus_idx = i
-	if sfx_bus_idx == -1:
-		AudioServer.add_bus()
-		sfx_bus_idx = AudioServer.get_bus_count() - 1
-		AudioServer.set_bus_name(sfx_bus_idx, "SFX")
-	if music_bus_idx == -1:
-		AudioServer.add_bus()
-		music_bus_idx = AudioServer.get_bus_count() - 1
-		AudioServer.set_bus_name(music_bus_idx, "Music")
-		AudioServer.set_bus_volume_db(music_bus_idx, linear_to_db(bgm_volume))
+	_init_audio()
+	print("🎵 AudioManager启动")
 
-	# 创建背景音乐播放器
+func _init_audio():
+	# 初始化音效播放器
+	for sound_name in SOUND_PATHS:
+		var player = AudioStreamPlayer.new()
+		player.name = sound_name + "Player"
+		player.volume_db = linear_to_db(sfx_volume)
+		add_child(player)
+		sound_effects[sound_name] = player
+	
+	# 初始化BGM播放器
 	bgm_player = AudioStreamPlayer.new()
-	bgm_player.bus = "Music"
+	bgm_player.name = "BGMPlayer"
+	bgm_player.volume_db = linear_to_db(music_volume)
+	bgm_player.loop = true
 	add_child(bgm_player)
 	
-	# 播放背景音乐
-	if bgm:
-		bgm_player.stream = bgm
-		bgm_player.loop = true
+	print("✅ 音频系统初始化完成")
+
+func play_sound(sound_name: String):
+	if not sfx_enabled:
+		return
+	if sound_name in sound_effects:
+		var player = sound_effects[sound_name]
+		if player.stream:
+			player.play()
+		else:
+			_load_and_play(player, SOUND_PATHS[sound_name])
+
+func play_bgm(bgm_name: String):
+	if not music_enabled:
+		return
+	if bgm_name in BGM_PATHS:
+		bgm_player.stream = load(BGM_PATHS[bgm_name])
 		bgm_player.play()
+		print("🎵 播放BGM: " + bgm_name)
 
-func play_sfx(sound: AudioStream) -> void:
-	if sound:
-		var player = AudioStreamPlayer.new()
-		player.stream = sound
-		player.bus = "SFX"
-		add_child(player)
-		player.play()
-		player.finished.connect(player.queue_free)
-
-func play_shoot() -> void:
-	play_sfx(shoot_sound)
-
-func play_explosion() -> void:
-	play_sfx(explosion_sound)
-
-func play_hit() -> void:
-	play_sfx(hit_sound)
-
-func play_grenade_throw() -> void:
-	play_sfx(grenade_sound)
-
-func play_upgrade() -> void:
-	play_sfx(upgrade_sound)
-
-func play_level_up() -> void:
-	play_sfx(level_up_sound)
-
-func play_boss_spawn() -> void:
-	play_sfx(boss_spawn_sound)
-
-func play_game_over() -> void:
-	play_sfx(game_over_sound)
-
-func play_victory() -> void:
-	play_sfx(victory_sound)
-
-func stop_bgm() -> void:
+func stop_bgm():
 	if bgm_player:
 		bgm_player.stop()
 
-func play_bgm() -> void:
-	if bgm and bgm_player:
-		bgm_player.play()
+func play_shoot():
+	play_sound("shoot")
 
-func set_bgm_volume(volume: float) -> void:
-	bgm_volume = clamp(volume, 0.0, 1.0)
-	if music_bus_idx >= 0:
-		AudioServer.set_bus_volume_db(music_bus_idx, linear_to_db(bgm_volume))
+func play_hit():
+	play_sound("hit")
 
-func set_sfx_volume(volume: float) -> void:
-	if sfx_bus_idx >= 0:
-		AudioServer.set_bus_volume_db(sfx_bus_idx, linear_to_db(volume))
+func play_explode():
+	play_sound("explode")
+
+func play_levelup():
+	play_sound("levelup")
+
+func play_pickup():
+	play_sound("pickup")
+
+func play_boss_appear():
+	play_sound("boss_appear")
+	play_bgm("boss")
+
+func play_gameover():
+	stop_bgm()
+	play_sound("gameover")
+
+func play_victory():
+	stop_bgm()
+	play_sound("victory")
+	play_bgm("normal")
+
+func play_grenade_throw():
+	play_sound("grenade_throw")
+
+func play_grenade_explode():
+	play_sound("grenade_explode")
+
+func _load_and_play(player: AudioStreamPlayer, path: String):
+	var stream = load(path)
+	if stream:
+		player.stream = stream
+		player.play()
+	else:
+		print("⚠️ 无法加载音效: " + path)
+
+func set_master_volume(volume: float):
+	master_volume = clamp(volume, 0.0, 1.0)
+	_update_volumes()
+
+func set_music_volume(volume: float):
+	music_volume = clamp(volume, 0.0, 1.0)
+	_update_volumes()
+
+func set_sfx_volume(volume: float):
+	sfx_volume = clamp(volume, 0.0, 1.0)
+	_update_volumes()
+
+func _update_volumes():
+	if bgm_player:
+		bgm_player.volume_db = linear_to_db(music_volume * master_volume)
+	for sound_name in sound_effects:
+		sound_effects[sound_name].volume_db = linear_to_db(sfx_volume * master_volume)
+
+func toggle_music():
+	music_enabled = !music_enabled
+	if not music_enabled:
+		stop_bgm()
+	return music_enabled
+
+func toggle_sfx():
+	sfx_enabled = !sfx_enabled
+	return sfx_enabled

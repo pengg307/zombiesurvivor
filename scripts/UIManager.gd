@@ -19,6 +19,7 @@ func _ready():
 	_add_triple_shot_display()
 	_add_grenade_display()
 	_add_bottom_status_bar()
+	_add_mobile_controls()
 	
 	print("")
 	print("✅ UIManager初始化完成")
@@ -28,6 +29,7 @@ func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
 		audio_manager = am
+		print("🎵 音频管理器已连接")
 
 func set_player(player_node):
 	player = player_node
@@ -45,17 +47,34 @@ func _connect_buttons():
 			print("  ✅ StartButton 已连接")
 
 func _on_start_game():
+	print("")
+	print("========================================")
+	print("🎮 [DEBUG] 游戏开始！")
+	print("========================================")
+	
+	# 播放开始音效
+	if audio_manager:
+		audio_manager.play_levelup()
+	
 	if spawner:
 		spawner.start()
+	
 	if has_node("Panel"):
 		$Panel.modulate = Color(1, 1, 1, 1)
+	
 	if has_node("StartPanel"):
 		$StartPanel.visible = false
+	
 	$Panel/TopPanel.visible = true
 	print("🎮 游戏开始！")
 
 func show_game_over(kills):
 	print("💀 [GAME_OVER] 游戏结束")
+	
+	# 播放游戏结束音效
+	if audio_manager:
+		audio_manager.play_gameover()
+	
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.text = "💀 LOST 💀"
@@ -64,6 +83,11 @@ func show_game_over(kills):
 
 func show_win(kills):
 	print("🏆 [WIN] 游戏胜利！")
+	
+	# 播放胜利音效
+	if audio_manager:
+		audio_manager.play_victory()
+	
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.text = "🏆 WON 🏆"
@@ -72,9 +96,20 @@ func show_win(kills):
 
 func _on_restart_game():
 	print("🔄 重新开始游戏")
+	
+	# 重置音频
+	if audio_manager:
+		audio_manager.stop_bgm()
+	
 	get_tree().reload_current_scene()
 
 func show_upgrade_panel():
+	print("🎁 [升级] 显示升级面板")
+	
+	# 播放升级音效
+	if audio_manager:
+		audio_manager.play_levelup()
+	
 	if has_node("UpgradePanel"):
 		$UpgradePanel.visible = true
 		get_tree().paused = true
@@ -117,21 +152,6 @@ func hide_upgrade_panel():
 		$UpgradePanel.visible = false
 	get_tree().paused = false
 
-func _add_upgrade_buttons():
-	if has_node("UpgradePanel"):
-		var vbox = $UpgradePanel/PanelContainer/VBoxContainer
-		for child in vbox.get_children():
-			if child is Button:
-				child.queue_free()
-		var options = ["射速+20%", "伤害+50%", "生命+20"]
-		for i in range(options.size()):
-			var btn = Button.new()
-			btn.text = options[i]
-			btn.name = "UpgradeBtn" + str(i)
-			btn.custom_minimum_size = Vector2(200, 50)
-			vbox.add_child(btn)
-			print("✅ 升级按钮", i, "已添加: ", options[i])
-
 func _add_bottom_status_bar():
 	var container = VBoxContainer.new()
 	container.name = "BottomStatusBar"
@@ -151,7 +171,7 @@ func _add_bottom_status_bar():
 func _add_triple_shot_display():
 	var triple_label = Label.new()
 	triple_label.name = "TripleShotDisplay"
-	triple_label.text = "🔫 三发子弹: 未解锁 (0/5)"
+	triple_label.text = "🔫 三发子弹: 未解锁"
 	triple_label.position = Vector2(600, 10)
 	triple_label.modulate = Color(1, 1, 1)
 	triple_label.add_theme_font_size_override("font_size", 18)
@@ -254,3 +274,35 @@ func _update_health():
 				bar.modulate = Color(1, 1, 0)
 			else:
 				bar.modulate = Color(1, 0, 0)
+
+func _add_mobile_controls():
+	# 添加虚拟摇杆
+	var joystick = load("res://scripts/VirtualJoystick.gd").new()
+	joystick.name = "VirtualJoystick"
+	joystick.set_position(Vector2(100, 1000))
+	joystick.set_size(Vector2(150, 150))
+	add_child(joystick)
+	
+	# 连接摇杆信号
+	joystick.moved.connect(_on_joystick_moved)
+	
+	# 添加技能按钮
+	var grenade_btn = load("res://scripts/ActionButton.gd").new()
+	grenade_btn.name = "GrenadeButton"
+	grenade_btn.set_position(Vector2(550, 1050))
+	grenade_btn.set_size(Vector2(80, 80))
+	grenade_btn.button_text = "💣"
+	grenade_btn.cooldown_time = 2.0
+	add_child(grenade_btn)
+	
+	grenade_btn.pressed.connect(_on_grenade_pressed)
+	
+	print("✅ 移动端控制已添加")
+
+func _on_joystick_moved(direction: Vector2):
+	if player:
+		player.move_direction = direction
+
+func _on_grenade_pressed():
+	if player and player.grenades > 0:
+		player._throw_grenade()
