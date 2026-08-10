@@ -252,17 +252,17 @@ func _physics_process(delta):
 			print("   类型: " + zombie_type)
 			print("   屏幕Y: " + str(int(screen_y)) + " >= " + str(PLAYER_Y_SCREEN))
 			print("")
-			
+
 			if is_boss or zombie_type == "boss":
-				print("👹 Boss到达玩家！游戏胜利！")
-				emit_signal("boss_died")
-				player_node.emit_signal("game_won")
+				print("👹 Boss到达玩家！游戏失败！")
+				player_node.take_damage(999)
+				player_node.emit_signal("player_died")
 			else:
 				print("❌ 僵尸到达玩家！游戏失败！")
 				player_node.take_damage(999)
 				player_node.emit_signal("player_died")
 				emit_signal("zombie_reached_player")
-			
+
 			print("🗑️ Boss/僵尸将被删除: " + zombie_type)
 			queue_free()
 		
