@@ -27,7 +27,8 @@ var current_frame = 0
 var hit_flash_timer = 0.0
 var has_reached_player = false
 var _boss_anim_timer = 0.0  # Boss animation timer
-var _boss_frame_size = 128  # Boss sprite frame size
+var _boss_frame_size = 128  # Boss sprite frame width
+var _boss_frame_height = 128  # Boss sprite frame height
 
 const ZOMBIE_CONFIG = {
 	"basic": {"health": 10.0, "speed": 50.0, "color": Color(0.3, 0.5, 0.3)},
@@ -107,6 +108,7 @@ func _setup_boss_sprite():
 		# 只显示第1帧（最左边的帧）
 		sprite.region_rect = Rect2(0, 0, frame_w, frame_h)
 		_boss_frame_size = int(frame_w)
+		_boss_frame_height = int(frame_h)  # 保存帧高度
 
 		# 缩放：让 Boss 显示得和僵尸差不多大小
 		var target_frame_size = 150.0
@@ -232,7 +234,8 @@ func _physics_process(delta):
 				current_frame = (current_frame + 1) % 4
 				var frame_x = (current_frame % 4) * _boss_frame_size
 				var frame_y = 0
-				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_size)
+				# 使用正确的帧宽高
+				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_height)
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()
