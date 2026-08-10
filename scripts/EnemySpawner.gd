@@ -115,7 +115,9 @@ func _spawn_matrix():
 			zombie.position = Vector2(x, y)
 			zombie.z_index = 100
 			zombie.side = side
+			print("🧟 创建僵尸: 类型=" + zombie_type + " 位置=(" + str(int(x)) + "," + str(int(y)) + ")")
 			add_child(zombie)
+			print("  - add_child 后僵尸数量: " + str(get_tree().get_nodes_in_group("zombies").size()))
 			spawned_count += 1
 	
 	print("✅ 已生成" + str(spawned_count) + "个僵尸")
