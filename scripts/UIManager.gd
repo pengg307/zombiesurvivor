@@ -178,13 +178,18 @@ func _update_boss_progress():
 		$BossProgress.text = "👹 Boss进度: %d/%d" % [boss_current, boss_required]
 
 func _on_start_game():
+	print("🎮 [DEBUG] _on_start_game 被调用！")
 	if has_node("StartPanel"):
 		$StartPanel.visible = false
 		print("🎮 游戏开始！")
 		# 通知 GameManager 开始游戏
 		var gm = get_tree().get_first_node_in_group("game_manager")
+		print("🎮 [DEBUG] GameManager: " + str(gm))
 		if gm:
 			gm._start_game()
+			print("🎮 [DEBUG] 已调用 gm._start_game()")
+		else:
+			print("❌ [DEBUG] 未找到 GameManager！")
 
 func _on_restart_game():
 	print("🔄 [RESTART] 重新开始游戏被点击!")
