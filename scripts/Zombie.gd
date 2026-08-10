@@ -227,12 +227,12 @@ func _physics_process(delta):
 			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)  # 脉动效果
 			var base_scale = Vector2(1.0, 1.0)
 			sprite_node.scale = base_scale * pulse
-			# Boss 当前只显示第1帧（静态），暂不切换动画帧
-			# if frame_count % 8 == 0:
-			# 	current_frame = (current_frame + 1) % 4
-			# 	var frame_x = (current_frame % 4) * _boss_frame_size  # 4x1 布局
-			# 	var frame_y = 0
-			# 	sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_size)
+			# Boss 显示所有4帧动画
+			if frame_count % 8 == 0:
+				current_frame = (current_frame + 1) % 4
+				var frame_x = (current_frame % 4) * _boss_frame_size
+				var frame_y = 0
+				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_size)
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()

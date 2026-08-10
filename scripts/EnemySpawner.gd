@@ -172,14 +172,15 @@ func _spawn_boss():
 	# 不播放音效，避免错误
 	# if audio_manager:
 	# 	audio_manager.play_boss_spawn()
-	
+
 	var boss = Zombie.new()
 	boss.zombie_type = "boss"
 	boss.is_boss = true
-	boss.position = Vector2(0, SPAWN_TOP_Y)
+	# Boss 生成在更靠前的位置，避免与僵尸重叠
+	boss.position = Vector2(0, SPAWN_TOP_Y - 200)
 	add_child(boss)
 	boss_active = true
-	print("✅ Boss已生成！血量=" + str(BOSS_HEALTH))
+	print("✅ Boss已生成！血量=" + str(BOSS_HEALTH) + " 位置=(" + str(int(boss.position.x)) + "," + str(int(boss.position.y)) + ")")
 	print("")
 
 func get_current_kills() -> int:
