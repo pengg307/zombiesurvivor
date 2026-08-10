@@ -72,17 +72,28 @@ func _on_game_won():
 		ui.show_win(spawner.current_kills if spawner else 0)
 
 func _start_game():
+	print("")
+	print("========================================")
+	print("🎮 [DEBUG] GameManager._start_game 被调用！")
+	print("========================================")
+	print("  - spawner: " + str(spawner))
+	print("  - ui: " + str(ui))
+	
 	if not spawner or not ui:
-		print("ERROR: 缺少必要节点")
+		print("ERROR: 缺少必要节点 - spawner=" + str(spawner) + " ui=" + str(ui))
 		return
 	
+	print("  - 开始启动游戏...")
 	spawner.current_kills = 0
 	spawner.boss_active = false
 	spawner.boss_spawned_this_game = false
 	spawner.wave_number = 0
+	print("  - 启动 spawn_timer...")
 	spawner.spawn_timer.start()  # 启动生成计时器
+	print("  - 调用 _start_next_wave()...")
 	spawner._start_next_wave()
-	print("✅ 游戏启动成功！")
+	print("✅ [DEBUG] 游戏启动成功！")
+	print("========================================")
 
 func reset_game():
 	print("🔄 重置游戏状态...")

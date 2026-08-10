@@ -79,10 +79,17 @@ func _connect_buttons():
 	if has_node("StartPanel"):
 		print("  - 找到 StartPanel")
 		if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
-			$StartPanel/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_game)
+			var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
+			print("  - 按钮可见: " + str(start_btn.visible))
+			print("  - 按钮位置: " + str(start_btn.position))
+			print("  - 按钮大小: " + str(start_btn.size))
+			start_btn.pressed.connect(_on_start_game)
 			print("  ✅ StartButton 已连接")
 		else:
 			print("  ❌ 未找到 StartButton")
+			# 尝试查找任何按钮
+			var buttons = get_tree().get_nodes_in_group("")
+			print("  - 尝试查找所有按钮...")
 	else:
 		print("  ❌ 未找到 StartPanel")
 	
@@ -178,13 +185,38 @@ func _update_boss_progress():
 		$BossProgress.text = "👹 Boss进度: %d/%d" % [boss_current, boss_required]
 
 func _on_start_game():
+	print("")
+	print("========================================")
+	print("🎮 [DEBUG] _on_start_game 被调用！")
+	print("========================================")
+	print("  - 调用时间: " + str(Time.get_ticks_msec()))
+	print("  - 暂停状态: " + str(get_tree().paused))
+	print("  - 场景路径: " + str(get_path()))
+	
 	if has_node("StartPanel"):
+		print("  - StartPanel 存在")
 		$StartPanel.visible = false
+		print("  - StartPanel 已隐藏")
+		
 		print("🎮 游戏开始！")
 		# 通知 GameManager 开始游戏
 		var gm = get_tree().get_first_node_in_group("game_manager")
+		print("  - GameManager: " + str(gm))
 		if gm:
+			print("  - 调用 gm._start_game()")
 			gm._start_game()
+			print("✅ [DEBUG] gm._start_game() 已调用")
+		else:
+			print("❌ [DEBUG] 未找到 GameManager！")
+			print("  - 尝试通过路径获取...")
+			var root = get_tree().get_root()
+			var game_node = root.get_node_or_null("Game")
+			print("  - Game 节点: " + str(game_node))
+			if game_node:
+				var gm2 = game_node.get_node_or_null("GameManager")
+				print("  - GameManager via path: " + str(gm2))
+	else:
+		print("❌ [DEBUG] StartPanel 不存在！")
 
 func _on_restart_game():
 	print("🔄 [RESTART] 重新开始游戏被点击!")
