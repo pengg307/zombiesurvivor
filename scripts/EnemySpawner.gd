@@ -73,7 +73,12 @@ func _start_next_wave():
 	zombies_in_wave = SPAWN_MATRIX_SIZE * SPAWN_MATRIX_SIZE
 	
 	print("")
+	print("========================================")
 	print("🌊 第" + str(wave_number) + "波开始！")
+	print("📐 生成" + str(zombies_in_wave) + "个僵尸（" + str(SPAWN_MATRIX_SIZE) + "x" + str(SPAWN_MATRIX_SIZE) + "矩阵）")
+	print("========================================")
+	print("  - boss_active: " + str(boss_active))
+	print("  - current_kills: " + str(current_kills))
 	if boss_active:
 		print("👹 Boss已在场！生成普通僵尸支援！")
 	else:
