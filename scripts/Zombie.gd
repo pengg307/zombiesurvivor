@@ -58,6 +58,7 @@ func _ready():
 	
 	print("✅ Zombie创建: 类型=" + zombie_type + " 初始位置=中心(" + str(int(position.x)) + "," + str(int(position.y)) + ") 屏幕(" + str(int(position.x + 360)) + "," + str(int(position.y + 640)) + ")")
 	print("👁️ 可见性: z_index=" + str(z_index) + " visible=" + str(visible))
+	print("👥 组: " + str(get_groups()))
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()

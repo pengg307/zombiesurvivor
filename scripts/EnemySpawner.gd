@@ -121,12 +121,12 @@ func _spawn_matrix():
 	print("✅ 已生成" + str(spawned_count) + "个僵尸")
 	print("----------------------------------------")
 	print("")
-		
+
 	# 调试：检查生成的僵尸
 	var all_zombies = get_tree().get_nodes_in_group("zombies")
 	print("📊 当前僵尸数量: " + str(all_zombies.size()))
 	for z in all_zombies:
-		print("  - " + z.name + " 位置=(" + str(int(z.position.x)) + "," + str(int(z.position.y)) + ") 屏幕=(" + str(int(z.position.x + 360)) + "," + str(int(z.position.y + 640)) + ")")
+		print("  - " + z.name + " 类型=" + z.zombie_type + " 位置=(" + str(int(z.position.x)) + "," + str(int(z.position.y)) + ") 屏幕=(" + str(int(z.position.x + 360)) + "," + str(int(z.position.y + 640)) + ")")
 	
 	# 每3波生成一个弹药桶
 	if wave_number % 3 == 0 and not boss_active:
