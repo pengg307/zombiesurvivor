@@ -210,9 +210,9 @@ func _physics_process(delta):
 		var move_dir = Vector2(dx, dy).normalized()
 		position += move_dir * base_speed * delta
 		
-		# 动画
+		# 动画（普通僵尸才切换帧）
 		var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
-		if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled:
+		if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled and zombie_type != "boss":
 			current_frame = (current_frame + 1) % 4
 			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 		
