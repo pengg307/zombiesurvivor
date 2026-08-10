@@ -241,29 +241,37 @@ func _on_start_game():
 	print("  - 调用时间: " + str(Time.get_ticks_msec()))
 	print("  - 暂停状态: " + str(get_tree().paused))
 	print("  - 场景路径: " + str(get_path()))
-	
+
 	if has_node("StartPanel"):
 		print("  - StartPanel 存在")
 		$StartPanel.visible = false
 		print("  - StartPanel 已隐藏")
-		
-		print("🎮 游戏开始！")
-		# 通知 GameManager 开始游戏
-		var gm = get_tree().get_first_node_in_group("game_manager")
-		print("  - GameManager: " + str(gm))
-		if gm:
-			print("  - 调用 gm._start_game()")
-			gm._start_game()
-			print("✅ [DEBUG] gm._start_game() 已调用")
-		else:
-			print("❌ [DEBUG] 未找到 GameManager！")
-			print("  - 尝试通过路径获取...")
-			var root = get_tree().get_root()
-			var game_node = root.get_node_or_null("Game")
-			print("  - Game 节点: " + str(game_node))
-			if game_node:
-				var gm2 = game_node.get_node_or_null("GameManager")
-				print("  - GameManager via path: " + str(gm2))
+
+	if has_node("Panel"):
+		$Panel.modulate = Color(1, 1, 1, 1)  # 恢复不透明
+		print("  - Panel 已显示")
+
+	if has_node("Panel/TopPanel"):
+		$Panel/TopPanel.visible = true  # 显示健康条
+		print("  - TopPanel 已显示")
+
+	print("🎮 游戏开始！")
+	# 通知 GameManager 开始游戏
+	var gm = get_tree().get_first_node_in_group("game_manager")
+	print("  - GameManager: " + str(gm))
+	if gm:
+		print("  - 调用 gm._start_game()")
+		gm._start_game()
+		print("✅ [DEBUG] gm._start_game() 已调用")
+	else:
+		print("❌ [DEBUG] 未找到 GameManager！")
+		print("  - 尝试通过路径获取...")
+		var root = get_tree().get_root()
+		var game_node = root.get_node_or_null("Game")
+		print("  - Game 节点: " + str(game_node))
+		if game_node:
+			var gm2 = game_node.get_node_or_null("GameManager")
+			print("  - GameManager via path: " + str(gm2))
 	else:
 		print("❌ [DEBUG] StartPanel 不存在！")
 
@@ -306,6 +314,7 @@ func show_game_over(kills):
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.text = "💀 LOST 💀"
+		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.add_theme_font_size_override("font_size", 80)
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
 		# 设置红色文字
 		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.modulate = Color(1, 0.2, 0.2)
@@ -318,6 +327,7 @@ func show_win(kills):
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.text = "🏆 WON 🏆"
+		$WinPanel/PanelContainer/VBoxContainer/WinLabel.add_theme_font_size_override("font_size", 80)
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 		# 设置绿色文字
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(0.2, 1, 0.2)
