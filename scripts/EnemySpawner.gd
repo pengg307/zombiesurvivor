@@ -59,7 +59,12 @@ func _ready():
 	# 不自动开始，等待玩家点击"开始游戏"
 
 func _on_spawn_timer_timeout():
-	print("⏰ [DEBUG] spawn_timer 触发！")
+	print("")
+	print("========================================")
+	print("⏰ [DEBUG] spawn_timer 触发！时间=" + str(Time.get_ticks_msec()))
+	print("========================================")
+	print("  - wave_number: " + str(wave_number))
+	print("  - boss_active: " + str(boss_active))
 	_start_next_wave()
 
 func _start_next_wave():

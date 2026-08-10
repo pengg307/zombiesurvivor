@@ -77,6 +77,7 @@ func _start_game():
 	print("🎮 [DEBUG] GameManager._start_game 被调用！")
 	print("========================================")
 	print("  - spawner: " + str(spawner))
+	print("  - spawner 是否为 null: " + str(spawner == null))
 	print("  - ui: " + str(ui))
 	
 	if not spawner or not ui:
@@ -88,10 +89,21 @@ func _start_game():
 	spawner.boss_active = false
 	spawner.boss_spawned_this_game = false
 	spawner.wave_number = 0
+	
+	print("  - spawn_timer 自动启动: " + str(spawner.spawn_timer.autostart))
+	print("  - spawn_timer 已运行: " + str(spawner.spawn_timer.is_running()))
+	print("  - spawn_timer 等待时间: " + str(spawner.spawn_timer.wait_time))
+	
 	print("  - 启动 spawn_timer...")
-	spawner.spawn_timer.start()  # 启动生成计时器
+	spawner.spawn_timer.start()
+	
+	# 等待一帧确保 timer 启动
+	await get_tree().process_frame
+	
+	print("  - 启动后 spawn_timer 已运行: " + str(spawner.spawn_timer.is_running()))
 	print("  - 调用 _start_next_wave()...")
 	spawner._start_next_wave()
+	
 	print("✅ [DEBUG] 游戏启动成功！")
 	print("========================================")
 
