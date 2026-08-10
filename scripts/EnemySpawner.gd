@@ -98,14 +98,14 @@ func _spawn_matrix():
 		for col in range(SPAWN_MATRIX_SIZE):
 			var zombie_type = _get_random_type()
 			var zombie = Zombie.new()
-				zombie.zombie_type = zombie_type
-				var x = start_x + col * SQUARE_SPACING
-				var y = SPAWN_TOP_Y + row * SQUARE_SPACING
-				zombie.position = Vector2(x, y)
-				zombie.z_index = 100
-				zombie.side = side
-				add_child(zombie)
-				spawned_count += 1
+			zombie.zombie_type = zombie_type
+			var x = start_x + col * SQUARE_SPACING
+			var y = SPAWN_TOP_Y + row * SQUARE_SPACING
+			zombie.position = Vector2(x, y)
+			zombie.z_index = 100
+			zombie.side = side
+			add_child(zombie)
+			spawned_count += 1
 	
 	print("✅ 已生成" + str(spawned_count) + "个僵尸")
 	print("----------------------------------------")
@@ -155,13 +155,13 @@ func _spawn_boss():
 	# 	audio_manager.play_boss_spawn()
 	
 	var boss = Zombie.new()
-		boss.zombie_type = "boss"
-		boss.is_boss = true
-		boss.position = Vector2(0, SPAWN_TOP_Y)
-		add_child(boss)
-		boss_active = true
-		print("✅ Boss已生成！血量=" + str(BOSS_HEALTH))
-		print("")
+	boss.zombie_type = "boss"
+	boss.is_boss = true
+	boss.position = Vector2(0, SPAWN_TOP_Y)
+	add_child(boss)
+	boss_active = true
+	print("✅ Boss已生成！血量=" + str(BOSS_HEALTH))
+	print("")
 
 func get_current_kills() -> int:
 	return current_kills
