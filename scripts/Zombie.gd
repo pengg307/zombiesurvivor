@@ -334,27 +334,27 @@ func get_max_health() -> float:
 		return BASE_HEALTH
 
 func _create_health_bar():
-	# 健康条背景
+	# 健康条背景 - 更窄更靠下
 	health_bar_bg = ColorRect.new()
 	health_bar_bg.name = "HealthBarBG"
 	health_bar_bg.color = Color(0.2, 0.2, 0.2, 0.8)
-	health_bar_bg.position = Vector2(-30, -sprite_size.y - 10)
-	health_bar_bg.size = Vector2(60, 8)
+	health_bar_bg.position = Vector2(-30, -sprite_size.y / 2 - 5)
+	health_bar_bg.size = Vector2(60, 6)
 	add_child(health_bar_bg)
 	
-	# 健康条前景
+	# 健康条前景 - 更窄更靠下
 	health_bar = ProgressBar.new()
 	health_bar.name = "HealthBar"
 	health_bar.min_value = 0
 	health_bar.max_value = get_max_health()
 	health_bar.value = current_health
-	health_bar.position = Vector2(-30, -sprite_size.y - 10)
-	health_bar.size = Vector2(60, 8)
+	health_bar.position = Vector2(-30, -sprite_size.y / 2 - 5)
+	health_bar.size = Vector2(60, 6)
 	health_bar.modulate = Color(0, 1, 0)  # 绿色
 	health_bar.step = 1
 	add_child(health_bar)
 	
-	print("✅ 健康条已创建: 最大血量=" + str(get_max_health()))
+	print("✅ 健康条已创建: 最大血量=" + str(get_max_health()) + " 位置=" + str(health_bar.position))
 
 func _update_health_bar():
 	if health_bar:
@@ -369,7 +369,7 @@ func _update_health_bar():
 			health_bar.modulate = Color(1, 0, 0)  # 红色
 		# 更新背景大小
 		if health_bar_bg:
-			health_bar_bg.size = Vector2(60, 8)
+			health_bar_bg.size = Vector2(60, 6)
 
 func _die():
 	var player = get_tree().get_first_node_in_group("player")

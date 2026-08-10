@@ -301,30 +301,74 @@ func _on_restart_game():
 		print("❌ [RESTART] 未找到 GameManager!")
 
 func show_game_over(kills):
+	print("💀 [GAME_OVER] 游戏结束")
+	# 创建全屏红色覆盖层
+	if not has_node("GameOverOverlay"):
+		var overlay = Panel.new()
+		overlay.name = "GameOverOverlay"
+		overlay.visible = true
+		overlay.layout_mode = 1
+		overlay.anchor_left = 0.0
+		overlay.anchor_top = 0.0
+		overlay.anchor_right = 1.0
+		overlay.anchor_bottom = 1.0
+		overlay.modulate = Color(1, 0, 0, 0.7)  # 红色半透明
+		add_child(overlay)
+	
+	# 显示"LOST"文字
+	if not has_node("GameOverOverlay/LostLabel"):
+		var label = Label.new()
+		label.name = "LostLabel"
+		label.text = "💀 LOST 💀"
+		label.add_theme_font_size_override("font_size", 120)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.modulate = Color(1, 0, 0)
+		label.position = Vector2(0, 0)
+		label.size = Vector2(720, 1280)
+		$GameOverOverlay.add_child(label)
+	
+	# 显示分数
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = true
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
-		get_tree().paused = true
-		if audio_manager and audio_manager.has_method("play_game_over"):
-			audio_manager.play_game_over()
+	get_tree().paused = true
+	print("✅ 游戏结束面板已显示")
 
 func show_win(kills):
-	print("🏆 [SHOW_WIN] 显示胜利面板")
-	print("  - kills = " + str(kills))
+	print("🏆 [WIN] 游戏胜利")
+	# 创建全屏绿色覆盖层
+	if not has_node("WinOverlay"):
+		var overlay = Panel.new()
+		overlay.name = "WinOverlay"
+		overlay.visible = true
+		overlay.layout_mode = 1
+		overlay.anchor_left = 0.0
+		overlay.anchor_top = 0.0
+		overlay.anchor_right = 1.0
+		overlay.anchor_bottom = 1.0
+		overlay.modulate = Color(0, 1, 0, 0.7)  # 绿色半透明
+		add_child(overlay)
+	
+	# 显示"WON"文字
+	if not has_node("WinOverlay/WonLabel"):
+		var label = Label.new()
+		label.name = "WonLabel"
+		label.text = "🏆 WON 🏆"
+		label.add_theme_font_size_override("font_size", 120)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.modulate = Color(0, 1, 0)
+		label.position = Vector2(0, 0)
+		label.size = Vector2(720, 1280)
+		$WinOverlay.add_child(label)
+	
+	# 显示分数
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
-		print("  - WinPanel 已显示，visible = " + str($WinPanel.visible))
-		# 强制让按钮可见
-		if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
-			$WinPanel/PanelContainer/VBoxContainer/RestartButton.visible = true
-			print("  - RestartButton 已强制显示")
-		get_tree().paused = true
-		print("  - 游戏已暂停")
-		if audio_manager and audio_manager.has_method("play_victory"):
-			audio_manager.play_victory()
-	else:
-		print("  ❌ 未找到 WinPanel!")
+	get_tree().paused = true
+	print("✅ 胜利面板已显示")
 
 func show_upgrade_panel():
 	if has_node("UpgradePanel"):
