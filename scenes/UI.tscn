@@ -12,7 +12,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_x = 2.0
 grow_y = 2.0
-modulate = Color(1, 1, 1, 0)  # 初始透明
+visible = true  # 初始透明
 
 [node name="TopPanel" type="HBoxContainer" parent="Panel"]
 layout_mode = 0
