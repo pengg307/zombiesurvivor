@@ -7,7 +7,7 @@ const MOVE_SPEED = 250.0
 const MAX_HEALTH = 100.0
 const BASE_Y = 1100.0
 const FIRE_RATE_BASE = 0.3
-const SHOT_RANGE = 1200.0
+const SHOT_RANGE = 1500.0  # 增加射程
 const GRENADE_INTERVAL = 80
 const MAX_GRENADES = 5
 
@@ -46,6 +46,8 @@ var regen_rate: float = 0.0
 var exp_multiplier: float = 1.0
 var shield: int = 0
 var game_over = false
+var last_attack_pos = Vector2(0, 0)
+var attack_log_counter = 0
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
@@ -73,6 +75,7 @@ func _ready():
 	print("")
 	print("============================================================")
 	print("🎮 Player启动！碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
+	print("   位置: " + str(position) + " SHOT_RANGE=" + str(SHOT_RANGE))
 	print("============================================================")
 
 func _setup_character():
@@ -251,10 +254,10 @@ func _shoot(delta):
 	if game_over:
 		return
 	shoot_debug_counter += delta
-	if shoot_debug_counter >= 5.0:
+	if shoot_debug_counter >= 2.0:
 		shoot_debug_counter = 0.0
 		var enemies = get_tree().get_nodes_in_group("zombies")
-		print("🔧 [射击调试] 僵尸数量: " + str(enemies.size()) + " fire_rate: " + str(fire_rate) + " timer: " + str(_fire_timer))
+		print("🔧 [射击调试] 僵尸数量: " + str(enemies.size()) + " fire_rate: " + str(fire_rate) + " timer: " + str(_fire_timer) + " 位置: " + str(position))
 	
 	fire_rate = max(0.1, base_fire_rate - float(ammo_boost_level) * 0.05)
 	_fire_timer += delta
@@ -273,6 +276,12 @@ func _attack():
 			var zombie_screen_pos = nearest.position + Vector2(360, 640)
 			var dist = position.distance_to(zombie_screen_pos)
 			
+			# 每5次攻击打印一次调试信息
+			attack_log_counter += 1
+			if attack_log_counter >= 5:
+				attack_log_counter = 0
+				print("🎯 [攻击调试] 最近僵尸距离: " + str(int(dist)) + "/" + str(SHOT_RANGE) + " 位置: " + str(position) + " -> " + str(zombie_screen_pos))
+			
 			if dist <= SHOT_RANGE:
 				for i in range(bullet_count):
 					var angle_offset = (i - (bullet_count - 1) / 2.0) * 0.1
@@ -281,6 +290,11 @@ func _attack():
 				
 				if audio_manager:
 					audio_manager.play_shoot()
+				last_attack_pos = zombie_screen_pos
+	else:
+		if attack_log_counter >= 10:  # 每10次检查打印一次
+			print("⚠️ [攻击调试] 没有僵尸在范围内！")
+			attack_log_counter = 0
 
 func _find_nearest_enemy(enemies):
 	var nearest = null
@@ -323,6 +337,7 @@ func _spawn_bullet(direction: Vector2):
 	
 	if audio_manager:
 		audio_manager.play_shoot()
+	print("🔫 发射子弹！位置: " + str(position) + " 方向: " + str(direction))
 
 func _handle_grenade(delta):
 	if grenade_cooldown > 0:
@@ -432,6 +447,7 @@ func _update_debug_info():
 		print("   - 射速: " + str(fire_rate))
 		print("   - 伤害: " + str(damage_per_shot))
 		print("   - 游戏结束: " + str(game_over))
+		print("   - 位置: " + str(position))
 
 func _spawn_debug_ammo_barrel():
 	var barrel_scene = load("res://scripts/AmmoBarrel.gd")
