@@ -302,19 +302,25 @@ func _on_restart_game():
 
 func show_game_over(kills):
 	print("💀 [GAME_OVER] 游戏结束")
-	# 只显示分数面板，不创建覆盖层
+	# 显示分数面板，包含LOST文字
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = true
+		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.text = "💀 LOST 💀"
 		$GameOverPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: %d" % kills
+		# 设置红色文字
+		$GameOverPanel/PanelContainer/VBoxContainer/GameOverLabel.modulate = Color(1, 0.2, 0.2)
 	get_tree().paused = true
 	print("✅ 游戏结束面板已显示")
 
 func show_win(kills):
 	print("🏆 [WIN] 游戏胜利")
-	# 只显示分数面板，不创建覆盖层
+	# 显示分数面板，包含WON文字
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
+		$WinPanel/PanelContainer/VBoxContainer/WinLabel.text = "🏆 WON 🏆"
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
+		# 设置绿色文字
+		$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(0.2, 1, 0.2)
 	get_tree().paused = true
 	print("✅ 胜利面板已显示")
 
