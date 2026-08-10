@@ -91,7 +91,7 @@ func _start_game():
 	spawner.wave_number = 0
 	
 	print("  - spawn_timer 自动启动: " + str(spawner.spawn_timer.autostart))
-	print("  - spawn_timer 已运行: " + str(spawner.spawn_timer.is_running()))
+	print("  - spawn_timer 已停止: " + str(spawner.spawn_timer.is_stopped()))
 	print("  - spawn_timer 等待时间: " + str(spawner.spawn_timer.wait_time))
 	
 	print("  - 启动 spawn_timer...")
@@ -100,7 +100,7 @@ func _start_game():
 	# 等待一帧确保 timer 启动
 	await get_tree().process_frame
 	
-	print("  - 启动后 spawn_timer 已运行: " + str(spawner.spawn_timer.is_running()))
+	print("  - 启动后 spawn_timer 已停止: " + str(spawner.spawn_timer.is_stopped()))
 	print("  - 调用 _start_next_wave()...")
 	spawner._start_next_wave()
 	
