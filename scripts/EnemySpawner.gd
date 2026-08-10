@@ -158,6 +158,8 @@ func add_kill():
 	if current_kills >= BOSS_KILLS_REQUIRED and not boss_active and not boss_spawned_this_game:
 		boss_spawned_this_game = true
 		_spawn_boss()
+		emit_signal("boss_spawned")  # 发射 Boss 生成信号
+		emit_signal("boss_spawned")  # 发射 Boss 生成信号
 	
 	# 波次完成检测
 	if zombies_in_wave <= 0 and not boss_active:
@@ -165,6 +167,10 @@ func add_kill():
 		print("✅ 第" + str(wave_number) + "波完成！")
 		print("📋 等待下一波生成...")
 		print("")
+		# 波次完成后重新开始（如果 Boss 还没出现）
+		if not boss_active:
+			await get_tree().create_timer(2.0).timeout
+			_start_next_wave()
 
 func _spawn_boss():
 	print("")
