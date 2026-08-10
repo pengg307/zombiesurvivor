@@ -212,8 +212,14 @@ func _to_screen_position() -> Vector2:
 func _on_player_detected(body):
 	if body.is_in_group("player"):
 		print("💥 Zombie 碰到玩家！类型=" + zombie_type)
-		player_node.take_damage(999)
-		player_node.emit_signal("player_died")
+		if player_node:
+			player_node.take_damage(999)
+			player_node.emit_signal("player_died")
+		else:
+			player_node = get_tree().get_first_node_in_group("player")
+			if player_node:
+				player_node.take_damage(999)
+				player_node.emit_signal("player_died")
 		emit_signal("zombie_reached_player")
 
 func _physics_process(delta):
