@@ -83,7 +83,7 @@ func _setup_boss_sprite():
 	sprite.z_index = 50  # Boss should be on top
 	sprite.visible = true
 	
-	# 使用 biggerboss.png 作为 Boss 纹理（4帧精灵图）
+	# 使用 biggerboss.png 作为 Boss 纹理
 	var boss_texture_path = "res://assets/downloads/biggerboss.png"
 	var boss_texture = load(boss_texture_path)
 	
@@ -92,26 +92,30 @@ func _setup_boss_sprite():
 		sprite.centered = true
 		sprite.region_enabled = true
 		
-		# 自动检测图片尺寸并计算帧大小
+		# 自动检测图片尺寸
 		var tex_width = boss_texture.get_width()
 		var tex_height = boss_texture.get_height()
 		
-		# 假设 2x2 布局 (4帧)
-		var frame_w = tex_width / 2.0
-		var frame_h = tex_height / 2.0
+		# 图片是 4帧横排布局 (4x1)，每帧宽度 = 总宽度 / 4
+		var frame_cols = 4
+		var frame_rows = 1
+		var frame_w = tex_width / frame_cols
+		var frame_h = tex_height / frame_rows
 		
+		# 只显示第1帧（最左边的帧）
 		sprite.region_rect = Rect2(0, 0, frame_w, frame_h)
 		_boss_frame_size = int(frame_w)
 		
 		# 缩放：让 Boss 显示得和僵尸差不多大小
-		# 僵尸帧大小 64px，目标 Boss 帧 ~150px
 		var target_frame_size = 150.0
 		var scale = target_frame_size / frame_w
 		sprite.scale = Vector2(scale, scale)
 		
 		print("🎨 Boss 纹理加载成功: " + boss_texture_path)
 		print("  - 原始尺寸: " + str(int(tex_width)) + "x" + str(int(tex_height)))
+		print("  - 帧布局: " + str(frame_cols) + "x" + str(frame_rows))
 		print("  - 帧尺寸: " + str(int(frame_w)) + "x" + str(int(frame_h)))
+		print("  - 显示帧: 第1帧 (最左边)")
 		print("  - 缩放: " + str(sprite.scale))
 	else:
 		print("❌ 无法加载 Boss 纹理: " + boss_texture_path)
@@ -218,12 +222,12 @@ func _physics_process(delta):
 			var pulse = 1.0 + 0.1 * sin(_boss_anim_timer * 3.0)  # 脉动效果
 			var base_scale = Vector2(1.0, 1.0)
 			sprite_node.scale = base_scale * pulse
-			# 同时切换帧 (2x2 布局)
-			if frame_count % 8 == 0:
-				current_frame = (current_frame + 1) % 4
-				var frame_x = (current_frame % 2) * _boss_frame_size
-				var frame_y = (current_frame / 2) * _boss_frame_size
-				sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_size)
+			# Boss 当前只显示第1帧（静态），暂不切换动画帧
+			# if frame_count % 8 == 0:
+			# 	current_frame = (current_frame + 1) % 4
+			# 	var frame_x = (current_frame % 4) * _boss_frame_size  # 4x1 布局
+			# 	var frame_y = 0
+			# 	sprite_node.region_rect = Rect2(frame_x, frame_y, _boss_frame_size, _boss_frame_size)
 		
 		# 检查是否到达玩家位置
 		var screen_pos = _to_screen_position()
