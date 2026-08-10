@@ -4,6 +4,7 @@ class_name UIManager
 var player = null
 var spawner = null
 var audio_manager = null
+var stats_manager = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -14,6 +15,7 @@ func _ready():
 	print("============================================================")
 	
 	_setup_audio()
+	_setup_stats()
 	_connect_buttons()
 	_create_health_alert_panel()
 	_add_triple_shot_display()
@@ -30,6 +32,12 @@ func _setup_audio():
 	if am:
 		audio_manager = am
 		print("🎵 音频管理器已连接")
+
+func _setup_stats():
+	var sm = get_tree().get_first_node_in_group("stats_manager")
+	if sm:
+		stats_manager = sm
+		print("📊 统计管理器已连接")
 
 func set_player(player_node):
 	player = player_node
@@ -52,9 +60,11 @@ func _on_start_game():
 	print("🎮 [DEBUG] 游戏开始！")
 	print("========================================")
 	
-	# 播放开始音效
 	if audio_manager:
 		audio_manager.play_levelup()
+	
+	if stats_manager:
+		stats_manager.start_game()
 	
 	if spawner:
 		spawner.start()
@@ -71,9 +81,11 @@ func _on_start_game():
 func show_game_over(kills):
 	print("💀 [GAME_OVER] 游戏结束")
 	
-	# 播放游戏结束音效
 	if audio_manager:
 		audio_manager.play_gameover()
+	
+	if stats_manager:
+		stats_manager.end_game(false)
 	
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = true
@@ -84,9 +96,11 @@ func show_game_over(kills):
 func show_win(kills):
 	print("🏆 [WIN] 游戏胜利！")
 	
-	# 播放胜利音效
 	if audio_manager:
 		audio_manager.play_victory()
+	
+	if stats_manager:
+		stats_manager.end_game(true)
 	
 	if has_node("WinPanel"):
 		$WinPanel.visible = true
@@ -97,7 +111,6 @@ func show_win(kills):
 func _on_restart_game():
 	print("🔄 重新开始游戏")
 	
-	# 重置音频
 	if audio_manager:
 		audio_manager.stop_bgm()
 	
@@ -106,7 +119,6 @@ func _on_restart_game():
 func show_upgrade_panel():
 	print("🎁 [升级] 显示升级面板")
 	
-	# 播放升级音效
 	if audio_manager:
 		audio_manager.play_levelup()
 	
@@ -276,25 +288,18 @@ func _update_health():
 				bar.modulate = Color(1, 0, 0)
 
 func _add_mobile_controls():
-	# 添加虚拟摇杆
-	var joystick = load("res://scripts/VirtualJoystick.gd").new()
-	joystick.name = "VirtualJoystick"
+	var joystick = load("res://scripts/JoystickControl.gd").new()
+	joystick.name = "Joystick"
 	joystick.set_position(Vector2(100, 1000))
-	joystick.set_size(Vector2(150, 150))
 	add_child(joystick)
-	
-	# 连接摇杆信号
 	joystick.moved.connect(_on_joystick_moved)
 	
-	# 添加技能按钮
-	var grenade_btn = load("res://scripts/ActionButton.gd").new()
+	var grenade_btn = load("res://scripts/MobileButton.gd").new()
 	grenade_btn.name = "GrenadeButton"
-	grenade_btn.set_position(Vector2(550, 1050))
-	grenade_btn.set_size(Vector2(80, 80))
+	grenade_btn.set_position(Vector2(580, 1100))
 	grenade_btn.button_text = "💣"
 	grenade_btn.cooldown_time = 2.0
 	add_child(grenade_btn)
-	
 	grenade_btn.pressed.connect(_on_grenade_pressed)
 	
 	print("✅ 移动端控制已添加")

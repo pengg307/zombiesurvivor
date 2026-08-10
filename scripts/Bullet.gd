@@ -1,4 +1,4 @@
-extends Node
+extends CharacterBody2D
 class_name Bullet
 
 var damage = 10.0
@@ -8,11 +8,13 @@ var kills_for_speed = 0
 var is_pierce = false
 var max_distance = 1200.0
 var traveled_distance = 0.0
+var collision_layer = 3
+var collision_mask = 2
 
 func _ready():
 	add_to_group("bullets")
-	collision_layer = 3
-	collision_mask = 2
+	self.collision_layer = collision_layer
+	self.collision_mask = collision_mask
 
 func _physics_process(delta):
 	var move = direction * current_speed * delta
@@ -25,7 +27,6 @@ func _physics_process(delta):
 func _on_body_entered(body):
 	if body.is_in_group("zombies"):
 		var final_damage = damage
-		# 暴击判定
 		var is_critical = randf() < 0.15
 		if is_critical:
 			final_damage *= 2.0

@@ -6,6 +6,7 @@ var ui = null
 var player = null
 var audio_manager = null
 var weapon_upgrade_sys = null
+var stats_manager = null
 
 func _ready():
 	add_to_group("game_manager")
@@ -15,6 +16,7 @@ func _ready():
 	player = get_parent().get_node_or_null("Player")
 	audio_manager = get_parent().get_node_or_null("AudioManager")
 	weapon_upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
+	stats_manager = get_node_or_null("/root/StatsManager")
 	
 	if ui and player:
 		if ui.has_method("set_player"):

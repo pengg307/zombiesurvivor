@@ -213,25 +213,21 @@ func _update_ammo_boost(delta):
 func _move(delta):
 	var direction = Vector2(0, 0)
 	
-	# 键盘输入
 	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 		direction.x = -1
 	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		direction.x = 1
 	
-	# 触摸输入
 	if touch_left:
 		direction.x = -1
 	if touch_right:
 		direction.x = 1
 	
-	# 鼠标输入
 	if mouse_left:
 		direction.x = -1
 	if mouse_right:
 		direction.x = 1
 	
-	# 虚拟摇杆输入
 	if move_direction.x != 0:
 		direction.x = move_direction.x
 	
@@ -314,7 +310,6 @@ func _spawn_bullet(direction: Vector2):
 	bullet.is_pierce = pierce_shot
 	get_parent().add_child(bullet)
 	
-	# 播放射击音效
 	if audio_manager:
 		audio_manager.play_shoot()
 

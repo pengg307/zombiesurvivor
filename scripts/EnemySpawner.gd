@@ -10,7 +10,6 @@ const SPAWN_LEFT_X = -80.0
 const SPAWN_RIGHT_X = 80.0
 const SPAWN_TOP_Y = -100.0
 
-# 难度曲线配置
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
 	2: {"zombies": 4, "interval": 2.3, "types": ["basic", "fast"]},
@@ -24,7 +23,6 @@ const WAVE_CONFIG = {
 	10: {"zombies": 12, "interval": 0.6, "types": ["basic", "fast", "tank", "explorer"]}
 }
 
-# 僵尸类型权重
 const ZOMBIE_WEIGHTS = {
 	"basic": 65,
 	"fast": 35,
