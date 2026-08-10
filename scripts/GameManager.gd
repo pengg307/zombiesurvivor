@@ -7,6 +7,9 @@ var player = null
 var audio_manager = null
 var weapon_upgrade_sys = null
 var stats_manager = null
+var settings_manager = null
+var tutorial_manager = null
+var splash_screen = null
 
 func _ready():
 	add_to_group("game_manager")
@@ -17,6 +20,9 @@ func _ready():
 	audio_manager = get_parent().get_node_or_null("AudioManager")
 	weapon_upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
 	stats_manager = get_node_or_null("/root/StatsManager")
+	settings_manager = get_node_or_null("/root/SettingsManager")
+	tutorial_manager = get_node_or_null("/root/TutorialOverlay")
+	splash_screen = get_node_or_null("/root/SplashScreen")
 	
 	if ui and player:
 		if ui.has_method("set_player"):
@@ -26,6 +32,11 @@ func _ready():
 			ui.set_spawner(spawner)
 	
 	_connect_signals_deferred()
+	
+	print("")
+	print("============================================================")
+	print("🎮 GameManager启动！")
+	print("============================================================")
 
 func _connect_signals_deferred():
 	await get_tree().process_frame
@@ -49,9 +60,33 @@ func _connect_signals_deferred():
 			spawner.boss_spawned.connect(_on_boss_spawned)
 			print("✅ 已连接 boss_spawned")
 
+func start_game():
+	print("🎮 开始游戏！")
+	if settings_manager:
+		settings_manager._apply_audio_settings()
+	if splash_screen:
+		splash_screen.show()
+		# 3秒后自动开始
+		var timer = get_tree().create_timer(3.0)
+		timer.timeout.connect(_start_real_game)
+	elif spawner:
+		_start_real_game()
+
+func _start_real_game():
+	if spawner:
+		spawner.start()
+	if audio_manager:
+		audio_manager.play_bgm("normal")
+	if settings_manager and not settings_manager.is_tutorial_seen():
+		if tutorial_manager:
+			tutorial_manager.start_tutorial()
+	print("🎮 游戏正式开始！")
+
 func _on_kill_count_changed():
 	if player and weapon_upgrade_sys:
 		weapon_upgrade_sys.add_kills(1)
+	if stats_manager:
+		stats_manager.add_kill()
 
 func _on_upgrade_available():
 	print("🎁 [升级] 获得升级机会！")
@@ -60,6 +95,10 @@ func _on_upgrade_available():
 
 func _on_player_died():
 	print("💀 玩家死亡！")
+	if audio_manager:
+		audio_manager.play_gameover()
+	if stats_manager:
+		stats_manager.end_game(false)
 	if ui and ui.has_method("show_game_over"):
 		ui.show_game_over(spawner.current_kills if spawner else 0)
 	if spawner:
@@ -67,14 +106,16 @@ func _on_player_died():
 
 func _on_boss_spawned():
 	print("👹 Boss已出现！")
+	if audio_manager:
+		audio_manager.play_boss_appear()
 
 func _on_game_won():
 	print("🏆 胜利！")
+	if audio_manager:
+		audio_manager.play_victory()
+	if stats_manager:
+		stats_manager.end_game(true)
 	if ui and ui.has_method("show_win"):
 		ui.show_win(spawner.current_kills if spawner else 0)
 	if spawner:
 		spawner.stop()
-
-func start_game():
-	if spawner and spawner.has_method("start"):
-		spawner.start()

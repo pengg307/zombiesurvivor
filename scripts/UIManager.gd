@@ -5,6 +5,8 @@ var player = null
 var spawner = null
 var audio_manager = null
 var stats_manager = null
+var settings_manager = null
+var tutorial_manager = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -16,16 +18,20 @@ func _ready():
 	
 	_setup_audio()
 	_setup_stats()
+	_setup_settings()
+	_setup_tutorial()
 	_connect_buttons()
 	_create_health_alert_panel()
 	_add_triple_shot_display()
 	_add_grenade_display()
 	_add_bottom_status_bar()
 	_add_mobile_controls()
+	_add_settings_button()
+	_add_stats_button()
 	
 	print("")
 	print("✅ UIManager初始化完成")
-	print("")
+	print("============================================================")
 
 func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
@@ -38,6 +44,18 @@ func _setup_stats():
 	if sm:
 		stats_manager = sm
 		print("📊 统计管理器已连接")
+
+func _setup_settings():
+	var sm = get_tree().get_first_node_in_group("settings_manager")
+	if sm:
+		settings_manager = sm
+		print("⚙️ 设置管理器已连接")
+
+func _setup_tutorial():
+	var tm = get_tree().get_first_node_in_group("tutorial_overlay")
+	if tm:
+		tutorial_manager = tm
+		print("📚 教程管理器已连接")
 
 func set_player(player_node):
 	player = player_node
@@ -76,6 +94,11 @@ func _on_start_game():
 		$StartPanel.visible = false
 	
 	$Panel/TopPanel.visible = true
+	
+	# 启动教程
+	if tutorial_manager:
+		tutorial_manager.start_tutorial()
+	
 	print("🎮 游戏开始！")
 
 func show_game_over(kills):
@@ -311,3 +334,44 @@ func _on_joystick_moved(direction: Vector2):
 func _on_grenade_pressed():
 	if player and player.grenades > 0:
 		player._throw_grenade()
+
+func _add_settings_button():
+	var btn = Button.new()
+	btn.name = "SettingsButton"
+	btn.text = "⚙️"
+	btn.size = Vector2(50, 50)
+	btn.position = Vector2(660, 570)
+	btn.z_index = 50
+	btn.modulate = Color(1, 1, 1, 0.7)
+	btn.add_theme_font_size_override("font_size", 24)
+	btn.pressed.connect(_on_settings_pressed)
+	add_child(btn)
+
+func _on_settings_pressed():
+	print("⚙️ 打开设置菜单")
+	if settings_manager:
+		settings_manager._save_settings()
+
+func _add_stats_button():
+	var btn = Button.new()
+	btn.name = "StatsButton"
+	btn.text = "📊"
+	btn.size = Vector2(50, 50)
+	btn.position = Vector2(660, 520)
+	btn.z_index = 50
+	btn.modulate = Color(1, 1, 1, 0.7)
+	btn.add_theme_font_size_override("font_size", 24)
+	btn.pressed.connect(_on_stats_pressed)
+	add_child(btn)
+
+func _on_stats_pressed():
+	print("📊 打开统计面板")
+	if stats_manager:
+		var panel = get_node_or_null("StatsPanel")
+		if panel:
+			panel.show_panel()
+		else:
+			var stats_panel = load("res://scripts/StatsPanel.gd").new()
+			stats_panel.name = "StatsPanel"
+			add_child(stats_panel)
+			stats_panel.show_panel()
