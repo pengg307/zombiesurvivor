@@ -10,7 +10,7 @@ const BOSS_SPEED = 30.0
 const DAMAGE = 10.0
 const COLLISION_RADIUS = 50.0
 const EXPERIENCE_REWARD = 10
-const SAFETY_TIME = 2.0
+const SAFETY_TIME = 2.0  # 安全时间（秒）
 
 var zombie_type = "basic"
 var is_boss = false
@@ -18,12 +18,12 @@ var current_health = BASE_HEALTH
 var speed = BASE_SPEED
 var dead = false
 var can_attack = false
+var player_node = null
 var player_area = null
 var bullet_area = null
 var sprite: Sprite2D
-var sprite_hit: Sprite2D
 var health_bar_fg: ColorRect
-var is_attacking = false
+var zombie_kills = 0  # 该僵尸击杀数
 
 signal zombie_died
 signal boss_died
@@ -42,50 +42,29 @@ func _ready():
 
 func _setup_sprite():
 	if zombie_type == "boss" or is_boss:
-		# Boss移动动画
+		# Boss使用bigboss.png
 		sprite = Sprite2D.new()
-		var boss_texture = load("res://assets/downloads/bboss.png")
+		var boss_texture = load("res://assets/downloads/bigboss.png")
 		if boss_texture:
 			sprite.texture = boss_texture
-			sprite.scale = Vector2(1, 1)
-			sprite.centered = true
+			sprite.scale = Vector2(2, 2)
 		add_child(sprite)
-		
-		# Boss攻击动画
-		sprite_hit = Sprite2D.new()
-		sprite_hit.visible = false
-		var boss_hit_texture = load("res://assets/downloads/bbosshit.png")
-		if boss_hit_texture:
-			sprite_hit.texture = boss_hit_texture
-			sprite_hit.scale = Vector2(1, 1)
-			sprite_hit.centered = true
-		add_child(sprite_hit)
-		
 		position = Vector2(0, -300)
 	else:
-		# 普通僵尸移动动画
+		# 普通僵尸使用zombie_front_4frames_game.png
 		sprite = Sprite2D.new()
-		var texture = load("res://assets/downloads/szombie.png")
+		var texture = load("res://assets/downloads/zombie_front_4frames_game.png")
 		if texture:
 			sprite.texture = texture
 			sprite.scale = Vector2(2, 2)
 			sprite.centered = true
 		add_child(sprite)
-		
-		# 普通僵尸攻击动画
-		sprite_hit = Sprite2D.new()
-		sprite_hit.visible = false
-		var hit_texture = load("res://assets/downloads/szombiehit.png")
-		if hit_texture:
-			sprite_hit.texture = hit_texture
-			sprite_hit.scale = Vector2(2, 2)
-			sprite_hit.centered = true
-		add_child(sprite_hit)
 
 func _setup_collision():
+	# 创建碰撞体 - 使用更加可靠的检测方法
 	player_area = Area2D.new()
 	player_area.name = "PlayerArea"
-	player_area.collision_layer = 2
+	player_area.collision_layer = 2  # 检测玩家
 	player_area.collision_mask = 1
 	player_area.body_entered.connect(_on_player_detected)
 	add_child(player_area)
@@ -96,10 +75,11 @@ func _setup_collision():
 	player_shape.shape = circle
 	player_area.add_child(player_shape)
 	
+	# 创建子弹检测区域
 	bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
-	bullet_area.collision_layer = 0
-	bullet_area.collision_mask = 4
+	bullet_area.collision_layer = 0  # 不检测任何层
+	bullet_area.collision_mask = 4   # 检测子弹层
 	bullet_area.area_entered.connect(_on_bullet_area_entered)
 	add_child(bullet_area)
 	
@@ -109,21 +89,20 @@ func _setup_collision():
 	bullet_shape.shape = circle2
 	bullet_area.add_child(bullet_shape)
 	
-	print("  ✅ 碰撞体创建成功")
+	print("  ✅ 碰撞体创建成功 (检测玩家层=2, 子弹层=4)")
 
 func _on_player_detected(body):
+	# 只有当僵尸还活着且可以攻击时才检测
 	if body.is_in_group("player") and not dead and can_attack:
-		var player_pos = body.position + Vector2(360, 640)
+		var player_pos = body.position + Vector2(360, 640)  # 转换为世界坐标
 		var dist = position.distance_to(player_pos)
 		if dist <= COLLISION_RADIUS:
+			# 立即禁用碰撞，防止多次触发
 			_disable_collision()
-			dead = true
-			is_attacking = true
-			_show_hit_animation()
+			dead = true  # 僵尸碰到玩家后也标记为死亡
 			var player = get_tree().get_first_node_in_group("player")
 			if player:
 				player.take_damage(999)
-			emit_signal("zombie_reached_player")
 			print("💀 僵尸碰到玩家！距离=" + str(int(dist)))
 
 func _on_bullet_area_entered(area):
@@ -147,18 +126,6 @@ func _disable_collision():
 		bullet_area.monitoring = false
 		bullet_area.monitorable = false
 
-func _show_hit_animation():
-	if sprite_hit:
-		sprite_hit.visible = true
-	if sprite:
-		sprite.visible = false
-
-func _show_move_animation():
-	if sprite_hit:
-		sprite_hit.visible = false
-	if sprite:
-		sprite.visible = true
-
 func _physics_process(delta):
 	if dead:
 		return
@@ -166,31 +133,29 @@ func _physics_process(delta):
 	# 移动逻辑
 	var target = get_tree().get_first_node_in_group("player")
 	if target:
-		var target_pos = target.position + Vector2(360, 640)
+		var target_pos = target.position + Vector2(360, 640)  # 转换为世界坐标
 		var direction = (target_pos - position).normalized()
 		position += direction * speed * delta
+	
+	# 动画
+	if sprite and sprite.texture:
+		frame = (frame + delta * 8) % 4
 
 func take_damage(damage: float):
 	if dead:
 		return
 	current_health -= damage
 	_update_health_bar()
-	
-	if not is_attacking:
-		is_attacking = true
-		_show_hit_animation()
-		await get_tree().create_timer(0.5).timeout
-		if not dead:
-			is_attacking = false
-			_show_move_animation()
+	if current_health <= 0:
+		_die()
 
 func _die():
 	if dead:
 		return
 	dead = true
 	_disable_collision()
-	_show_move_animation()
 	
+	# 创建粒子效果
 	_spawn_death_particles()
 	
 	var player = get_tree().get_first_node_in_group("player")
@@ -243,6 +208,8 @@ func _setup_health_bar():
 
 func _spawn_death_particles():
 	var particle = GPUParticles2D.new()
+	particle.process_material = ProcessMaterial.new()
+	particle.process_material.emission_sphere_radius = 20
 	particle.one_shot = true
 	particle.max_particles = 10
 	particle.emitting = true
