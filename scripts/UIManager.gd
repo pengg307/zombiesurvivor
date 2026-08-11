@@ -41,6 +41,11 @@ func _ready():
 	print("✅ UIManager初始化完成")
 	print("============================================================")
 
+func _process(delta):
+	# 每帧更新健康条
+	if player and not game_ended and game_started:
+		_update_health()
+
 func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
@@ -63,26 +68,36 @@ func _setup_tutorial():
 
 func set_player(player_node):
 	player = player_node
+	print("✅ Player引用已设置")
 
 func set_spawner(spawner_node):
 	spawner = spawner_node
+	print("✅ Spawner引用已设置")
 
 func _connect_buttons():
 	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
 		var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
 		start_btn.pressed.connect(_on_start_game)
+		print("  ✅ StartButton 已连接")
 	
 	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
 		var restart_btn = $GameOverPanel/PanelContainer/VBoxContainer/RestartButton
 		restart_btn.pressed.connect(_on_restart_game)
+		print("  ✅ GameOver RestartButton 已连接")
 	
 	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 		var restart_btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
 		restart_btn.pressed.connect(_on_restart_game)
+		print("  ✅ Win RestartButton 已连接")
 
 func _on_start_game():
 	if game_started or game_ended:
 		return
+	
+	print("")
+	print("========================================")
+	print("🎮 游戏开始！")
+	print("========================================")
 	
 	game_started = true
 	game_ended = false
@@ -112,12 +127,16 @@ func _on_start_game():
 	
 	if tutorial_manager:
 		tutorial_manager.start_tutorial()
+	
+	print("🎮 游戏开始！")
 
 func show_game_over(kills):
 	if game_ended:
 		return
 	game_ended = true
 	game_started = false
+	
+	print("💀 [GAME_OVER] 游戏结束")
 	
 	if audio_manager:
 		audio_manager.play_gameover()
@@ -140,6 +159,8 @@ func show_win(kills):
 	game_ended = true
 	game_started = false
 	
+	print("🏆 [WIN] 游戏胜利！")
+	
 	if audio_manager:
 		audio_manager.play_victory()
 	
@@ -156,8 +177,11 @@ func show_win(kills):
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 
 func _on_restart_game():
+	print("🔄 重新开始游戏")
+	
 	if audio_manager:
 		audio_manager.stop_bgm()
+	
 	get_tree().reload_current_scene()
 
 func _create_bottom_health_bar():
@@ -190,7 +214,7 @@ func _create_bottom_health_bar():
 	# 健康文字 - 大字体，居中显示
 	var label = Label.new()
 	label.name = "HealthLabel"
-	label.text = "HP: 100/100"
+	label.text = "❤️ HP: 100/100"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 28)
