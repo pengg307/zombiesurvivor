@@ -25,9 +25,12 @@ var health_bar_bg: ColorRect = null
 var health_bar_fg: ColorRect = null
 var can_attack = false
 var spawner = null
+var player_area = null  # 玩家检测区域
+var bullet_area = null  # 子弹检测区域
 
 signal zombie_reached_player
 signal zombie_spawned
+signal boss_died
 
 func _ready():
 	add_to_group("zombies")
@@ -103,7 +106,7 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 
 func _setup_collision():
 	# 玩家检测区域
-	var player_area = Area2D.new()
+	player_area = Area2D.new()
 	player_area.name = "PlayerArea"
 	player_area.collision_layer = 2
 	player_area.collision_mask = 1
@@ -118,7 +121,7 @@ func _setup_collision():
 	player_area.add_child(player_collision)
 	
 	# 子弹检测区域
-	var bullet_area = Area2D.new()
+	bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
 	bullet_area.collision_layer = 2
 	bullet_area.collision_mask = 4
@@ -157,6 +160,7 @@ func _on_player_detected(body):
 			if dist <= COLLISION_RADIUS:
 				if not dead:
 					dead = true
+					_disable_collision()  # 立即禁用碰撞
 					var player = get_tree().get_first_node_in_group("player")
 					if player:
 						player.take_damage(999)
@@ -176,6 +180,15 @@ func _on_bullet_area_entered(area):
 			print("💥 Zombie受伤: 类型=" + zombie_type + " 伤害=" + str(int(final_damage)) + " 暴击=" + str(is_critical))
 			if not bullet.is_pierce:
 				bullet.queue_free()
+
+func _disable_collision():
+	# 禁用所有碰撞体，防止僵尸在死亡前触发碰撞
+	if player_area:
+		player_area.monitoring = false
+		player_area.monitorable = false
+	if bullet_area:
+		bullet_area.monitoring = false
+		bullet_area.monitorable = false
 
 func _physics_process(delta):
 	if dead:
@@ -254,6 +267,7 @@ func _die():
 	if dead:
 		return
 	dead = true
+	_disable_collision()  # 立即禁用碰撞，防止死亡前触发碰撞
 	
 	var player = get_tree().get_first_node_in_group("player")
 	var spawner = get_tree().get_first_node_in_group("spawner")
