@@ -42,6 +42,7 @@ var spawn_side = 0
 var zombies_in_wave = 0
 var game_started = false
 var all_zombies_dead = false
+var zombie_count = 0
 
 signal boss_spawned
 signal game_over
@@ -59,6 +60,7 @@ func _ready():
 	print("🎮 EnemySpawner启动！")
 	print("📍 最大波次: " + str(MAX_WAVES))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
+	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
 	print("============================================================")
 
 func _on_spawn_timer_timeout():
@@ -66,20 +68,17 @@ func _on_spawn_timer_timeout():
 	var zombies = get_tree().get_nodes_in_group("zombies")
 	if zombies.size() == 0:
 		all_zombies_dead = true
-		print("🎉 所有僵尸已清除！")
+		print("🎉 所有僵尸已清除！当前波次: " + str(wave_number))
 		
 		# 检查是否达到最大波次
 		if wave_number >= MAX_WAVES and not boss_spawned_this_game:
 			print("🏆 完成所有" + str(MAX_WAVES) + "波！")
-			# Boss 应该在第5击杀时出现，如果没有，直接胜利
 			var spawner = get_tree().get_first_node_in_group("spawner")
 			if spawner:
 				spawner.stop()
-				# 检查是否需要生成Boss
 				if current_kills >= BOSS_KILLS_REQUIRED:
 					_spawn_boss()
 				else:
-					# 玩家已清除所有僵尸，胜利
 					var player = get_tree().get_first_node_in_group("player")
 					if player:
 						player.emit_signal("game_won")
@@ -103,6 +102,7 @@ func _start_next_wave():
 	
 	var config = WAVE_CONFIG[min(wave_number, WAVE_CONFIG.size())]
 	zombies_in_wave = config.zombies
+	zombie_count = 0
 	
 	print("")
 	print("🌊 第" + str(wave_number) + "波开始！生成" + str(zombies_in_wave) + "个僵尸")
@@ -152,9 +152,11 @@ func _spawn_zombie(index, config):
 		zombie.position = Vector2(x_pos, y_pos)
 		add_child(zombie)
 		
-		var screen_x = x_pos + 360
-		var screen_y = y_pos + 640
-		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
+		# 转换为屏幕坐标显示
+		var screen_x = x_pos + SCREEN_WIDTH / 2.0
+		var screen_y = y_pos + 640.0
+		zombie_count += 1
+		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 中心=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
@@ -188,7 +190,7 @@ func start():
 	game_started = true
 	all_zombies_dead = false
 	spawn_timer.start()
-	print("⏰ Timer已启动")
+	print("⏰ Timer已启动，间隔=" + str(spawn_timer.wait_time) + "s")
 
 func stop():
 	print("⏹️ 生成器停止！")
