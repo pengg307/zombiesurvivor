@@ -6,10 +6,11 @@ const BOSS_KILLS_REQUIRED = 5
 const SQUARE_SPACING = 80.0
 const SCREEN_WIDTH = 720.0
 const BOSS_HEALTH = 500.0
-const SPAWN_TOP_Y = -450.0  # 更远的生成位置
+const SPAWN_TOP_Y = -450.0
 const SPAWN_BOTTOM_Y = -350.0
 const SPAWN_LEFT_X = -360.0
 const SPAWN_RIGHT_X = 360.0
+const MAX_WAVES = 10
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -40,6 +41,7 @@ var wave_number = 0
 var spawn_side = 0
 var zombies_in_wave = 0
 var game_started = false
+var all_zombies_dead = false
 
 signal boss_spawned
 signal game_over
@@ -55,12 +57,40 @@ func _ready():
 	print("")
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
-	print("============================================================")
-	print("📍 生成范围: X=" + str(SPAWN_LEFT_X) + "~" + str(SPAWN_RIGHT_X) + " Y=" + str(SPAWN_TOP_Y) + "~" + str(SPAWN_BOTTOM_Y))
+	print("📍 最大波次: " + str(MAX_WAVES))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("============================================================")
 
 func _on_spawn_timer_timeout():
+	# 检查是否还有僵尸存活
+	var zombies = get_tree().get_nodes_in_group("zombies")
+	if zombies.size() == 0:
+		all_zombies_dead = true
+		print("🎉 所有僵尸已清除！")
+		
+		# 检查是否达到最大波次
+		if wave_number >= MAX_WAVES and not boss_spawned_this_game:
+			print("🏆 完成所有" + str(MAX_WAVES) + "波！")
+			# Boss 应该在第5击杀时出现，如果没有，直接胜利
+			var spawner = get_tree().get_first_node_in_group("spawner")
+			if spawner:
+				spawner.stop()
+				# 检查是否需要生成Boss
+				if current_kills >= BOSS_KILLS_REQUIRED:
+					_spawn_boss()
+				else:
+					# 玩家已清除所有僵尸，胜利
+					var player = get_tree().get_first_node_in_group("player")
+					if player:
+						player.emit_signal("game_won")
+			return
+	
+	# 检查是否还有更多波次
+	if wave_number >= MAX_WAVES:
+		print("⏹️ 已达到最大波次，停止生成")
+		spawn_timer.stop()
+		return
+	
 	var config = WAVE_CONFIG[min(wave_number + 1, WAVE_CONFIG.size())]
 	if config:
 		spawn_timer.wait_time = config.interval
@@ -69,6 +99,7 @@ func _on_spawn_timer_timeout():
 func _start_next_wave():
 	wave_number += 1
 	wave_active = true
+	all_zombies_dead = false
 	
 	var config = WAVE_CONFIG[min(wave_number, WAVE_CONFIG.size())]
 	zombies_in_wave = config.zombies
@@ -115,17 +146,15 @@ func _spawn_zombie(index, config):
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
 		
-		# 使用正确的中心坐标系统生成僵尸
 		var x_pos = SPAWN_LEFT_X + index * SQUARE_SPACING if spawn_side == 0 else SPAWN_RIGHT_X + index * SQUARE_SPACING
 		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
 		
 		zombie.position = Vector2(x_pos, y_pos)
 		add_child(zombie)
 		
-		# 计算屏幕位置用于调试
 		var screen_x = x_pos + 360
 		var screen_y = y_pos + 640
-		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 中心=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
+		print("  ✅ 生成" + zombie_type + "僵尸 #" + str(index + 1) + " 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
@@ -140,7 +169,9 @@ func _spawn_boss():
 	boss_active = true
 	boss_spawned_this_game = true
 	print("")
+	print("👹 ========================================")
 	print("👹 Boss即将出现！")
+	print("👹 ========================================")
 	
 	var boss_scene = load("res://scripts/Zombie.gd")
 	if boss_scene:
@@ -155,7 +186,9 @@ func _spawn_boss():
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
 	game_started = true
+	all_zombies_dead = false
 	spawn_timer.start()
+	print("⏰ Timer已启动")
 
 func stop():
 	print("⏹️ 生成器停止！")
