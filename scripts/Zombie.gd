@@ -84,51 +84,78 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 	sprite_node = sprite
 
 func _setup_collision():
-	var area = Area2D.new()
-	area.name = "ZombieArea"
-	area.collision_layer = 2
-	area.collision_mask = 1
-	area.monitoring = true
-	area.monitorable = true
-	area.body_entered.connect(_on_player_detected)
-	add_child(area)
+	# 玩家检测区域
+	var player_area = Area2D.new()
+	player_area.name = "PlayerArea"
+	player_area.collision_layer = 2
+	player_area.collision_mask = 1
+	player_area.monitoring = true
+	player_area.body_entered.connect(_on_player_detected)
+	add_child(player_area)
 	
-	var collision = CollisionShape2D.new()
-	collision.name = "CollisionShape"
-	var shape = CircleShape2D.new()
-	shape.radius = COLLISION_RADIUS * 0.4
-	collision.shape = shape
-	area.add_child(collision)
+	var player_collision = CollisionShape2D.new()
+	var player_shape = CircleShape2D.new()
+	player_shape.radius = COLLISION_RADIUS * 0.4
+	player_collision.shape = player_shape
+	player_area.add_child(player_collision)
+	
+	# 子弹检测区域
+	var bullet_area = Area2D.new()
+	bullet_area.name = "BulletArea"
+	bullet_area.collision_layer = 2
+	bullet_area.collision_mask = 4  # 检测 bullets
+	bullet_area.monitoring = true
+	bullet_area.body_entered.connect(_on_bullet_detected)
+	add_child(bullet_area)
+	
+	var bullet_collision = CollisionShape2D.new()
+	var bullet_shape = CircleShape2D.new()
+	bullet_shape.radius = 25.0
+	bullet_collision.shape = bullet_shape
+	bullet_area.add_child(bullet_collision)
+	
+	print("  ✅ 碰撞体创建 (玩家半径=" + str(COLLISION_RADIUS * 0.4) + ", 子弹半径=25)")
 
 func _create_health_bar():
-	# 更小的健康条 - 15x3
+	# 非常小的健康条 - 20x4
 	health_bar_bg = ColorRect.new()
 	health_bar_bg.name = "HealthBarBg"
 	health_bar_bg.color = Color(0.5, 0, 0)
-	health_bar_bg.size = Vector2(15, 3)
-	health_bar_bg.position = Vector2(-7, -35)
+	health_bar_bg.size = Vector2(20, 4)
+	health_bar_bg.position = Vector2(-10, -40)
 	add_child(health_bar_bg)
 	
 	health_bar_fg = ColorRect.new()
 	health_bar_fg.name = "HealthBarFg"
 	health_bar_fg.color = Color(0, 1, 0)
-	health_bar_fg.size = Vector2(15, 3)
-	health_bar_fg.position = Vector2(-7, -35)
+	health_bar_fg.size = Vector2(20, 4)
+	health_bar_fg.position = Vector2(-10, -40)
 	add_child(health_bar_fg)
 
 func _on_player_detected(body):
 	if body.is_in_group("player") and not dead:
-		var zombie_screen_pos = position + Vector2(360, 640)
-		var player_screen_pos = body.position
-		var dist = zombie_screen_pos.distance_to(player_screen_pos)
-		
-		if dist <= COLLISION_RADIUS:
+		var dist = position.distance_to(body.position)
+		if dist <= COLLISION_RADIUS * 0.4:
 			if not dead:
 				dead = true
 				var player = get_tree().get_first_node_in_group("player")
 				if player:
 					player.take_damage(999)
 				emit_signal("zombie_reached_player")
+
+func _on_bullet_detected(body):
+	if body.is_in_group("bullets"):
+		var bullet = body as Bullet
+		if bullet:
+			var final_damage = bullet.damage
+			var is_critical = randf() < 0.15
+			if is_critical:
+				final_damage *= 2.0
+			take_damage(final_damage)
+			_show_damage_number(final_damage, is_critical)
+			if not bullet.is_pierce:
+				bullet.queue_free()
+			print("💥 Zombie受伤: 类型=" + zombie_type + " 伤害=" + str(int(final_damage)))
 
 func _physics_process(delta):
 	if dead:
@@ -184,7 +211,7 @@ func _update_health_bar():
 	if health_bar_fg:
 		var max_health = get_max_health()
 		var health_pct = max(0.0, float(current_health) / float(max_health))
-		health_bar_fg.size.x = 15.0 * health_pct
+		health_bar_fg.size.x = 20.0 * health_pct
 		
 		if health_pct > 0.6:
 			health_bar_fg.color = Color(0, 1, 0)
@@ -233,3 +260,19 @@ func _die():
 		stats_mgr.add_kill(false)
 	
 	queue_free()
+
+func _show_damage_number(damage, is_critical):
+	var number = Label.new()
+	number.text = str(int(damage))
+	if is_critical:
+		number.text = str(int(damage)) + "!"
+	number.add_theme_font_size_override("font_size", 12 if not is_critical else 18)
+	number.modulate = Color(1, 1, 0.2) if is_critical else Color(1, 1, 1)
+	number.position = position + Vector2(0, -35)
+	number.z_index = 100
+	get_parent().add_child(number)
+	
+	var tween = create_tween()
+	tween.tween_property(number, "position:y", number.position.y - 30, 0.5)
+	tween.tween_property(number, "modulate:a", 0, 0.5)
+	tween.tween_callback(number.queue_free)
