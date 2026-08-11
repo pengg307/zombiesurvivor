@@ -11,6 +11,7 @@ const SPAWN_BOTTOM_Y = -350.0
 const SPAWN_LEFT_X = -360.0
 const SPAWN_RIGHT_X = 360.0
 const MAX_WAVES = 10
+const MIN_SPAWN_DISTANCE = 400.0  # 最小生成距离
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -43,6 +44,7 @@ var zombies_in_wave = 0
 var game_started = false
 var all_zombies_dead = false
 var zombie_count = 0
+var game_over = false
 
 signal boss_spawned
 signal game_over
@@ -61,9 +63,14 @@ func _ready():
 	print("📍 最大波次: " + str(MAX_WAVES))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
+	print("📏 最小生成距离: " + str(MIN_SPAWN_DISTANCE))
 	print("============================================================")
 
 func _on_spawn_timer_timeout():
+	# 检查游戏是否结束
+	if game_over:
+		return
+	
 	# 检查是否还有僵尸存活
 	var zombies = get_tree().get_nodes_in_group("zombies")
 	if zombies.size() == 0:
@@ -73,15 +80,13 @@ func _on_spawn_timer_timeout():
 		# 检查是否达到最大波次
 		if wave_number >= MAX_WAVES and not boss_spawned_this_game:
 			print("🏆 完成所有" + str(MAX_WAVES) + "波！")
-			var spawner = get_tree().get_first_node_in_group("spawner")
-			if spawner:
-				spawner.stop()
-				if current_kills >= BOSS_KILLS_REQUIRED:
-					_spawn_boss()
-				else:
-					var player = get_tree().get_first_node_in_group("player")
-					if player:
-						player.emit_signal("game_won")
+			stop()
+			# 检查是否需要生成Boss
+			if current_kills >= BOSS_KILLS_REQUIRED:
+				_spawn_boss()
+			else:
+				# 玩家已清除所有僵尸，胜利
+				_trigger_win()
 			return
 	
 	# 检查是否还有更多波次
@@ -146,21 +151,44 @@ func _spawn_zombie(index, config):
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
 		
-		var x_pos = SPAWN_LEFT_X + index * SQUARE_SPACING if spawn_side == 0 else SPAWN_RIGHT_X + index * SQUARE_SPACING
-		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
+		# 生成在屏幕边缘，距离玩家足够远
+		var spawn_x = _get_spawn_x(index)
+		var spawn_y = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
 		
-		zombie.position = Vector2(x_pos, y_pos)
+		# 确保生成位置距离玩家足够远
+		var player = get_tree().get_first_node_in_group("player")
+		if player:
+			var player_center_pos = player.position - Vector2(360, 640)
+			var spawn_pos = Vector2(spawn_x, spawn_y)
+			var dist = spawn_pos.distance_to(player_center_pos)
+			if dist < MIN_SPAWN_DISTANCE:
+				# 调整位置确保距离
+				var dir = (spawn_pos - player_center_pos).normalized()
+				spawn_pos = player_center_pos + dir * MIN_SPAWN_DISTANCE
+				spawn_x = spawn_pos.x
+				spawn_y = spawn_pos.y
+		
+		zombie.position = Vector2(spawn_x, spawn_y)
 		add_child(zombie)
 		
 		# 转换为屏幕坐标显示
-		var screen_x = x_pos + SCREEN_WIDTH / 2.0
-		var screen_y = y_pos + 640.0
+		var screen_x = spawn_x + SCREEN_WIDTH / 2.0
+		var screen_y = spawn_y + 640.0
 		zombie_count += 1
-		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 中心=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
+		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
+func _get_spawn_x(index):
+	# 交替从左右两侧生成
+	if spawn_side == 0:
+		return SPAWN_LEFT_X + index * SQUARE_SPACING
+	else:
+		return SPAWN_RIGHT_X + index * SQUARE_SPACING
+
 func add_kill():
+	if game_over:
+		return
 	current_kills += 1
 	print("📊 击杀数: " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
 	
@@ -180,15 +208,27 @@ func _spawn_boss():
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
+		# Boss 从上方生成，距离玩家足够远
 		boss.position = Vector2(0, SPAWN_TOP_Y - 100)
 		add_child(boss)
 		print("👹 Boss已生成！")
 		emit_signal("boss_spawned")
 
+func _trigger_win():
+	if game_over:
+		return
+	game_over = true
+	print("🏆 玩家胜利！")
+	var player = get_tree().get_first_node_in_group("player")
+	if player:
+		player.emit_signal("game_won")
+	emit_signal("game_won")
+
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
 	game_started = true
 	all_zombies_dead = false
+	game_over = false
 	spawn_timer.start()
 	print("⏰ Timer已启动，间隔=" + str(spawn_timer.wait_time) + "s")
 
