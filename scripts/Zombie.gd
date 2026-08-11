@@ -34,7 +34,6 @@ func _ready():
 	_setup_collision()
 	_create_health_bar()
 	
-	# 初始化健康值
 	if is_boss or zombie_type == "boss":
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
@@ -77,7 +76,7 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 	sprite.centered = true
 	sprite.z_index = 10
 	var rect = ColorRect.new()
-	rect.size = Vector2(40, 40)
+	rect.size = Vector2(30, 30)
 	rect.color = color
 	sprite.add_child(rect)
 	sprite.scale = scale
@@ -85,7 +84,6 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 	sprite_node = sprite
 
 func _setup_collision():
-	# 创建 Area2D 检测玩家
 	var area = Area2D.new()
 	area.name = "ZombieArea"
 	area.collision_layer = 2
@@ -95,29 +93,27 @@ func _setup_collision():
 	area.body_entered.connect(_on_player_detected)
 	add_child(area)
 	
-	# 添加碰撞形状
 	var collision = CollisionShape2D.new()
 	collision.name = "CollisionShape"
 	var shape = CircleShape2D.new()
-	shape.radius = COLLISION_RADIUS
+	shape.radius = COLLISION_RADIUS * 0.4
 	collision.shape = shape
 	area.add_child(collision)
-	
-	print("  ✅ 碰撞体创建 (层=2, 掩码=1, 半径=" + str(COLLISION_RADIUS) + ")")
 
 func _create_health_bar():
+	# 更小的健康条 - 15x3
 	health_bar_bg = ColorRect.new()
 	health_bar_bg.name = "HealthBarBg"
 	health_bar_bg.color = Color(0.5, 0, 0)
-	health_bar_bg.size = Vector2(40, 4)
-	health_bar_bg.position = Vector2(-20, -45)
+	health_bar_bg.size = Vector2(15, 3)
+	health_bar_bg.position = Vector2(-7, -35)
 	add_child(health_bar_bg)
 	
 	health_bar_fg = ColorRect.new()
 	health_bar_fg.name = "HealthBarFg"
 	health_bar_fg.color = Color(0, 1, 0)
-	health_bar_fg.size = Vector2(40, 4)
-	health_bar_fg.position = Vector2(-20, -45)
+	health_bar_fg.size = Vector2(15, 3)
+	health_bar_fg.position = Vector2(-7, -35)
 	add_child(health_bar_fg)
 
 func _on_player_detected(body):
@@ -125,8 +121,6 @@ func _on_player_detected(body):
 		var zombie_screen_pos = position + Vector2(360, 640)
 		var player_screen_pos = body.position
 		var dist = zombie_screen_pos.distance_to(player_screen_pos)
-		
-		print("💥 Zombie碰撞: 类型=" + zombie_type + " 距离=" + str(int(dist)) + " 半径=" + str(COLLISION_RADIUS))
 		
 		if dist <= COLLISION_RADIUS:
 			if not dead:
@@ -156,7 +150,7 @@ func _physics_process(delta):
 		if !is_boss and zombie_type != "boss":
 			if frame_count % 5 == 0 and sprite_node:
 				current_frame = (current_frame + 1) % 4
-				sprite_node.region_rect = Rect2(current_frame * 40, 0, 40, 40)
+				sprite_node.region_rect = Rect2(current_frame * 30, 0, 30, 30)
 		
 		# Boss 动画
 		if is_boss or zombie_type == "boss":
@@ -190,7 +184,7 @@ func _update_health_bar():
 	if health_bar_fg:
 		var max_health = get_max_health()
 		var health_pct = max(0.0, float(current_health) / float(max_health))
-		health_bar_fg.size.x = 40.0 * health_pct
+		health_bar_fg.size.x = 15.0 * health_pct
 		
 		if health_pct > 0.6:
 			health_bar_fg.color = Color(0, 1, 0)
