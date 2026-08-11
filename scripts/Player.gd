@@ -72,7 +72,8 @@ func _ready():
 	_add_position_label()
 	_setup_audio()
 	
-	print("🎮 Player启动！碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
+	print("🎮 Player启动！位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ")")
+	print("   SHOT_RANGE=" + str(SHOT_RANGE) + " fire_rate=" + str(fire_rate))
 
 func _setup_character():
 	var sprite = Sprite2D.new()
@@ -99,7 +100,6 @@ func _setup_fallback_sprite():
 	print("⚠️ 使用备用玩家素材")
 
 func _setup_collision():
-	# 玩家碰撞体
 	var collision = CollisionShape2D.new()
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
@@ -108,7 +108,6 @@ func _setup_collision():
 	collision.shape = shape
 	add_child(collision)
 	
-	# 僵尸检测区域
 	var area = Area2D.new()
 	area.name = "ZombieDetector"
 	area.monitoring = true
@@ -118,21 +117,23 @@ func _setup_collision():
 	area.body_entered.connect(_on_zombie_detected)
 	add_child(area)
 	
-	# 添加碰撞形状
 	var shape2 = CollisionShape2D.new()
 	var circle = CircleShape2D.new()
 	circle.radius = 30.0
 	shape2.shape = circle
 	area.add_child(shape2)
 	
-	print("✅ 玩家碰撞体创建成功")
+	print("✅ 玩家碰撞体创建成功 (层=1, 掩码=2, 半径=30)")
 
 func _on_zombie_detected(body):
 	if body.is_in_group("zombies") and not game_over:
-		print("💥 僵尸碰到玩家！")
-		game_over = true
-		current_health = 0
-		emit_signal("player_died")
+		var dist = position.distance_to(body.position + Vector2(360, 640))
+		print("💥 僵尸碰撞检测: 距离=" + str(int(dist)))
+		if dist <= 60.0:  # 碰撞半径
+			print("💀 僵尸碰到玩家！")
+			game_over = true
+			current_health = 0
+			emit_signal("player_died")
 
 func _add_position_label():
 	var label = Label.new()
@@ -195,6 +196,14 @@ func _physics_process(delta):
 	if regen_rate > 0 and current_health < MAX_HEALTH:
 		current_health = min(MAX_HEALTH, current_health + regen_rate * delta)
 
+func _update_ammo_boost(delta):
+	if ammo_boost_timer > 0:
+		ammo_boost_timer -= delta
+		if ammo_boost_timer <= 0:
+			ammo_boost_timer = 0
+			ammo_boost_level = 0
+			fire_rate = base_fire_rate
+
 func _move(delta):
 	var direction = Vector2(0, 0)
 	
@@ -230,10 +239,10 @@ func _shoot(delta):
 	if game_over:
 		return
 	shoot_debug_counter += delta
-	if shoot_debug_counter >= 2.0:
+	if shoot_debug_counter >= 1.0:
 		shoot_debug_counter = 0.0
 		var enemies = get_tree().get_nodes_in_group("zombies")
-		print("🔧 僵尸数量: " + str(enemies.size()) + " fire_rate: " + str(fire_rate))
+		print("🔧 [射击调试] 僵尸:" + str(enemies.size()) + " fire_rate:" + str(fire_rate) + " timer:" + str(_fire_timer))
 	
 	fire_rate = max(0.1, base_fire_rate - float(ammo_boost_level) * 0.05)
 	_fire_timer += delta
@@ -260,9 +269,14 @@ func _attack():
 				
 				if audio_manager:
 					audio_manager.play_shoot()
+				print("🔫 [攻击] 射击! 距离=" + str(int(dist)) + " 子弹数=" + str(bullet_count))
+			else:
+				if attack_log_counter >= 5:
+					print("⚠️ [攻击] 僵尸太远: " + str(int(dist)) + "/" + str(SHOT_RANGE))
+					attack_log_counter = 0
 	else:
 		if attack_log_counter >= 10:
-			print("⚠️ 没有僵尸在范围内！")
+			print("⚠️ [攻击] 没有僵尸")
 			attack_log_counter = 0
 
 func _find_nearest_enemy(enemies):
@@ -291,7 +305,7 @@ func _spawn_bullet(direction: Vector2):
 	
 	if audio_manager:
 		audio_manager.play_shoot()
-	print("🔫 发射子弹！方向: " + str(direction))
+	print("🔫 [子弹] 发射! 位置=" + str(int(bullet.position.x)) + "," + str(int(bullet.position.y)))
 
 func _handle_grenade(delta):
 	if grenade_cooldown > 0:
@@ -308,7 +322,7 @@ func _throw_grenade():
 		get_parent().add_child(grenade)
 		if audio_manager:
 			audio_manager.play_grenade_throw()
-		print("💣 投掷手雷！剩余:" + str(grenades))
+		print("💣 手雷! 剩余:" + str(grenades))
 
 func _update_position_label():
 	if has_node("PositionLabel"):
@@ -350,7 +364,7 @@ func take_damage(damage: float):
 	if current_health <= 0:
 		game_over = true
 		emit_signal("player_died")
-	print("💥 生命值:" + str(int(current_health)))
+	print("💥 [受伤] HP=" + str(int(current_health)))
 
 func add_kill():
 	if game_over:
@@ -361,7 +375,7 @@ func add_kill():
 	if kills % 10 == 0:
 		emit_signal("upgrade_available")
 	emit_signal("kill_count_changed")
-	print("💀 击杀数:" + str(kills) + " 等级:" + str(level))
+	print("💀 [击杀] #" + str(kills) + " Lv." + str(level))
 	
 	if kills % 10 == 0:
 		bullet_speed += 100.0
@@ -369,11 +383,11 @@ func add_kill():
 	if kills == 5 and not triple_shot_unlocked:
 		triple_shot_unlocked = true
 		bullet_count = 3
-		print("🔓 三发子弹已解锁！")
+		print("🔓 [解锁] 三发子弹!")
 	
 	if kills > 0 and kills % GRENADE_INTERVAL == 0 and grenades < MAX_GRENADES:
 		grenades += 1
-		print("💣 获得手雷！当前:" + str(grenades))
+		print("💣 [手雷] 获得! 当前:" + str(grenades))
 	
 	emit_signal("kill_count_changed")
 
@@ -386,4 +400,4 @@ func add_experience(amount: int):
 func _update_debug_info():
 	if debug_mode and last_log_kill != kills:
 		last_log_kill = kills
-		print("📊 击杀:" + str(kills) + " 等级:" + str(level) + " 三发:" + str(triple_shot_unlocked))
+		print("📊 [调试] 击杀:" + str(kills) + " 三发:" + str(bullet_count))
