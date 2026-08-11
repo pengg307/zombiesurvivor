@@ -10,6 +10,11 @@ var tutorial_manager = null
 var game_ended = false
 var game_started = false
 
+# 底部健康条节点
+var health_bar_container = null
+var health_bar_fg = null
+var health_label = null
+
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
@@ -23,10 +28,9 @@ func _ready():
 	_setup_settings()
 	_setup_tutorial()
 	_connect_buttons()
-	_create_health_alert_panel()
+	_create_bottom_health_bar()
 	_add_triple_shot_display()
 	_add_grenade_display()
-	_add_bottom_status_bar()
 	_add_mobile_controls()
 	_add_settings_button()
 	_add_stats_button()
@@ -71,13 +75,11 @@ func set_spawner(spawner_node):
 	print("✅ Spawner引用已设置")
 
 func _connect_buttons():
-	# 连接开始按钮
 	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
 		var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
 		start_btn.pressed.connect(_on_start_game)
 		print("  ✅ StartButton 已连接")
 	
-	# 连接重新开始按钮
 	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
 		var restart_btn = $GameOverPanel/PanelContainer/VBoxContainer/RestartButton
 		restart_btn.pressed.connect(_on_restart_game)
@@ -96,7 +98,6 @@ func _on_start_game():
 	print("========================================")
 	print("🎮 [DEBUG] 游戏开始！")
 	print("========================================")
-	print("  - Spawner引用: " + str(spawner))
 	
 	game_started = true
 	game_ended = false
@@ -108,11 +109,7 @@ func _on_start_game():
 		stats_manager.start_game()
 	
 	if spawner:
-		print("  - 调用spawner.start()")
 		spawner.start()
-		print("  - Spawner已启动！")
-	else:
-		print("  - ❌ Spawner引用为空！")
 	
 	if has_node("Panel"):
 		$Panel.modulate = Color(1, 1, 1, 1)
@@ -123,13 +120,11 @@ func _on_start_game():
 	if has_node("Panel/TopPanel"):
 		$Panel/TopPanel.visible = true
 	
-	# 隐藏结束面板
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
 	if has_node("WinPanel"):
 		$WinPanel.visible = false
 	
-	# 启动教程
 	if tutorial_manager:
 		tutorial_manager.start_tutorial()
 	
@@ -149,7 +144,6 @@ func show_game_over(kills):
 	if stats_manager:
 		stats_manager.end_game(false)
 	
-	# 隐藏其他面板
 	if has_node("WinPanel"):
 		$WinPanel.visible = false
 	
@@ -173,7 +167,6 @@ func show_win(kills):
 	if stats_manager:
 		stats_manager.end_game(true)
 	
-	# 隐藏其他面板
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
 	
@@ -191,71 +184,81 @@ func _on_restart_game():
 	
 	get_tree().reload_current_scene()
 
-func show_upgrade_panel():
-	if game_ended or not game_started:
-		return
-	print("🎁 [升级] 显示升级面板")
-	
-	if audio_manager:
-		audio_manager.play_levelup()
-	
-	if has_node("UpgradePanel"):
-		$UpgradePanel.visible = true
-		get_tree().paused = true
-		_generate_upgrade_options()
-
-func _generate_upgrade_options():
-	var upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
-	if not upgrade_sys:
-		upgrade_sys = preload("res://scripts/UpgradeSystem.gd").new()
-		add_child(upgrade_sys)
-	
-	var options = upgrade_sys.get_random_options(3)
-	_show_upgrade_options(options)
-
-func _show_upgrade_options(options):
-	for child in $UpgradePanel/PanelContainer/VBoxContainer/OptionsContainer.get_children():
-		child.queue_free()
-	
-	for option_key in options:
-		var btn = Button.new()
-		btn.text = get_upgrade_name(option_key)
-		btn.pressed.connect(_on_upgrade_selected.bind(option_key))
-		$UpgradePanel/PanelContainer/VBoxContainer/OptionsContainer.add_child(btn)
-
-func get_upgrade_name(key):
-	var upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
-	if upgrade_sys and key in upgrade_sys.UPGRADE_OPTIONS:
-		return upgrade_sys.UPGRADE_OPTIONS[key].name
-	return key
-
-func _on_upgrade_selected(option_key):
-	print("🎯 [强化选择] " + get_upgrade_name(option_key))
-	var upgrade_sys = get_node_or_null("/root/WeaponUpgradeSystem")
-	if upgrade_sys and player:
-		upgrade_sys.apply_upgrade(player, option_key)
-	hide_upgrade_panel()
-
-func hide_upgrade_panel():
-	if has_node("UpgradePanel"):
-		$UpgradePanel.visible = false
-	get_tree().paused = false
-
-func _add_bottom_status_bar():
-	var container = VBoxContainer.new()
-	container.name = "BottomStatusBar"
-	container.position = Vector2(0, 1240)
-	container.size = Vector2(720, 40)
+func _create_bottom_health_bar():
+	# 底部健康条容器 - 长条形
+	var container = Panel.new()
+	container.name = "BottomHealthBar"
+	container.layout_mode = 1
+	container.anchor_left = 0.0
+	container.anchor_top = 1.0
+	container.anchor_right = 1.0
+	container.anchor_bottom = 1.0
+	container.offset_left = 0
+	container.offset_top = -60
+	container.offset_right = 0
+	container.offset_bottom = 0
+	container.modulate = Color(0.1, 0.1, 0.1, 0.8)
 	add_child(container)
 	
-	var status_label = Label.new()
-	status_label.name = "StatusLabel"
-	status_label.text = "⚔️10.0 💨0.30s 🚀600"
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	status_label.add_theme_font_size_override("font_size", 16)
-	status_label.modulate = Color(1, 1, 0.8)
-	container.add_child(status_label)
+	# 健康条背景
+	var bg = ColorRect.new()
+	bg.name = "HealthBarBg"
+	bg.size = Vector2(700, 40)
+	bg.position = Vector2(10, 10)
+	bg.color = Color(0.3, 0.1, 0.1)
+	container.add_child(bg)
+	
+	# 健康条前景
+	var fg = ColorRect.new()
+	fg.name = "HealthBarFg"
+	fg.size = Vector2(700, 40)
+	fg.position = Vector2(10, 10)
+	fg.color = Color(0, 0.8, 0)
+	container.add_child(fg)
+	health_bar_fg = fg
+	
+	# 健康文字
+	var label = Label.new()
+	label.name = "HealthLabel"
+	label.text = "HP: 100/100"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_color_override("font_color", Color(1, 1, 1))
+	label.position = Vector2(0, 0)
+	label.size = Vector2(720, 60)
+	container.add_child(label)
+	health_label = label
+	
+	print("✅ 底部健康条已创建")
+
+func _update_health():
+	if not player or game_ended:
+		return
+	
+	if has_node("BottomHealthBar"):
+		var container = $BottomHealthBar
+		var fg = container.get_node("HealthBarFg")
+		var label = container.get_node("HealthLabel")
+		
+		if fg and label:
+			var max_hp = player.MAX_HEALTH
+			var current_hp = player.current_health
+			var pct = current_hp / max_hp
+			
+			# 更新宽度
+			fg.size.x = 700 * pct
+			fg.position.x = 10 + (700 * (1 - pct))
+			
+			# 更新文字
+			label.text = "HP: %d/%d" % [int(current_hp), int(max_hp)]
+			
+			# 更新颜色
+			if pct > 0.6:
+				fg.color = Color(0, 0.8, 0)  # 绿色
+			elif pct > 0.3:
+				fg.color = Color(1, 0.8, 0)  # 黄色
+			else:
+				fg.color = Color(1, 0.2, 0.2)  # 红色
 
 func _add_triple_shot_display():
 	var triple_label = Label.new()
@@ -274,97 +277,6 @@ func _add_grenade_display():
 	grenade_label.modulate = Color(1, 0.5, 0.3)
 	grenade_label.add_theme_font_size_override("font_size", 18)
 	add_child(grenade_label)
-
-func _create_health_alert_panel():
-	var panel = Panel.new()
-	panel.name = "HealthAlertPanel"
-	panel.visible = true
-	panel.layout_mode = 1
-	panel.anchor_left = 0.0
-	panel.anchor_top = 1.0
-	panel.anchor_right = 1.0
-	panel.anchor_bottom = 1.0
-	panel.offset_left = 0.0
-	panel.offset_top = 0.0
-	panel.offset_right = 0.0
-	panel.offset_bottom = -150.0
-	panel.modulate = Color(1, 1, 1, 0.9)
-	add_child(panel)
-	
-	var container = VBoxContainer.new()
-	container.name = "HealthAlertContainer"
-	container.alignment = BoxContainer.ALIGNMENT_CENTER
-	container.custom_minimum_size = Vector2(0, 120)
-	panel.add_child(container)
-	
-	var label = Label.new()
-	label.name = "HealthAlertLabel"
-	label.text = "❤️ 玩家健康"
-	label.add_theme_font_size_override("font_size", 28)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.modulate = Color(1, 0.3, 0.3)
-	container.add_child(label)
-	
-	var bar_container = HBoxContainer.new()
-	bar_container.name = "HealthBarContainer"
-	bar_container.custom_minimum_size = Vector2(0, 60)
-	bar_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	panel.add_child(bar_container)
-	
-	var text_label = Label.new()
-	text_label.name = "HealthTextLabel"
-	text_label.text = "HP: 100/100"
-	text_label.add_theme_font_size_override("font_size", 24)
-	text_label.modulate = Color(1, 1, 1)
-	bar_container.add_child(text_label)
-	
-	var bar = ProgressBar.new()
-	bar.name = "HealthBar"
-	bar.value = 100.0
-	bar.min_value = 0.0
-	bar.max_value = 100.0
-	bar.size_flags_horizontal = Control.SIZE_FILL
-	bar.add_theme_constant_override("separation", 10)
-	bar.modulate = Color(0, 1, 0)
-	bar_container.add_child(bar)
-	
-	print("✅ 健康警报面板已创建")
-
-func _show_health_alert():
-	if not has_node("HealthAlertPanel"):
-		return
-	if game_ended:
-		return
-	var panel = $HealthAlertPanel
-	panel.visible = true
-	var tween = create_tween()
-	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
-	tween.tween_property(panel, "modulate:a", 0.3, 0.1)
-	tween.tween_property(panel, "modulate:a", 1.0, 0.1)
-	var timer = get_tree().create_timer(0.5)
-	timer.timeout.connect(func():
-		if has_node("HealthAlertPanel") and not game_ended:
-			_update_health()
-	)
-
-func _update_health():
-	if not player or game_ended:
-		return
-	if has_node("HealthAlertPanel/HealthAlertContainer"):
-		var panel = $HealthAlertPanel
-		var text_label = panel.get_node("HealthAlertContainer/HealthBarContainer/HealthTextLabel")
-		var bar = panel.get_node("HealthAlertContainer/HealthBarContainer/HealthBar")
-		if text_label and bar:
-			text_label.text = "HP: %d/%d" % [player.current_health, player.MAX_HEALTH]
-			bar.value = player.current_health
-			bar.max_value = player.MAX_HEALTH
-			var pct = float(player.current_health) / float(player.MAX_HEALTH)
-			if pct > 0.6:
-				bar.modulate = Color(0, 1, 0)
-			elif pct > 0.3:
-				bar.modulate = Color(1, 1, 0)
-			else:
-				bar.modulate = Color(1, 0, 0)
 
 func _add_mobile_controls():
 	var joystick = load("res://scripts/JoystickControl.gd").new()
