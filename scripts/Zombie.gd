@@ -7,161 +7,103 @@ const FAST_HEALTH = 8.0
 const FAST_SPEED = 70.0
 const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 30.0
-const DAMAGE_PER_SECOND = 5.0
-const EXPERIENCE_REWARD = 10
+const DAMAGE = 10.0
 const COLLISION_RADIUS = 50.0
+const EXPERIENCE_REWARD = 10
+const SAFETY_TIME = 2.0  # 安全时间（秒）
 
-@export var is_boss: bool = false
 var zombie_type = "basic"
-var current_health: float
-var base_speed: float
+var is_boss = false
+var current_health = BASE_HEALTH
+var speed = BASE_SPEED
 var dead = false
-var damage_timer = 0.0
-var sprite_node: Sprite2D = null
-var frame_count = 0
-var current_frame = 0
-var boss_anim_timer = 0.0
-var health_bar_bg: ColorRect = null
-var health_bar_fg: ColorRect = null
 var can_attack = false
-var spawner = null
+var player_node = null
 var player_area = null
 var bullet_area = null
+var sprite: Sprite2D
+var health_bar_fg: ColorRect
+var zombie_kills = 0  # 该僵尸击杀数
 
-signal zombie_reached_player
-signal zombie_spawned
+signal zombie_died
 signal boss_died
+signal zombie_reached_player
 
 func _ready():
 	add_to_group("zombies")
-	
-	spawner = get_tree().get_first_node_in_group("spawner")
-	
 	_setup_sprite()
 	_setup_collision()
-	_create_health_bar()
+	_setup_health_bar()
 	
-	if is_boss or zombie_type == "boss":
-		current_health = BOSS_HEALTH
-		base_speed = BOSS_SPEED
-	else:
-		if zombie_type == "fast":
-			current_health = FAST_HEALTH
-			base_speed = FAST_SPEED
-		else:
-			current_health = BASE_HEALTH
-			base_speed = BASE_SPEED
+	current_health = get_max_health()
+	speed = get_speed()
 	
-	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + " 位置=" + str(position))
-	
-	emit_signal("zombie_spawned")
-
-func _process(delta):
-	if spawner and not can_attack:
-		if not spawner.is_safety_mode:
-			can_attack = true
+	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)))
 
 func _setup_sprite():
-	var sprite = Sprite2D.new()
-	sprite.name = "Sprite"
-	sprite.centered = true
-	sprite.z_index = 10
-	
-	if is_boss or zombie_type == "boss":
-		var boss_texture = load("res://assets/downloads/biggerboss.png")
+	if zombie_type == "boss" or is_boss:
+		# Boss使用bigboss.png
+		sprite = Sprite2D.new()
+		var boss_texture = load("res://assets/downloads/bigboss.png")
 		if boss_texture:
 			sprite.texture = boss_texture
-			sprite.region_enabled = true
-			sprite.region_rect = Rect2(0, 0, 167, 374)
-			sprite.scale = Vector2(1.2, 1.2)
-		else:
-			_setup_fallback_sprite(Color(1, 0, 0), Vector2(1.2, 1.2))
+			sprite.scale = Vector2(2, 2)
+		add_child(sprite)
+		position = Vector2(0, -300)
 	else:
-		var zombie_texture = load("res://assets/downloads/zombie_front_4frames_game.png")
-		if zombie_texture:
-			sprite.texture = zombie_texture
-			sprite.region_enabled = true
-			sprite.region_rect = Rect2(0, 0, 64, 64)
-			sprite.scale = Vector2(0.8, 0.8)
-		else:
-			_setup_fallback_sprite(Color(0, 0.8, 0), Vector2(0.8, 0.8))
-	
-	add_child(sprite)
-	sprite_node = sprite
-
-func _setup_fallback_sprite(color: Color, scale: Vector2):
-	var sprite = Sprite2D.new()
-	sprite.name = "Sprite"
-	sprite.centered = true
-	sprite.z_index = 10
-	var rect = ColorRect.new()
-	rect.size = Vector2(30, 30)
-	rect.color = color
-	sprite.add_child(rect)
-	sprite.scale = scale
-	add_child(sprite)
-	sprite_node = sprite
+		# 普通僵尸使用zombie_front_4frames_game.png
+		sprite = Sprite2D.new()
+		var texture = load("res://assets/downloads/zombie_front_4frames_game.png")
+		if texture:
+			sprite.texture = texture
+			sprite.scale = Vector2(2, 2)
+			sprite.centered = true
+		add_child(sprite)
 
 func _setup_collision():
+	# 创建碰撞体 - 使用更加可靠的检测方法
 	player_area = Area2D.new()
 	player_area.name = "PlayerArea"
-	player_area.collision_layer = 2
+	player_area.collision_layer = 2  # 检测玩家
 	player_area.collision_mask = 1
-	player_area.monitoring = true
 	player_area.body_entered.connect(_on_player_detected)
 	add_child(player_area)
 	
-	var player_collision = CollisionShape2D.new()
-	var player_shape = CircleShape2D.new()
-	player_shape.radius = COLLISION_RADIUS * 0.5
-	player_collision.shape = player_shape
-	player_area.add_child(player_collision)
+	var player_shape = CollisionShape2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = COLLISION_RADIUS
+	player_shape.shape = circle
+	player_area.add_child(player_shape)
 	
+	# 创建子弹检测区域
 	bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
-	bullet_area.collision_layer = 2
-	bullet_area.collision_mask = 4
-	bullet_area.monitoring = true
-	bullet_area.monitorable = true
+	bullet_area.collision_layer = 0  # 不检测任何层
+	bullet_area.collision_mask = 4   # 检测子弹层
 	bullet_area.area_entered.connect(_on_bullet_area_entered)
 	add_child(bullet_area)
 	
-	var bullet_collision = CollisionShape2D.new()
-	var bullet_shape = CircleShape2D.new()
-	bullet_shape.radius = 25.0
-	bullet_collision.shape = bullet_shape
-	bullet_area.add_child(bullet_collision)
+	var bullet_shape = CollisionShape2D.new()
+	var circle2 = CircleShape2D.new()
+	circle2.radius = 20
+	bullet_shape.shape = circle2
+	bullet_area.add_child(bullet_shape)
 	
-	print("  ✅ 碰撞体创建 (玩家半径=" + str(COLLISION_RADIUS * 0.5) + ", 子弹半径=25)")
-
-func _create_health_bar():
-	health_bar_bg = ColorRect.new()
-	health_bar_bg.name = "HealthBarBg"
-	health_bar_bg.color = Color(0.5, 0, 0)
-	health_bar_bg.size = Vector2(20, 4)
-	health_bar_bg.position = Vector2(-10, -40)
-	add_child(health_bar_bg)
-	
-	health_bar_fg = ColorRect.new()
-	health_bar_fg.name = "HealthBarFg"
-	health_bar_fg.color = Color(0, 1, 0)
-	health_bar_fg.size = Vector2(20, 4)
-	health_bar_fg.position = Vector2(-10, -40)
-	add_child(health_bar_fg)
+	print("  ✅ 碰撞体创建成功 (检测玩家层=2, 子弹层=4)")
 
 func _on_player_detected(body):
-	if body.is_in_group("player") and not dead:
-		if can_attack:
-			var dist = position.distance_to(body.position)
-			if dist <= COLLISION_RADIUS:
-				if not dead:
-					dead = true
-					_disable_collision()
-					var player = get_tree().get_first_node_in_group("player")
-					if player:
-						player.take_damage(999)
-					emit_signal("zombie_reached_player")
-				print("💀 僵尸碰到玩家！距离=" + str(int(dist)))
+	# 只有当僵尸还活着且可以攻击时才检测
+	if body.is_in_group("player") and not dead and can_attack:
+		var player_pos = body.position + Vector2(360, 640)  # 转换为世界坐标
+		var dist = position.distance_to(player_pos)
+		if dist <= COLLISION_RADIUS:
+			# 立即禁用碰撞，防止多次触发
+			_disable_collision()
+			dead = true  # 僵尸碰到玩家后也标记为死亡
+			var player = get_tree().get_first_node_in_group("player")
+			if player:
+				player.take_damage(999)
+			print("💀 僵尸碰到玩家！距离=" + str(int(dist)))
 
 func _on_bullet_area_entered(area):
 	if area.is_in_group("bullets") and not dead:
@@ -188,75 +130,33 @@ func _physics_process(delta):
 	if dead:
 		return
 	
-	frame_count += 1
+	# 移动逻辑
+	var target = get_tree().get_first_node_in_group("player")
+	if target:
+		var target_pos = target.position + Vector2(360, 640)  # 转换为世界坐标
+		var direction = (target_pos - position).normalized()
+		position += direction * speed * delta
 	
-	var player_node = get_tree().get_first_node_in_group("player")
-	
-	if player_node:
-		var target_center_pos = player_node.position - Vector2(360, 640)
-		
-		var dx = target_center_pos.x - position.x
-		var dy = target_center_pos.y - position.y
-		var move_dir = Vector2(dx, dy).normalized()
-		position += move_dir * base_speed * delta
-		
-		if !is_boss and zombie_type != "boss":
-			if frame_count % 5 == 0 and sprite_node:
-				current_frame = (current_frame + 1) % 4
-				if sprite_node.texture and sprite_node.texture.resource_path.contains("zombie"):
-					sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
-		else:
-			boss_anim_timer += delta
-			var pulse = 1.0 + 0.1 * sin(boss_anim_timer * 3.0)
-			sprite_node.scale = Vector2(1.2, 1.2) * pulse
-			if frame_count % 8 == 0:
-				current_frame = (current_frame + 1) % 4
-				sprite_node.region_rect = Rect2(current_frame * 167, 0, 167, 374)
-	
-	if (is_boss or zombie_type == "boss") and player_node:
-		damage_timer += delta
-		if damage_timer >= 1.0:
-			damage_timer = 0.0
-			var player_health = player_node.current_health if player_node.has_method("take_damage") else 100
-			if player_health > 0:
-				player_node.take_damage(DAMAGE_PER_SECOND)
+	# 动画
+	if sprite and sprite.texture:
+		frame = (frame + delta * 8) % 4
 
 func take_damage(damage: float):
 	if dead:
 		return
-	
 	current_health -= damage
 	_update_health_bar()
-	
 	if current_health <= 0:
 		_die()
-
-func _update_health_bar():
-	if health_bar_fg:
-		var max_health = get_max_health()
-		var health_pct = max(0.0, float(current_health) / float(max_health))
-		health_bar_fg.size.x = 20.0 * health_pct
-		
-		if health_pct > 0.6:
-			health_bar_fg.color = Color(0, 1, 0)
-		elif health_pct > 0.3:
-			health_bar_fg.color = Color(1, 1, 0)
-		else:
-			health_bar_fg.color = Color(1, 0, 0)
-
-func get_max_health() -> float:
-	if is_boss or zombie_type == "boss":
-		return BOSS_HEALTH
-	elif zombie_type == "fast":
-		return FAST_HEALTH
-	else:
-		return BASE_HEALTH
 
 func _die():
 	if dead:
 		return
 	dead = true
 	_disable_collision()
+	
+	# 创建粒子效果
+	_spawn_death_particles()
 	
 	var player = get_tree().get_first_node_in_group("player")
 	var spawner = get_tree().get_first_node_in_group("spawner")
@@ -286,6 +186,39 @@ func _die():
 	
 	queue_free()
 
+func _update_health_bar():
+	if health_bar_fg:
+		var max_health = get_max_health()
+		var pct = current_health / max_health
+		health_bar_fg.size.x = 20 * pct
+		if pct > 0.6:
+			health_bar_fg.color = Color(0, 1, 0)
+		elif pct > 0.3:
+			health_bar_fg.color = Color(1, 1, 0)
+		else:
+			health_bar_fg.color = Color(1, 0, 0)
+
+func _setup_health_bar():
+	health_bar_fg = ColorRect.new()
+	health_bar_fg.name = "HealthBarFg"
+	health_bar_fg.color = Color(0, 1, 0)
+	health_bar_fg.size = Vector2(20, 4)
+	health_bar_fg.position = Vector2(-10, -40)
+	add_child(health_bar_fg)
+
+func _spawn_death_particles():
+	var particle = GPUParticles2D.new()
+	particle.process_material = ProcessMaterial.new()
+	particle.process_material.emission_sphere_radius = 20
+	particle.one_shot = true
+	particle.max_particles = 10
+	particle.emitting = true
+	particle.lifetime = 0.5
+	position.y -= 20
+	add_child(particle)
+	await get_tree().create_timer(0.5).timeout
+	particle.queue_free()
+
 func _show_damage_number(damage, is_critical):
 	var number = Label.new()
 	number.text = str(int(damage))
@@ -301,3 +234,19 @@ func _show_damage_number(damage, is_critical):
 	tween.tween_property(number, "position:y", number.position.y - 30, 0.5)
 	tween.tween_property(number, "modulate:a", 0, 0.5)
 	tween.tween_callback(number.queue_free)
+
+func get_max_health() -> float:
+	if is_boss or zombie_type == "boss":
+		return BOSS_HEALTH
+	elif zombie_type == "fast":
+		return FAST_HEALTH
+	else:
+		return BASE_HEALTH
+
+func get_speed() -> float:
+	if is_boss or zombie_type == "boss":
+		return BOSS_SPEED
+	elif zombie_type == "fast":
+		return FAST_SPEED
+	else:
+		return BASE_SPEED
