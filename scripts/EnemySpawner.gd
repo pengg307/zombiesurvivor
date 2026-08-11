@@ -3,14 +3,19 @@ class_name EnemySpawner
 
 const SPAWN_INTERVAL = 2.5
 const BOSS_KILLS_REQUIRED = 5
-const SQUARE_SPACING = 80.0
+const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
+const SCREEN_HEIGHT = 1280.0
 const BOSS_HEALTH = 500.0
 const SPAWN_TOP_Y = -450.0
 const SPAWN_BOTTOM_Y = -350.0
+const MAX_WAVES = 10
+
+# 屏幕中心对应世界坐标 (0, 0)
+# 屏幕左边缘 = -360, 右边缘 = 360
+# 屏幕上边缘 = -640, 下边缘 = 640
 const SPAWN_LEFT_X = -360.0
 const SPAWN_RIGHT_X = 360.0
-const MAX_WAVES = 10
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -65,11 +70,11 @@ func _ready():
 	print("📍 最大波次: " + str(MAX_WAVES))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
+	print("📏 屏幕范围: X(-360,360) Y(-640,640)")
 	print("⏱️ 安全时间: " + str(SAFETY_TIME) + "秒")
 	print("============================================================")
 
 func _process(delta):
-	# 安全时间计时
 	if is_safety_mode and game_started:
 		safety_timer += delta
 		if safety_timer >= SAFETY_TIME:
@@ -77,29 +82,23 @@ func _process(delta):
 			print("✅ 安全时间结束，僵尸可以攻击了！")
 
 func _on_spawn_timer_timeout():
-	# 检查游戏是否结束
 	if is_game_over:
 		return
 	
-	# 检查是否还有僵尸存活
 	var zombies = get_tree().get_nodes_in_group("zombies")
 	if zombies.size() == 0:
 		all_zombies_dead = true
 		print("🎉 所有僵尸已清除！当前波次: " + str(wave_number))
 		
-		# 检查是否达到最大波次
 		if wave_number >= MAX_WAVES and not boss_spawned_this_game:
 			print("🏆 完成所有" + str(MAX_WAVES) + "波！")
 			stop()
-			# 检查是否需要生成Boss
 			if current_kills >= BOSS_KILLS_REQUIRED:
 				_spawn_boss()
 			else:
-				# 玩家已清除所有僵尸，胜利
 				_trigger_win()
 			return
 	
-	# 检查是否还有更多波次
 	if wave_number >= MAX_WAVES:
 		print("⏹️ 已达到最大波次，停止生成")
 		spawn_timer.stop()
@@ -161,26 +160,30 @@ func _spawn_zombie(index, config):
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
 		
-		var x_pos = _get_spawn_x(index)
+		# 计算生成位置，确保在屏幕范围内
+		var x_pos = _get_spawn_x(index, zombies_in_wave)
 		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
+		
+		# 确保位置在屏幕范围内
+		x_pos = clamp(x_pos, -360.0, 360.0)
+		y_pos = clamp(y_pos, -640.0, 640.0)
 		
 		zombie.position = Vector2(x_pos, y_pos)
 		add_child(zombie)
 		
 		# 转换为屏幕坐标显示
 		var screen_x = x_pos + SCREEN_WIDTH / 2.0
-		var screen_y = y_pos + 640.0
+		var screen_y = y_pos + SCREEN_HEIGHT / 2.0
 		zombie_count += 1
-		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
+		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 世界=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
-func _get_spawn_x(index):
-	# 交替从左右两侧生成
-	if spawn_side == 0:
-		return SPAWN_LEFT_X + index * SQUARE_SPACING
-	else:
-		return SPAWN_RIGHT_X + index * SQUARE_SPACING
+func _get_spawn_x(index, total_count):
+	# 在屏幕宽度内均匀分布僵尸
+	var spacing = 720.0 / (total_count + 1)
+	var x = -360.0 + (index + 1) * spacing
+	return clamp(x, -360.0, 360.0)
 
 func add_kill():
 	if is_game_over:
@@ -204,8 +207,7 @@ func _spawn_boss():
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
-		# Boss 从上方生成，距离玩家足够远
-		boss.position = Vector2(0, SPAWN_TOP_Y - 100)
+		boss.position = Vector2(0, -500)
 		add_child(boss)
 		print("👹 Boss已生成！")
 		emit_signal("boss_spawned")

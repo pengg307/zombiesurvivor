@@ -11,7 +11,6 @@ var game_ended = false
 var game_started = false
 
 # 底部健康条节点
-var health_bar_container = null
 var health_bar_fg = null
 var health_label = null
 
@@ -46,58 +45,44 @@ func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
 		audio_manager = am
-		print("🎵 音频管理器已连接")
 
 func _setup_stats():
 	var sm = get_tree().get_first_node_in_group("stats_manager")
 	if sm:
 		stats_manager = sm
-		print("📊 统计管理器已连接")
 
 func _setup_settings():
 	var sm = get_tree().get_first_node_in_group("settings_manager")
 	if sm:
 		settings_manager = sm
-		print("⚙️ 设置管理器已连接")
 
 func _setup_tutorial():
 	var tm = get_tree().get_first_node_in_group("tutorial_overlay")
 	if tm:
 		tutorial_manager = tm
-		print("📚 教程管理器已连接")
 
 func set_player(player_node):
 	player = player_node
-	print("✅ Player引用已设置")
 
 func set_spawner(spawner_node):
 	spawner = spawner_node
-	print("✅ Spawner引用已设置")
 
 func _connect_buttons():
 	if has_node("StartPanel/PanelContainer/VBoxContainer/StartButton"):
 		var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
 		start_btn.pressed.connect(_on_start_game)
-		print("  ✅ StartButton 已连接")
 	
 	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
 		var restart_btn = $GameOverPanel/PanelContainer/VBoxContainer/RestartButton
 		restart_btn.pressed.connect(_on_restart_game)
-		print("  ✅ GameOver RestartButton 已连接")
 	
 	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
 		var restart_btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
 		restart_btn.pressed.connect(_on_restart_game)
-		print("  ✅ Win RestartButton 已连接")
 
 func _on_start_game():
 	if game_started or game_ended:
 		return
-	
-	print("")
-	print("========================================")
-	print("🎮 [DEBUG] 游戏开始！")
-	print("========================================")
 	
 	game_started = true
 	game_ended = false
@@ -127,16 +112,12 @@ func _on_start_game():
 	
 	if tutorial_manager:
 		tutorial_manager.start_tutorial()
-	
-	print("🎮 游戏开始！")
 
 func show_game_over(kills):
 	if game_ended:
 		return
 	game_ended = true
 	game_started = false
-	
-	print("💀 [GAME_OVER] 游戏结束")
 	
 	if audio_manager:
 		audio_manager.play_gameover()
@@ -159,8 +140,6 @@ func show_win(kills):
 	game_ended = true
 	game_started = false
 	
-	print("🏆 [WIN] 游戏胜利！")
-	
 	if audio_manager:
 		audio_manager.play_victory()
 	
@@ -177,27 +156,18 @@ func show_win(kills):
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 
 func _on_restart_game():
-	print("🔄 重新开始游戏")
-	
 	if audio_manager:
 		audio_manager.stop_bgm()
-	
 	get_tree().reload_current_scene()
 
 func _create_bottom_health_bar():
-	# 底部健康条容器 - 长条形
+	# 底部健康条容器 - 长条形，占据整个屏幕宽度
 	var container = Panel.new()
 	container.name = "BottomHealthBar"
-	container.layout_mode = 1
-	container.anchor_left = 0.0
-	container.anchor_top = 1.0
-	container.anchor_right = 1.0
-	container.anchor_bottom = 1.0
-	container.offset_left = 0
-	container.offset_top = -60
-	container.offset_right = 0
-	container.offset_bottom = 0
-	container.modulate = Color(0.1, 0.1, 0.1, 0.8)
+	container.layout_mode = Control.LAYOUT_MODE_ABSOLUTE
+	container.position = Vector2(0, 1220)  # 底部，留20px边距
+	container.size = Vector2(720, 60)
+	container.modulate = Color(0.1, 0.1, 0.1, 0.9)
 	add_child(container)
 	
 	# 健康条背景
@@ -217,19 +187,20 @@ func _create_bottom_health_bar():
 	container.add_child(fg)
 	health_bar_fg = fg
 	
-	# 健康文字
+	# 健康文字 - 大字体，居中显示
 	var label = Label.new()
 	label.name = "HealthLabel"
 	label.text = "HP: 100/100"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 24)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 28)
 	label.add_theme_color_override("font_color", Color(1, 1, 1))
 	label.position = Vector2(0, 0)
 	label.size = Vector2(720, 60)
 	container.add_child(label)
 	health_label = label
 	
-	print("✅ 底部健康条已创建")
+	print("✅ 底部健康条已创建 (720x60, 位置: 10,1220)")
 
 func _update_health():
 	if not player or game_ended:
@@ -250,15 +221,15 @@ func _update_health():
 			fg.position.x = 10 + (700 * (1 - pct))
 			
 			# 更新文字
-			label.text = "HP: %d/%d" % [int(current_hp), int(max_hp)]
+			label.text = "❤️ HP: %d/%d" % [int(current_hp), int(max_hp)]
 			
 			# 更新颜色
 			if pct > 0.6:
-				fg.color = Color(0, 0.8, 0)  # 绿色
+				fg.color = Color(0, 0.8, 0)
 			elif pct > 0.3:
-				fg.color = Color(1, 0.8, 0)  # 黄色
+				fg.color = Color(1, 0.8, 0)
 			else:
-				fg.color = Color(1, 0.2, 0.2)  # 红色
+				fg.color = Color(1, 0.2, 0.2)
 
 func _add_triple_shot_display():
 	var triple_label = Label.new()
@@ -292,8 +263,6 @@ func _add_mobile_controls():
 	grenade_btn.cooldown_time = 2.0
 	add_child(grenade_btn)
 	grenade_btn.pressed.connect(_on_grenade_pressed)
-	
-	print("✅ 移动端控制已添加")
 
 func _on_joystick_moved(direction: Vector2):
 	if player and not game_ended and game_started:
@@ -316,7 +285,6 @@ func _add_settings_button():
 	add_child(btn)
 
 func _on_settings_pressed():
-	print("⚙️ 打开设置菜单")
 	if settings_manager:
 		settings_manager._save_settings()
 
@@ -333,7 +301,6 @@ func _add_stats_button():
 	add_child(btn)
 
 func _on_stats_pressed():
-	print("📊 打开统计面板")
 	if stats_manager:
 		var panel = get_node_or_null("StatsPanel")
 		if panel:

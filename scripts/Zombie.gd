@@ -9,7 +9,7 @@ const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 30.0
 const DAMAGE_PER_SECOND = 5.0
 const EXPERIENCE_REWARD = 10
-const COLLISION_RADIUS = 60.0
+const COLLISION_RADIUS = 50.0
 
 @export var is_boss: bool = false
 var zombie_type = "basic"
@@ -25,8 +25,8 @@ var health_bar_bg: ColorRect = null
 var health_bar_fg: ColorRect = null
 var can_attack = false
 var spawner = null
-var player_area = null  # 玩家检测区域
-var bullet_area = null  # 子弹检测区域
+var player_area = null
+var bullet_area = null
 
 signal zombie_reached_player
 signal zombie_spawned
@@ -52,12 +52,11 @@ func _ready():
 			current_health = BASE_HEALTH
 			base_speed = BASE_SPEED
 	
-	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)))
+	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + " 位置=" + str(position))
 	
 	emit_signal("zombie_spawned")
 
 func _process(delta):
-	# 检查安全时间是否结束
 	if spawner and not can_attack:
 		if not spawner.is_safety_mode:
 			can_attack = true
@@ -78,12 +77,11 @@ func _setup_sprite():
 		else:
 			_setup_fallback_sprite(Color(1, 0, 0), Vector2(1.2, 1.2))
 	else:
-		# 普通僵尸使用 zombie_front_4frames_game.png (256x64, 4帧水平)
 		var zombie_texture = load("res://assets/downloads/zombie_front_4frames_game.png")
 		if zombie_texture:
 			sprite.texture = zombie_texture
 			sprite.region_enabled = true
-			sprite.region_rect = Rect2(0, 0, 64, 64)  # 每帧 64x64
+			sprite.region_rect = Rect2(0, 0, 64, 64)
 			sprite.scale = Vector2(0.8, 0.8)
 		else:
 			_setup_fallback_sprite(Color(0, 0.8, 0), Vector2(0.8, 0.8))
@@ -105,7 +103,6 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 	sprite_node = sprite
 
 func _setup_collision():
-	# 玩家检测区域
 	player_area = Area2D.new()
 	player_area.name = "PlayerArea"
 	player_area.collision_layer = 2
@@ -116,11 +113,10 @@ func _setup_collision():
 	
 	var player_collision = CollisionShape2D.new()
 	var player_shape = CircleShape2D.new()
-	player_shape.radius = COLLISION_RADIUS * 0.4
+	player_shape.radius = COLLISION_RADIUS * 0.5
 	player_collision.shape = player_shape
 	player_area.add_child(player_collision)
 	
-	# 子弹检测区域
 	bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
 	bullet_area.collision_layer = 2
@@ -136,7 +132,7 @@ func _setup_collision():
 	bullet_collision.shape = bullet_shape
 	bullet_area.add_child(bullet_collision)
 	
-	print("  ✅ 碰撞体创建 (玩家半径=" + str(COLLISION_RADIUS * 0.4) + ", 子弹半径=25)")
+	print("  ✅ 碰撞体创建 (玩家半径=" + str(COLLISION_RADIUS * 0.5) + ", 子弹半径=25)")
 
 func _create_health_bar():
 	health_bar_bg = ColorRect.new()
@@ -160,7 +156,7 @@ func _on_player_detected(body):
 			if dist <= COLLISION_RADIUS:
 				if not dead:
 					dead = true
-					_disable_collision()  # 立即禁用碰撞
+					_disable_collision()
 					var player = get_tree().get_first_node_in_group("player")
 					if player:
 						player.take_damage(999)
@@ -177,12 +173,10 @@ func _on_bullet_area_entered(area):
 				final_damage *= 2.0
 			take_damage(final_damage)
 			_show_damage_number(final_damage, is_critical)
-			print("💥 Zombie受伤: 类型=" + zombie_type + " 伤害=" + str(int(final_damage)) + " 暴击=" + str(is_critical))
 			if not bullet.is_pierce:
 				bullet.queue_free()
 
 func _disable_collision():
-	# 禁用所有碰撞体，防止僵尸在死亡前触发碰撞
 	if player_area:
 		player_area.monitoring = false
 		player_area.monitorable = false
@@ -206,16 +200,12 @@ func _physics_process(delta):
 		var move_dir = Vector2(dx, dy).normalized()
 		position += move_dir * base_speed * delta
 		
-		# 动画 - 每5帧切换一次
 		if !is_boss and zombie_type != "boss":
 			if frame_count % 5 == 0 and sprite_node:
 				current_frame = (current_frame + 1) % 4
 				if sprite_node.texture and sprite_node.texture.resource_path.contains("zombie"):
 					sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
-				elif sprite_node.texture and sprite_node.texture.resource_path.contains("boss"):
-					pass  # Boss 动画在下面处理
 		else:
-			# Boss 动画
 			boss_anim_timer += delta
 			var pulse = 1.0 + 0.1 * sin(boss_anim_timer * 3.0)
 			sprite_node.scale = Vector2(1.2, 1.2) * pulse
@@ -223,7 +213,6 @@ func _physics_process(delta):
 				current_frame = (current_frame + 1) % 4
 				sprite_node.region_rect = Rect2(current_frame * 167, 0, 167, 374)
 	
-	# Boss 伤害检测
 	if (is_boss or zombie_type == "boss") and player_node:
 		damage_timer += delta
 		if damage_timer >= 1.0:
@@ -267,7 +256,7 @@ func _die():
 	if dead:
 		return
 	dead = true
-	_disable_collision()  # 立即禁用碰撞，防止死亡前触发碰撞
+	_disable_collision()
 	
 	var player = get_tree().get_first_node_in_group("player")
 	var spawner = get_tree().get_first_node_in_group("spawner")
