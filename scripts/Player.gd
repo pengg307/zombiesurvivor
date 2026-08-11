@@ -7,7 +7,7 @@ const MOVE_SPEED = 250.0
 const MAX_HEALTH = 100.0
 const BASE_Y = 1100.0
 const FIRE_RATE_BASE = 0.3
-const SHOT_RANGE = 1500.0  # 增加射程
+const SHOT_RANGE = 1500.0
 const GRENADE_INTERVAL = 80
 const MAX_GRENADES = 5
 
@@ -72,11 +72,7 @@ func _ready():
 	_add_position_label()
 	_setup_audio()
 	
-	print("")
-	print("============================================================")
 	print("🎮 Player启动！碰撞层=" + str(collision_layer) + " 掩码=" + str(collision_mask))
-	print("   位置: " + str(position) + " SHOT_RANGE=" + str(SHOT_RANGE))
-	print("============================================================")
 
 func _setup_character():
 	var sprite = Sprite2D.new()
@@ -103,21 +99,31 @@ func _setup_fallback_sprite():
 	print("⚠️ 使用备用玩家素材")
 
 func _setup_collision():
+	# 玩家碰撞体
 	var collision = CollisionShape2D.new()
 	collision.name = "Collision"
 	var shape = CapsuleShape2D.new()
-	shape.radius = 30.0
-	shape.height = 50.0
+	shape.radius = 20.0
+	shape.height = 40.0
 	collision.shape = shape
 	add_child(collision)
 	
+	# 僵尸检测区域
 	var area = Area2D.new()
 	area.name = "ZombieDetector"
 	area.monitoring = true
+	area.monitorable = true
 	area.collision_layer = 1
 	area.collision_mask = 2
 	area.body_entered.connect(_on_zombie_detected)
 	add_child(area)
+	
+	# 添加碰撞形状
+	var shape2 = CollisionShape2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = 30.0
+	shape2.shape = circle
+	area.add_child(shape2)
 	
 	print("✅ 玩家碰撞体创建成功")
 
@@ -148,24 +154,6 @@ func _unhandled_input(event):
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D:
 			debug_mode = !debug_mode
-			print("")
-			print("🔧 调试模式: " + ("开启" if debug_mode else "关闭"))
-			if debug_mode:
-				print("   按T解锁三发子弹")
-				print("   按B生成弹药桶")
-				print("   按K模拟击杀")
-				print("   按R重置游戏")
-		elif event.keycode == KEY_T and debug_mode:
-			if not triple_shot_unlocked:
-				triple_shot_unlocked = true
-				print("")
-				print("🔓 [调试] 三发子弹已解锁！")
-		elif event.keycode == KEY_B and debug_mode:
-			_spawn_debug_ammo_barrel()
-		elif event.keycode == KEY_K and debug_mode:
-			_simulate_kill()
-		elif event.keycode == KEY_R and debug_mode:
-			get_tree().reload_current_scene()
 		elif event.keycode == KEY_SPACE and grenades > 0 and grenade_cooldown <= 0 and not game_over:
 			_throw_grenade()
 		elif event.keycode == KEY_ESCAPE:
@@ -193,8 +181,6 @@ func _unhandled_input(event):
 			mouse_left = event.pressed
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			mouse_right = event.pressed
-		elif event.button_index == MOUSE_BUTTON_MIDDLE and grenades > 0 and grenade_cooldown <= 0:
-			_throw_grenade()
 
 func _physics_process(delta):
 	if game_over:
@@ -208,15 +194,6 @@ func _physics_process(delta):
 	_update_debug_info()
 	if regen_rate > 0 and current_health < MAX_HEALTH:
 		current_health = min(MAX_HEALTH, current_health + regen_rate * delta)
-
-func _update_ammo_boost(delta):
-	if ammo_boost_timer > 0:
-		ammo_boost_timer -= delta
-		if ammo_boost_timer <= 0:
-			ammo_boost_timer = 0
-			ammo_boost_level = 0
-			fire_rate = base_fire_rate
-			print("⏰ [弹药桶] 增益效果已过期")
 
 func _move(delta):
 	var direction = Vector2(0, 0)
@@ -243,7 +220,6 @@ func _move(delta):
 		position.x += direction.x * MOVE_SPEED * delta
 		position.x = clamp(position.x, 30.0, VIEWPORT_WIDTH - 30.0)
 	
-	var prev_y = position.y
 	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
 		position.y -= MOVE_SPEED * 0.5 * delta
 	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
@@ -257,7 +233,7 @@ func _shoot(delta):
 	if shoot_debug_counter >= 2.0:
 		shoot_debug_counter = 0.0
 		var enemies = get_tree().get_nodes_in_group("zombies")
-		print("🔧 [射击调试] 僵尸数量: " + str(enemies.size()) + " fire_rate: " + str(fire_rate) + " timer: " + str(_fire_timer) + " 位置: " + str(position))
+		print("🔧 僵尸数量: " + str(enemies.size()) + " fire_rate: " + str(fire_rate))
 	
 	fire_rate = max(0.1, base_fire_rate - float(ammo_boost_level) * 0.05)
 	_fire_timer += delta
@@ -276,12 +252,6 @@ func _attack():
 			var zombie_screen_pos = nearest.position + Vector2(360, 640)
 			var dist = position.distance_to(zombie_screen_pos)
 			
-			# 每5次攻击打印一次调试信息
-			attack_log_counter += 1
-			if attack_log_counter >= 5:
-				attack_log_counter = 0
-				print("🎯 [攻击调试] 最近僵尸距离: " + str(int(dist)) + "/" + str(SHOT_RANGE) + " 位置: " + str(position) + " -> " + str(zombie_screen_pos))
-			
 			if dist <= SHOT_RANGE:
 				for i in range(bullet_count):
 					var angle_offset = (i - (bullet_count - 1) / 2.0) * 0.1
@@ -290,10 +260,9 @@ func _attack():
 				
 				if audio_manager:
 					audio_manager.play_shoot()
-				last_attack_pos = zombie_screen_pos
 	else:
-		if attack_log_counter >= 10:  # 每10次检查打印一次
-			print("⚠️ [攻击调试] 没有僵尸在范围内！")
+		if attack_log_counter >= 10:
+			print("⚠️ 没有僵尸在范围内！")
 			attack_log_counter = 0
 
 func _find_nearest_enemy(enemies):
@@ -306,21 +275,6 @@ func _find_nearest_enemy(enemies):
 			nearest_dist = dist
 			nearest = enemy
 	return nearest
-
-func _is_enemy_in_range(enemy) -> bool:
-	return position.distance_to(enemy.position + Vector2(360, 640)) <= SHOT_RANGE
-
-func _spawn_triple_bullet():
-	var angle_spread = deg_to_rad(15.0)
-	
-	var dir_middle = Vector2(0, -1)
-	_spawn_bullet(dir_middle)
-	
-	var dir_left = dir_middle.rotated(-angle_spread)
-	_spawn_bullet(dir_left)
-	
-	var dir_right = dir_middle.rotated(angle_spread)
-	_spawn_bullet(dir_right)
 
 func _spawn_bullet(direction: Vector2):
 	if game_over:
@@ -337,7 +291,7 @@ func _spawn_bullet(direction: Vector2):
 	
 	if audio_manager:
 		audio_manager.play_shoot()
-	print("🔫 发射子弹！位置: " + str(position) + " 方向: " + str(direction))
+	print("🔫 发射子弹！方向: " + str(direction))
 
 func _handle_grenade(delta):
 	if grenade_cooldown > 0:
@@ -354,7 +308,7 @@ func _throw_grenade():
 		get_parent().add_child(grenade)
 		if audio_manager:
 			audio_manager.play_grenade_throw()
-		print("💣 [手雷] 投掷手雷！剩余:" + str(grenades))
+		print("💣 投掷手雷！剩余:" + str(grenades))
 
 func _update_position_label():
 	if has_node("PositionLabel"):
@@ -378,15 +332,12 @@ func apply_ammo_boost(type: int):
 			ammo_boost_level = 1
 			ammo_boost_timer = 15.0
 			damage_per_shot = 10.0 + 5.0
-			print("🎯 [弹药桶] 获得重型机枪！伤害+5，持续15秒")
 		1:
 			ammo_boost_level = 2
 			ammo_boost_timer = 10.0
-			print("🎯 [弹药桶] 获得加特林！射速提升，持续10秒")
 		2:
 			ammo_boost_level = 3
 			ammo_boost_timer = 8.0
-			print("🎯 [弹药桶] 获得散弹枪！范围攻击，持续8秒")
 	emit_signal("ammo_boost_applied", ammo_boost_level)
 
 func take_damage(damage: float):
@@ -399,7 +350,7 @@ func take_damage(damage: float):
 	if current_health <= 0:
 		game_over = true
 		emit_signal("player_died")
-	print("💥 [受伤] 生命值:" + str(int(current_health)))
+	print("💥 生命值:" + str(int(current_health)))
 
 func add_kill():
 	if game_over:
@@ -410,21 +361,19 @@ func add_kill():
 	if kills % 10 == 0:
 		emit_signal("upgrade_available")
 	emit_signal("kill_count_changed")
-	print("")
-	print("💀 [击杀] 当前击杀数:" + str(kills) + " 等级:" + str(level))
+	print("💀 击杀数:" + str(kills) + " 等级:" + str(level))
 	
 	if kills % 10 == 0:
 		bullet_speed += 100.0
-		print("⚡ [速度提升] 子弹速度:" + str(bullet_speed))
 	
 	if kills == 5 and not triple_shot_unlocked:
 		triple_shot_unlocked = true
-		print("")
-		print("🎯 [解锁] 三发子弹已解锁！")
+		bullet_count = 3
+		print("🔓 三发子弹已解锁！")
 	
 	if kills > 0 and kills % GRENADE_INTERVAL == 0 and grenades < MAX_GRENADES:
 		grenades += 1
-		print("💣 [手雷] 获得手雷！当前:" + str(grenades))
+		print("💣 获得手雷！当前:" + str(grenades))
 	
 	emit_signal("kill_count_changed")
 
@@ -437,28 +386,4 @@ func add_experience(amount: int):
 func _update_debug_info():
 	if debug_mode and last_log_kill != kills:
 		last_log_kill = kills
-		print("")
-		print("📊 [调试] 当前状态:")
-		print("   - 击杀数: " + str(kills))
-		print("   - 等级: " + str(level))
-		print("   - 三发子弹: " + ("已解锁" if triple_shot_unlocked else "未解锁"))
-		print("   - 火力等级: " + str(ammo_boost_level) + " (剩余: " + str(int(ammo_boost_timer)) + "秒)")
-		print("   - 子弹速度: " + str(bullet_speed))
-		print("   - 射速: " + str(fire_rate))
-		print("   - 伤害: " + str(damage_per_shot))
-		print("   - 游戏结束: " + str(game_over))
-		print("   - 位置: " + str(position))
-
-func _spawn_debug_ammo_barrel():
-	var barrel_scene = load("res://scripts/AmmoBarrel.gd")
-	if barrel_scene:
-		var barrel = barrel_scene.new()
-		barrel.position = position + Vector2(0, -80)
-		barrel.barrel_type = randi() % 3
-		get_parent().add_child(barrel)
-		print("🛢️ [调试] 弹药桶已生成！类型=" + str(barrel.barrel_type))
-
-func _simulate_kill():
-	print("")
-	print("🎯 [调试] 模拟击杀！")
-	add_kill()
+		print("📊 击杀:" + str(kills) + " 等级:" + str(level) + " 三发:" + str(triple_shot_unlocked))
