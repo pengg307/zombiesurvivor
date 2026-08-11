@@ -169,11 +169,18 @@ func _physics_process(delta):
 	if dead:
 		return
 	
+	# 移动逻辑
+	var target = get_tree().get_first_node_in_group("player")
+	if target:
+		var target_pos = target.position + Vector2(360, 640)
+		var direction = (target_pos - position).normalized()
+		position += direction * speed * delta
+	
 	# 动画计时
 	anim_timer += delta
 	if anim_timer >= 0.15:
 		anim_timer = 0
-		# 切换帧（如果有多个帧）
+		# 切换帧
 		if sprite and sprite.texture:
 			var frame_count = _get_frame_count()
 			if frame_count > 1:
@@ -197,7 +204,7 @@ func take_damage(damage: float):
 	if not is_attacking:
 		is_attacking = true
 		_show_hit_animation()
-		# 1秒后恢复移动动画
+		# 0.5秒后恢复移动动画
 		await get_tree().create_timer(0.5).timeout
 		if not dead:
 			is_attacking = false
@@ -208,7 +215,7 @@ func _die():
 		return
 	dead = true
 	_disable_collision()
-	_show_move_animation()  # 死亡时显示移动动画（而不是攻击）
+	_show_move_animation()
 	
 	# 创建粒子效果
 	_spawn_death_particles()
@@ -263,8 +270,6 @@ func _setup_health_bar():
 
 func _spawn_death_particles():
 	var particle = GPUParticles2D.new()
-	particle.process_material = ProcessMaterial.new()
-	particle.process_material.emission_sphere_radius = 20
 	particle.one_shot = true
 	particle.max_particles = 10
 	particle.emitting = true
