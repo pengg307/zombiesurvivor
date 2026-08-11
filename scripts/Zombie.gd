@@ -23,12 +23,16 @@ var current_frame = 0
 var boss_anim_timer = 0.0
 var health_bar_bg: ColorRect = null
 var health_bar_fg: ColorRect = null
+var can_attack = false
+var spawner = null
 
 signal zombie_reached_player
 signal zombie_spawned
 
 func _ready():
 	add_to_group("zombies")
+	
+	spawner = get_tree().get_first_node_in_group("spawner")
 	
 	_setup_sprite()
 	_setup_collision()
@@ -48,6 +52,12 @@ func _ready():
 	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)))
 	
 	emit_signal("zombie_spawned")
+
+func _process(delta):
+	# 检查安全时间是否结束
+	if spawner and not can_attack:
+		if not spawner.is_safety_mode:
+			can_attack = true
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
@@ -142,12 +152,16 @@ func _create_health_bar():
 
 func _on_player_detected(body):
 	if body.is_in_group("player") and not dead:
-		if not dead:
-			dead = true
-			var player = get_tree().get_first_node_in_group("player")
-			if player:
-				player.take_damage(999)
-			emit_signal("zombie_reached_player")
+		if can_attack:
+			var dist = position.distance_to(body.position)
+			if dist <= COLLISION_RADIUS:
+				if not dead:
+					dead = true
+					var player = get_tree().get_first_node_in_group("player")
+					if player:
+						player.take_damage(999)
+					emit_signal("zombie_reached_player")
+				print("💀 僵尸碰到玩家！距离=" + str(int(dist)))
 
 func _on_bullet_area_entered(area):
 	if area.is_in_group("bullets") and not dead:

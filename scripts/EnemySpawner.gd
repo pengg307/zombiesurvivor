@@ -11,7 +11,6 @@ const SPAWN_BOTTOM_Y = -350.0
 const SPAWN_LEFT_X = -360.0
 const SPAWN_RIGHT_X = 360.0
 const MAX_WAVES = 10
-const MIN_SPAWN_DISTANCE = 400.0  # 最小生成距离
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -45,6 +44,9 @@ var game_started = false
 var all_zombies_dead = false
 var zombie_count = 0
 var game_over = false
+var safety_timer = 0.0
+var is_safety_mode = true
+const SAFETY_TIME = 3.0
 
 signal boss_spawned
 signal game_over
@@ -63,8 +65,16 @@ func _ready():
 	print("📍 最大波次: " + str(MAX_WAVES))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
-	print("📏 最小生成距离: " + str(MIN_SPAWN_DISTANCE))
+	print("⏱️ 安全时间: " + str(SAFETY_TIME) + "秒")
 	print("============================================================")
+
+func _process(delta):
+	# 安全时间计时
+	if is_safety_mode and game_started:
+		safety_timer += delta
+		if safety_timer >= SAFETY_TIME:
+			is_safety_mode = false
+			print("✅ 安全时间结束，僵尸可以攻击了！")
 
 func _on_spawn_timer_timeout():
 	# 检查游戏是否结束
@@ -151,29 +161,15 @@ func _spawn_zombie(index, config):
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
 		
-		# 生成在屏幕边缘，距离玩家足够远
-		var spawn_x = _get_spawn_x(index)
-		var spawn_y = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
+		var x_pos = _get_spawn_x(index)
+		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
 		
-		# 确保生成位置距离玩家足够远
-		var player = get_tree().get_first_node_in_group("player")
-		if player:
-			var player_center_pos = player.position - Vector2(360, 640)
-			var spawn_pos = Vector2(spawn_x, spawn_y)
-			var dist = spawn_pos.distance_to(player_center_pos)
-			if dist < MIN_SPAWN_DISTANCE:
-				# 调整位置确保距离
-				var dir = (spawn_pos - player_center_pos).normalized()
-				spawn_pos = player_center_pos + dir * MIN_SPAWN_DISTANCE
-				spawn_x = spawn_pos.x
-				spawn_y = spawn_pos.y
-		
-		zombie.position = Vector2(spawn_x, spawn_y)
+		zombie.position = Vector2(x_pos, y_pos)
 		add_child(zombie)
 		
 		# 转换为屏幕坐标显示
-		var screen_x = spawn_x + SCREEN_WIDTH / 2.0
-		var screen_y = spawn_y + 640.0
+		var screen_x = x_pos + SCREEN_WIDTH / 2.0
+		var screen_y = y_pos + 640.0
 		zombie_count += 1
 		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
 	else:
@@ -229,8 +225,11 @@ func start():
 	game_started = true
 	all_zombies_dead = false
 	game_over = false
+	safety_timer = 0.0
+	is_safety_mode = true
 	spawn_timer.start()
 	print("⏰ Timer已启动，间隔=" + str(spawn_timer.wait_time) + "s")
+	print("⏱️ 安全时间: " + str(SAFETY_TIME) + "秒")
 
 func stop():
 	print("⏹️ 生成器停止！")
