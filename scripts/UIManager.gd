@@ -116,9 +116,11 @@ func _on_start_game():
 	
 	if has_node("StartPanel"):
 		$StartPanel.visible = false
+		print("  ✅ StartPanel 已隐藏")
 	
 	if has_node("Panel/TopPanel"):
 		$Panel/TopPanel.visible = true
+		print("  ✅ TopPanel 已显示")
 	
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
@@ -188,7 +190,6 @@ func _create_bottom_health_bar():
 	# 底部健康条容器 - 长条形，占据整个屏幕宽度
 	var container = Panel.new()
 	container.name = "BottomHealthBar"
-	container.layout_mode = Control.LAYOUT_MODE_ABSOLUTE
 	container.position = Vector2(0, 1220)  # 底部，留20px边距
 	container.size = Vector2(720, 60)
 	container.modulate = Color(0.1, 0.1, 0.1, 0.9)
@@ -214,7 +215,7 @@ func _create_bottom_health_bar():
 	# 健康文字 - 大字体，居中显示
 	var label = Label.new()
 	label.name = "HealthLabel"
-	label.text = "❤️ HP: 100/100"
+	label.text = "HP: 100/100"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 28)
@@ -224,7 +225,7 @@ func _create_bottom_health_bar():
 	container.add_child(label)
 	health_label = label
 	
-	print("✅ 底部健康条已创建 (720x60, 位置: 10,1220)")
+	print("✅ 底部健康条已创建 (720x60, 位置: 0,1220)")
 
 func _update_health():
 	if not player or game_ended:
@@ -245,7 +246,7 @@ func _update_health():
 			fg.position.x = 10 + (700 * (1 - pct))
 			
 			# 更新文字
-			label.text = "❤️ HP: %d/%d" % [int(current_hp), int(max_hp)]
+			label.text = "HP: %d/%d" % [int(current_hp), int(max_hp)]
 			
 			# 更新颜色
 			if pct > 0.6:
