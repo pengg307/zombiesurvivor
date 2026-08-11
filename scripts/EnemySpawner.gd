@@ -43,13 +43,13 @@ var zombies_in_wave = 0
 var game_started = false
 var all_zombies_dead = false
 var zombie_count = 0
-var game_over = false
+var is_game_over = false
 var safety_timer = 0.0
 var is_safety_mode = true
 const SAFETY_TIME = 3.0
 
 signal boss_spawned
-signal game_over
+signal game_over_signal
 signal game_won
 signal wave_complete
 
@@ -78,7 +78,7 @@ func _process(delta):
 
 func _on_spawn_timer_timeout():
 	# 检查游戏是否结束
-	if game_over:
+	if is_game_over:
 		return
 	
 	# 检查是否还有僵尸存活
@@ -183,7 +183,7 @@ func _get_spawn_x(index):
 		return SPAWN_RIGHT_X + index * SQUARE_SPACING
 
 func add_kill():
-	if game_over:
+	if is_game_over:
 		return
 	current_kills += 1
 	print("📊 击杀数: " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
@@ -211,9 +211,9 @@ func _spawn_boss():
 		emit_signal("boss_spawned")
 
 func _trigger_win():
-	if game_over:
+	if is_game_over:
 		return
-	game_over = true
+	is_game_over = true
 	print("🏆 玩家胜利！")
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
@@ -224,7 +224,7 @@ func start():
 	print("🎮 [EnemySpawner] 开始生成！")
 	game_started = true
 	all_zombies_dead = false
-	game_over = false
+	is_game_over = false
 	safety_timer = 0.0
 	is_safety_mode = true
 	spawn_timer.start()
