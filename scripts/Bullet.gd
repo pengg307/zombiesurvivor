@@ -11,7 +11,28 @@ var traveled_distance = 0.0
 
 func _ready():
 	add_to_group("bullets")
-	# collision_layer and collision_mask are inherited from CharacterBody2D
+	collision_layer = 4
+	collision_mask = 2  # 检测僵尸
+	
+	# 添加精灵
+	var sprite = Sprite2D.new()
+	sprite.name = "Sprite"
+	sprite.centered = true
+	var rect = ColorRect.new()
+	rect.size = Vector2(8, 8)
+	rect.color = Color(1, 1, 0)  # 黄色子弹
+	sprite.add_child(rect)
+	add_child(sprite)
+	
+	# 添加碰撞体
+	var collision = CollisionShape2D.new()
+	collision.name = "Collision"
+	var shape = CircleShape2D.new()
+	shape.radius = 6.0
+	collision.shape = shape
+	add_child(collision)
+	
+	print("🔫 子弹创建！位置=" + str(position) + " 方向=" + str(direction))
 
 func _physics_process(delta):
 	var move = direction * current_speed * delta

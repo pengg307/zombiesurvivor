@@ -9,7 +9,7 @@ const BOSS_HEALTH = 500.0
 const BOSS_SPEED = 30.0
 const DAMAGE_PER_SECOND = 5.0
 const EXPERIENCE_REWARD = 10
-const COLLISION_RADIUS = 50.0  # 碰撞半径
+const COLLISION_RADIUS = 50.0
 
 @export var is_boss: bool = false
 var zombie_type = "basic"
@@ -21,6 +21,8 @@ var sprite_node: Sprite2D = null
 var frame_count = 0
 var current_frame = 0
 var boss_anim_timer = 0.0
+var health_bar_bg: ColorRect = null
+var health_bar_fg: ColorRect = null
 
 signal zombie_reached_player
 signal zombie_spawned
@@ -30,13 +32,12 @@ func _ready():
 	
 	_setup_sprite()
 	_setup_collision()
+	_create_health_bar()
 	
 	# 初始化健康值
 	if is_boss or zombie_type == "boss":
 		current_health = BOSS_HEALTH
 		base_speed = BOSS_SPEED
-		print("")
-		print("👹 Boss已创建！生命值=" + str(current_health) + " 速度=" + str(base_speed))
 	else:
 		if zombie_type == "fast":
 			current_health = FAST_HEALTH
@@ -46,11 +47,7 @@ func _ready():
 			base_speed = BASE_SPEED
 	
 	print("")
-	print("============================================================")
-	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + " 速度=" + str(int(base_speed)))
-	print("   位置=(" + str(int(position.x)) + ", " + str(int(position.y)) + ") 屏幕=(" + str(int(position.x + 360)) + ", " + str(int(position.y + 640)) + ")")
-	print("   碰撞半径=" + str(COLLISION_RADIUS))
-	print("============================================================")
+	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)))
 	
 	emit_signal("zombie_spawned")
 
@@ -66,12 +63,11 @@ func _setup_sprite():
 			sprite.texture = boss_texture
 			sprite.region_enabled = true
 			sprite.region_rect = Rect2(0, 0, 167, 374)
-			sprite.scale = Vector2(2.0, 2.0)
-			print("🎨 Boss素材加载成功")
+			sprite.scale = Vector2(1.5, 1.5)
 		else:
-			_setup_fallback_sprite(Color(1, 0, 0), Vector2(2, 2))
+			_setup_fallback_sprite(Color(1, 0, 0), Vector2(1.5, 1.5))
 	else:
-		_setup_fallback_sprite(Color(0, 0.5, 0), Vector2(1, 1))
+		_setup_fallback_sprite(Color(0, 0.8, 0), Vector2(1, 1))
 	
 	add_child(sprite)
 	sprite_node = sprite
@@ -82,7 +78,7 @@ func _setup_fallback_sprite(color: Color, scale: Vector2):
 	sprite.centered = true
 	sprite.z_index = 10
 	var rect = ColorRect.new()
-	rect.size = Vector2(64, 64)
+	rect.size = Vector2(40, 40)
 	rect.color = color
 	sprite.add_child(rect)
 	sprite.scale = scale
@@ -101,25 +97,34 @@ func _setup_collision():
 	var collision = CollisionShape2D.new()
 	collision.name = "CollisionShape"
 	var shape = CircleShape2D.new()
-	shape.radius = COLLISION_RADIUS
+	shape.radius = COLLISION_RADIUS * 0.5  # 碰撞半径减半
 	collision.shape = shape
 	area.add_child(collision)
+
+func _create_health_bar():
+	# 背景
+	health_bar_bg = ColorRect.new()
+	health_bar_bg.name = "HealthBarBg"
+	health_bar_bg.color = Color(0.5, 0, 0)
+	health_bar_bg.size = Vector2(50, 5)
+	health_bar_bg.position = Vector2(-25, -50)
+	add_child(health_bar_bg)
 	
-	print("✅ 碰撞体创建成功 (半径=" + str(COLLISION_RADIUS) + ", 层=" + str(area.collision_layer) + ", 掩码=" + str(area.collision_mask) + ")")
+	# 前景
+	health_bar_fg = ColorRect.new()
+	health_bar_fg.name = "HealthBarFg"
+	health_bar_fg.color = Color(0, 1, 0)
+	health_bar_fg.size = Vector2(50, 5)
+	health_bar_fg.position = Vector2(-25, -50)
+	add_child(health_bar_fg)
+	
+	print("  ✅ 健康条已创建 (50x5)")
 
 func _on_player_detected(body):
 	if body.is_in_group("player") and not dead:
-		# 计算屏幕位置
 		var zombie_screen_pos = position + Vector2(360, 640)
 		var player_screen_pos = body.position
 		var dist = zombie_screen_pos.distance_to(player_screen_pos)
-		
-		print("")
-		print("💥 Zombie 检测到玩家！类型=" + zombie_type)
-		print("   Zombie屏幕位置=(" + str(int(zombie_screen_pos.x)) + ", " + str(int(zombie_screen_pos.y)) + ")")
-		print("   玩家屏幕位置=(" + str(int(player_screen_pos.x)) + ", " + str(int(player_screen_pos.y)) + ")")
-		print("   距离=" + str(int(dist)) + " 碰撞半径=" + str(COLLISION_RADIUS))
-		print("")
 		
 		if dist <= COLLISION_RADIUS:
 			if not dead:
@@ -138,7 +143,6 @@ func _physics_process(delta):
 	var player_node = get_tree().get_first_node_in_group("player")
 	
 	if player_node:
-		# 计算目标位置（中心坐标系统）
 		var target_center_pos = player_node.position - Vector2(360, 640)
 		
 		var dx = target_center_pos.x - position.x
@@ -147,16 +151,17 @@ func _physics_process(delta):
 		position += move_dir * base_speed * delta
 		
 		# 动画
-		var anim_speed = 5 if (!is_boss and zombie_type != "boss") else 8
-		if frame_count % anim_speed == 0 and sprite_node and sprite_node.texture and sprite_node.region_enabled and zombie_type != "boss":
-			current_frame = (current_frame + 1) % 4
-			sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
+		if !is_boss and zombie_type != "boss":
+			var anim_speed = 5
+			if frame_count % anim_speed == 0 and sprite_node:
+				current_frame = (current_frame + 1) % 4
+				sprite_node.region_rect = Rect2(current_frame * 40, 0, 40, 40)
 		
 		# Boss 动画
-		if (is_boss or zombie_type == "boss") and sprite_node:
+		if is_boss or zombie_type == "boss":
 			boss_anim_timer += delta
 			var pulse = 1.0 + 0.1 * sin(boss_anim_timer * 3.0)
-			sprite_node.scale = Vector2(2.0, 2.0) * pulse
+			sprite_node.scale = Vector2(1.5, 1.5) * pulse
 			if frame_count % 8 == 0:
 				var frame = (current_frame % 4) * 167
 				sprite_node.region_rect = Rect2(frame, 0, 167, 374)
@@ -169,17 +174,30 @@ func _physics_process(delta):
 			var player_health = player_node.current_health if player_node.has_method("take_damage") else 100
 			if player_health > 0:
 				player_node.take_damage(DAMAGE_PER_SECOND)
-				print("💥 Boss攻击玩家！伤害=" + str(DAMAGE_PER_SECOND))
 
 func take_damage(damage: float):
 	if dead:
 		return
 	
 	current_health -= damage
-	print("💥 Zombie受伤: 类型=" + zombie_type + " 健康=" + str(int(current_health)) + "/" + str(int(get_max_health())))
+	_update_health_bar()
 	
 	if current_health <= 0:
 		_die()
+
+func _update_health_bar():
+	if health_bar_fg:
+		var max_health = get_max_health()
+		var health_pct = max(0.0, float(current_health) / float(max_health))
+		health_bar_fg.size.x = 50.0 * health_pct
+		
+		# 颜色根据生命值变化
+		if health_pct > 0.6:
+			health_bar_fg.color = Color(0, 1, 0)
+		elif health_pct > 0.3:
+			health_bar_fg.color = Color(1, 1, 0)
+		else:
+			health_bar_fg.color = Color(1, 0, 0)
 
 func get_max_health() -> float:
 	if is_boss or zombie_type == "boss":
@@ -205,11 +223,10 @@ func _die():
 	if player:
 		player.add_experience(EXPERIENCE_REWARD)
 		player.add_kill()
-		print("💀 Zombie死亡: 类型=" + zombie_type + " 玩家击杀数=" + str(player.kills))
+		print("💀 Zombie死亡: 玩家击杀数=" + str(player.kills))
 	
 	if spawner:
 		spawner.add_kill()
-		print("📊 Spawner击杀数: " + str(spawner.current_kills) + "/" + str(spawner.BOSS_KILLS_REQUIRED))
 	
 	if is_boss or zombie_type == "boss":
 		emit_signal("boss_died")
@@ -221,5 +238,4 @@ func _die():
 	if stats_mgr:
 		stats_mgr.add_kill(false)
 	
-	print("💀 Zombie死亡！获得经验:" + str(EXPERIENCE_REWARD))
 	queue_free()
