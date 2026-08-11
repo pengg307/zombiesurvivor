@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends Area2D
 class_name Bullet
 
 var damage = 10.0
@@ -12,7 +12,7 @@ var traveled_distance = 0.0
 func _ready():
 	add_to_group("bullets")
 	collision_layer = 4
-	collision_mask = 2
+	collision_mask = 2  # 检测僵尸 (layer 2)
 	
 	# 添加精灵
 	var sprite = Sprite2D.new()
@@ -24,24 +24,17 @@ func _ready():
 	sprite.add_child(rect)
 	add_child(sprite)
 	
-	# 添加 Area2D 检测僵尸
-	var area = Area2D.new()
-	area.name = "HitArea"
-	area.collision_layer = 4
-	area.collision_mask = 2
-	area.monitoring = true
-	area.body_entered.connect(_on_body_entered)
-	add_child(area)
-	
 	# 添加碰撞形状
-	var collision = CollisionShape2D.new()
-	collision.name = "Collision"
-	var shape = CircleShape2D.new()
-	shape.radius = 8.0
-	collision.shape = shape
-	area.add_child(collision)
+	var shape = CollisionShape2D.new()
+	shape.name = "Collision"
+	var circle = CircleShape2D.new()
+	circle.radius = 8.0
+	shape.shape = circle
+	add_child(shape)
 	
-	print("🔫 子弹创建！位置=" + str(position))
+	body_entered.connect(_on_body_entered)
+	
+	print("🔫 子弹创建！位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ")")
 
 func _physics_process(delta):
 	var move = direction * current_speed * delta
@@ -59,6 +52,7 @@ func _on_body_entered(body):
 			final_damage *= 2.0
 		body.take_damage(final_damage)
 		_show_damage_number(body, final_damage, is_critical)
+		print("💥 子弹命中！伤害=" + str(int(final_damage)) + " 暴击=" + str(is_critical))
 		if not is_pierce:
 			queue_free()
 
