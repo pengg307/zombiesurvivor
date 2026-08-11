@@ -65,7 +65,15 @@ func _setup_sprite():
 		else:
 			_setup_fallback_sprite(Color(1, 0, 0), Vector2(1.2, 1.2))
 	else:
-		_setup_fallback_sprite(Color(0, 0.8, 0), Vector2(0.8, 0.8))
+		# 普通僵尸使用 zombie_front_4frames_game.png (256x64, 4帧水平)
+		var zombie_texture = load("res://assets/downloads/zombie_front_4frames_game.png")
+		if zombie_texture:
+			sprite.texture = zombie_texture
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, 0, 64, 64)  # 每帧 64x64
+			sprite.scale = Vector2(0.8, 0.8)
+		else:
+			_setup_fallback_sprite(Color(0, 0.8, 0), Vector2(0.8, 0.8))
 	
 	add_child(sprite)
 	sprite_node = sprite
@@ -99,11 +107,11 @@ func _setup_collision():
 	player_collision.shape = player_shape
 	player_area.add_child(player_collision)
 	
-	# 子弹检测区域 - 使用 area_entered 检测 Area2D
+	# 子弹检测区域
 	var bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
 	bullet_area.collision_layer = 2
-	bullet_area.collision_mask = 4  # 检测 bullets
+	bullet_area.collision_mask = 4
 	bullet_area.monitoring = true
 	bullet_area.monitorable = true
 	bullet_area.area_entered.connect(_on_bullet_area_entered)
@@ -118,7 +126,6 @@ func _setup_collision():
 	print("  ✅ 碰撞体创建 (玩家半径=" + str(COLLISION_RADIUS * 0.4) + ", 子弹半径=25)")
 
 func _create_health_bar():
-	# 非常小的健康条 - 20x4
 	health_bar_bg = ColorRect.new()
 	health_bar_bg.name = "HealthBarBg"
 	health_bar_bg.color = Color(0.5, 0, 0)
@@ -172,20 +179,22 @@ func _physics_process(delta):
 		var move_dir = Vector2(dx, dy).normalized()
 		position += move_dir * base_speed * delta
 		
-		# 动画
+		# 动画 - 每5帧切换一次
 		if !is_boss and zombie_type != "boss":
 			if frame_count % 5 == 0 and sprite_node:
 				current_frame = (current_frame + 1) % 4
-				sprite_node.region_rect = Rect2(current_frame * 30, 0, 30, 30)
-		
-		# Boss 动画
-		if is_boss or zombie_type == "boss":
+				if sprite_node.texture and sprite_node.texture.resource_path.contains("zombie"):
+					sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
+				elif sprite_node.texture and sprite_node.texture.resource_path.contains("boss"):
+					pass  # Boss 动画在下面处理
+		else:
+			# Boss 动画
 			boss_anim_timer += delta
 			var pulse = 1.0 + 0.1 * sin(boss_anim_timer * 3.0)
 			sprite_node.scale = Vector2(1.2, 1.2) * pulse
 			if frame_count % 8 == 0:
-				var frame = (current_frame % 4) * 167
-				sprite_node.region_rect = Rect2(frame, 0, 167, 374)
+				current_frame = (current_frame + 1) % 4
+				sprite_node.region_rect = Rect2(current_frame * 167, 0, 167, 374)
 	
 	# Boss 伤害检测
 	if (is_boss or zombie_type == "boss") and player_node:
