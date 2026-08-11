@@ -99,13 +99,14 @@ func _setup_collision():
 	player_collision.shape = player_shape
 	player_area.add_child(player_collision)
 	
-	# 子弹检测区域
+	# 子弹检测区域 - 使用 area_entered 检测 Area2D
 	var bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
 	bullet_area.collision_layer = 2
 	bullet_area.collision_mask = 4  # 检测 bullets
 	bullet_area.monitoring = true
-	bullet_area.body_entered.connect(_on_bullet_detected)
+	bullet_area.monitorable = true
+	bullet_area.area_entered.connect(_on_bullet_area_entered)
 	add_child(bullet_area)
 	
 	var bullet_collision = CollisionShape2D.new()
@@ -134,18 +135,16 @@ func _create_health_bar():
 
 func _on_player_detected(body):
 	if body.is_in_group("player") and not dead:
-		var dist = position.distance_to(body.position)
-		if dist <= COLLISION_RADIUS * 0.4:
-			if not dead:
-				dead = true
-				var player = get_tree().get_first_node_in_group("player")
-				if player:
-					player.take_damage(999)
-				emit_signal("zombie_reached_player")
+		if not dead:
+			dead = true
+			var player = get_tree().get_first_node_in_group("player")
+			if player:
+				player.take_damage(999)
+			emit_signal("zombie_reached_player")
 
-func _on_bullet_detected(body):
-	if body.is_in_group("bullets"):
-		var bullet = body as Bullet
+func _on_bullet_area_entered(area):
+	if area.is_in_group("bullets") and not dead:
+		var bullet = area as Bullet
 		if bullet:
 			var final_damage = bullet.damage
 			var is_critical = randf() < 0.15
@@ -153,9 +152,9 @@ func _on_bullet_detected(body):
 				final_damage *= 2.0
 			take_damage(final_damage)
 			_show_damage_number(final_damage, is_critical)
+			print("💥 Zombie受伤: 类型=" + zombie_type + " 伤害=" + str(int(final_damage)) + " 暴击=" + str(is_critical))
 			if not bullet.is_pierce:
 				bullet.queue_free()
-			print("💥 Zombie受伤: 类型=" + zombie_type + " 伤害=" + str(int(final_damage)))
 
 func _physics_process(delta):
 	if dead:
