@@ -9,6 +9,11 @@ var is_pierce = false
 var max_distance = 1200.0
 var traveled_distance = 0.0
 
+# 透视缩放参数
+const PLAYER_Y = 460.0     # 玩家在中心坐标系Y
+const BULLET_SCALE_TOP = 0.4   # 远处(生成点)缩放
+const BULLET_SCALE_BOTTOM = 1.2  # 近处(玩家)缩放
+
 func _ready():
 	add_to_group("bullets")
 	collision_layer = 4
@@ -40,6 +45,12 @@ func _physics_process(delta):
 	var move = direction * current_speed * delta
 	position += move
 	traveled_distance += move.length()
+	
+	# 应用透视缩放：越远越小
+	var center_y = position.y + 640.0  # 转换为中心坐标
+	var t = clamp((center_y - PLAYER_Y) / (-640.0 - PLAYER_Y), 0.0, 1.0)
+	var scale = lerp(BULLET_SCALE_BOTTOM, BULLET_SCALE_TOP, t)
+	$Sprite.scale = Vector2(scale, scale)
 	
 	if traveled_distance >= max_distance:
 		queue_free()

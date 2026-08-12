@@ -67,8 +67,9 @@ func _get_road_half_width(y_pos: float) -> float:
 func _get_perspective_scale(y_pos: float) -> float:
 	var t = inverse_lerp(PLAYER_Y_CENTER, SPAWN_Y_TOP, y_pos)
 	t = clamp(t, 0.0, 1.0)
-	# 远处(顶部)最小缩放0.3，近处(玩家)最大缩放1.0
-	return lerp(1.0, 0.3, t)
+	# 远处(顶部)t=0, scale=1.2; 近处(玩家)t=1, scale=0.6
+	# 修正：生成时在远处，用更大基础缩放让它们看起来更大
+	return lerp(1.2, 0.6, t)
 
 # 更新透视缩放和位置
 func _update_perspective():
@@ -82,9 +83,11 @@ func _update_perspective():
 	
 	if sprite:
 		if is_boss or zombie_type == "boss":
-			sprite.scale = Vector2(0.4, 0.4) * scale_val
+			# Boss: 基础0.6，透视放大到1.2
+			sprite.scale = Vector2(0.6, 0.6) * scale_val
 		else:
-			sprite.scale = Vector2(0.8, 0.8) * scale_val
+			# 僵尸: 基础0.9，透视放大到1.5
+			sprite.scale = Vector2(0.9, 0.9) * scale_val
 
 func _setup_sprite():
 	if is_boss or zombie_type == "boss":
