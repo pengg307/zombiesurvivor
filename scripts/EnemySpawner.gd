@@ -30,9 +30,9 @@ const WAVE_CONFIG = {
 }
 
 const ZOMBIE_WEIGHTS = {
-	"basic": 65,
-	"fast": 35,
-	"tank": 10,
+	"basic": 50,
+	"fast": 30,
+	"tank": 15,
 	"explorer": 5
 }
 
