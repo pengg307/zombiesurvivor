@@ -164,8 +164,10 @@ func _spawn_zombie(index, config):
 	if zombie_scene:
 		var zombie = zombie_scene.new()
 		# 只有 Zombie.gd 有 zombie_type 变量
-		if zombie.has_variable("zombie_type"):
-			zombie.zombie_type = zombie_type
+		if zombie_type == "boss":
+			zombie.is_boss = true
+		if zombie_type == "fast":
+			zombie.zombie_type = "fast"
 		
 		# 生成Y位置
 		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
