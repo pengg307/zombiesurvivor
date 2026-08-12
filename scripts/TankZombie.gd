@@ -7,6 +7,12 @@ const EXPERIENCE_REWARD = 20
 const SCREEN_HEIGHT = 1280.0
 const PLAYER_Y_SCREEN = 1100.0
 
+# 透视缩放参数（与 Zombie.gd 一致）
+const ROAD_WIDTH_TOP = 614.0
+const ROAD_WIDTH_BOTTOM = 20.0
+const PLAYER_Y_CENTER = 460.0
+const SPAWN_Y_TOP = -450.0
+
 var current_health = BASE_HEALTH
 var sprite_node: Sprite2D = null
 var walk_timer = 0.0
@@ -14,6 +20,7 @@ var current_frame = 0
 var health_bar: ProgressBar = null
 var health_bar_bg: ColorRect = null
 var sprite_size = Vector2(80, 80)
+var dead = false
 
 signal tank_exploded
 
@@ -24,7 +31,27 @@ func _ready():
 	call_deferred("_setup_collision")
 	_setup_sprite()
 	_create_health_bar()
+	_update_perspective()
 	print("✅ TankZombie创建: 血量=" + str(BASE_HEALTH) + " 速度=" + str(BASE_SPEED))
+
+func _get_road_half_width(y_pos: float) -> float:
+	var t = inverse_lerp(PLAYER_Y_CENTER, SPAWN_Y_TOP, y_pos)
+	t = clamp(t, 0.0, 1.0)
+	var width = lerp(ROAD_WIDTH_BOTTOM, ROAD_WIDTH_TOP, t)
+	return width / 2.0
+
+func _get_perspective_scale(y_pos: float) -> float:
+	var t = inverse_lerp(PLAYER_Y_CENTER, SPAWN_Y_TOP, y_pos)
+	t = clamp(t, 0.0, 1.0)
+	return lerp(1.2, 0.6, t)
+
+func _update_perspective():
+	var half_width = _get_road_half_width(position.y)
+	position.x = clamp(position.x, -half_width, half_width)
+	
+	var scale_val = _get_perspective_scale(position.y)
+	if sprite_node:
+		sprite_node.scale = Vector2(1.2, 1.2) * scale_val
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
@@ -76,6 +103,9 @@ func _on_player_detected(body):
 		emit_signal("zombie_reached_player")
 
 func _physics_process(delta):
+	if dead:
+		return
+	
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
 		# 玩家屏幕坐标 -> 僵尸中心坐标
@@ -85,6 +115,9 @@ func _physics_process(delta):
 			target_center.y = position.y
 		var move_dir = (target_center - position).normalized()
 		position += move_dir * BASE_SPEED * delta
+		
+		# 每帧更新透视
+		_update_perspective()
 		
 		# 动画
 		walk_timer += delta
@@ -103,6 +136,8 @@ func _physics_process(delta):
 			queue_free()
 
 func take_damage(damage: float):
+	if dead:
+		return
 	current_health -= damage
 	modulate = Color(1, 0, 0)
 	var timer = get_tree().create_timer(0.1)
@@ -112,6 +147,10 @@ func take_damage(damage: float):
 		_die()
 
 func _die():
+	if dead:
+		return
+	dead = true
+	
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
 		player.add_kill()
@@ -139,9 +178,8 @@ func _explode():
 		player.apply_tank_upgrade()
 		print("💥 Tank爆炸！玩家火力永久提升！")
 	elif player:
-		# 如果玩家没有 apply_tank_upgrade 方法，直接提升伤害
-		print("💥 Tank爆炸！子弹伤害+5")
 		player.damage_per_shot += 5.0
+		print("💥 Tank爆炸！子弹伤害+5")
 
 func _spawn_explosion_effect():
 	var particles = GPUParticles2D.new()
