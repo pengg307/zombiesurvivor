@@ -48,6 +48,7 @@ var shield: int = 0
 var game_over = false
 var last_attack_pos = Vector2(0, 0)
 var attack_log_counter = 0
+var tank_upgrade_count: int = 0  # 记录Tank击杀数
 
 signal kill_count_changed
 signal ammo_boost_applied(level: int)
@@ -351,6 +352,13 @@ func apply_ammo_boost(type: int):
 			ammo_boost_timer = 8.0
 	emit_signal("ammo_boost_applied", ammo_boost_level)
 
+# Tank 被击杀后的永久升级
+func apply_tank_upgrade():
+	tank_upgrade_count += 1
+	# 永久提升子弹伤害
+	damage_per_shot += 5.0
+	print("💥 Tank升级！当前伤害=" + str(int(damage_per_shot)) + " (已提升" + str(tank_upgrade_count) + "次)")
+
 func take_damage(damage: float):
 	if game_over:
 		return
@@ -397,4 +405,4 @@ func add_experience(amount: int):
 func _update_debug_info():
 	if debug_mode and last_log_kill != kills:
 		last_log_kill = kills
-		print("📊 [调试] 击杀:" + str(kills) + " 三发:" + str(bullet_count))
+		print("📊 [调试] 击杀:" + str(kills) + " 三发:" + str(bullet_count) + " 坦克升级:" + str(tank_upgrade_count))

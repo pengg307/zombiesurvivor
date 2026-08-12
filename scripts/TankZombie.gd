@@ -15,6 +15,8 @@ var health_bar: ProgressBar = null
 var health_bar_bg: ColorRect = null
 var sprite_size = Vector2(80, 80)
 
+signal tank_exploded
+
 func _ready():
 	add_to_group("zombies")
 	collision_layer = 2
@@ -114,11 +116,43 @@ func _die():
 	if player:
 		player.add_kill()
 		player.add_experience(EXPERIENCE_REWARD)
+	
+	# Tank 爆炸！永久提升玩家火力
+	_explode()
+	
 	if health_bar:
 		health_bar.queue_free()
 	if health_bar_bg:
 		health_bar_bg.queue_free()
 	queue_free()
+
+func _explode():
+	# 触发爆炸信号
+	emit_signal("tank_exploded")
+	
+	# 显示爆炸特效
+	_spawn_explosion_effect()
+	
+	# 永久提升玩家火力
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.has_method("apply_tank_upgrade"):
+		player.apply_tank_upgrade()
+		print("💥 Tank爆炸！玩家火力永久提升！")
+	elif player:
+		# 如果玩家没有 apply_tank_upgrade 方法，直接提升伤害
+		print("💥 Tank爆炸！子弹伤害+5")
+		player.damage_per_shot += 5.0
+
+func _spawn_explosion_effect():
+	var particles = GPUParticles2D.new()
+	particles.one_shot = true
+	particles.amount = 20
+	particles.lifetime = 0.8
+	particles.emitting = true
+	get_parent().add_child(particles)
+	
+	var timer = get_tree().create_timer(0.8)
+	timer.timeout.connect(func(): particles.queue_free())
 
 func _create_health_bar():
 	health_bar_bg = ColorRect.new()
@@ -135,7 +169,7 @@ func _create_health_bar():
 	health_bar.value = BASE_HEALTH
 	health_bar.position = Vector2(-40, -50)
 	health_bar.size = Vector2(80, 8)
-	health_bar.modulate = Color(0, 1, 0)
+	health_bar.modulate = Color(1, 0.3, 0.1)
 	add_child(health_bar)
 
 func _update_health_bar():
@@ -143,8 +177,8 @@ func _update_health_bar():
 		health_bar.value = current_health
 		var pct = float(current_health) / BASE_HEALTH
 		if pct > 0.6:
-			health_bar.modulate = Color(0, 1, 0)
+			health_bar.modulate = Color(1, 0.8, 0.1)
 		elif pct > 0.3:
-			health_bar.modulate = Color(1, 1, 0)
+			health_bar.modulate = Color(1, 0.5, 0.1)
 		else:
-			health_bar.modulate = Color(1, 0, 0)
+			health_bar.modulate = Color(1, 0.1, 0.1)
