@@ -25,7 +25,7 @@ var dead = false
 signal tank_exploded
 
 func _ready():
-	add_to_group("zombies")
+	add_to_group("zombies")  # Tank 仍然是僵尸，会攻击玩家
 	collision_layer = 2
 	collision_mask = 1
 	call_deferred("_setup_collision")
@@ -51,7 +51,7 @@ func _update_perspective():
 	
 	var scale_val = _get_perspective_scale(position.y)
 	if sprite_node:
-		sprite_node.scale = Vector2(1.2, 1.2) * scale_val
+		sprite_node.scale = Vector2(1.0, 1.0) * scale_val  # Tank 比正常僵尸稍大
 
 func _setup_sprite():
 	var sprite = Sprite2D.new()
@@ -73,7 +73,7 @@ func _setup_fallback_sprite():
 	sprite.name = "Sprite"
 	var rect = ColorRect.new()
 	rect.size = Vector2(80, 80)
-	rect.color = Color(0.3, 0.3, 0.5)
+	rect.color = Color(0.8, 0.3, 0.1)  # 橙色表示 Tank
 	sprite.add_child(rect)
 	add_child(sprite)
 	sprite_node = sprite
@@ -156,7 +156,7 @@ func _die():
 		player.add_kill()
 		player.add_experience(EXPERIENCE_REWARD)
 	
-	# Tank 爆炸！永久提升玩家火力
+	# Tank 爆炸！生成火力增强包
 	_explode()
 	
 	if health_bar:
@@ -172,14 +172,16 @@ func _explode():
 	# 显示爆炸特效
 	_spawn_explosion_effect()
 	
-	# 永久提升玩家火力
-	var player = get_tree().get_first_node_in_group("player")
-	if player and player.has_method("apply_tank_upgrade"):
-		player.apply_tank_upgrade()
-		print("💥 Tank爆炸！玩家火力永久提升！")
-	elif player:
-		player.damage_per_shot += 5.0
-		print("💥 Tank爆炸！子弹伤害+5")
+	# 生成火力增强包（不再是直接升级，而是掉落道具）
+	_spawn_power_up()
+
+func _spawn_power_up():
+	var power_up_scene = load("res://scripts/TankPowerUp.gd")
+	if power_up_scene:
+		var power_up = power_up_scene.new()
+		power_up.position = position
+		get_parent().add_child(power_up)
+		print("🎁 火力增强包已生成！位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ")")
 
 func _spawn_explosion_effect():
 	var particles = GPUParticles2D.new()
