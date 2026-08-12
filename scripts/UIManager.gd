@@ -9,10 +9,14 @@ var settings_manager = null
 var tutorial_manager = null
 var game_ended = false
 var game_started = false
+var level_manager = null
 
 # 底部健康条节点
 var health_bar_fg = null
 var health_label = null
+
+# 关卡信息
+var current_level_label = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -33,6 +37,8 @@ func _ready():
 	_add_mobile_controls()
 	_add_settings_button()
 	_add_stats_button()
+	_add_level_button()
+	_setup_level_display()
 	
 	game_ended = false
 	game_started = false
@@ -62,7 +68,7 @@ func _unhandled_input(event):
 				_on_restart_game()
 			elif has_node("WinPanel") and $WinPanel.visible:
 				get_viewport().set_input_as_handled()
-				_on_restart_game()
+				_on_next_level_prompt()
 
 func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
@@ -103,10 +109,15 @@ func _connect_buttons():
 		restart_btn.pressed.connect(_on_restart_game)
 		print("  ✅ GameOver RestartButton 已连接")
 	
-	if has_node("WinPanel/PanelContainer/VBoxContainer/RestartButton"):
-		var restart_btn = $WinPanel/PanelContainer/VBoxContainer/RestartButton
-		restart_btn.pressed.connect(_on_restart_game)
-		print("  ✅ Win RestartButton 已连接")
+	if has_node("WinPanel/PanelContainer/VBoxContainer/NextLevelButton"):
+		var next_btn = $WinPanel/PanelContainer/VBoxContainer/NextLevelButton
+		next_btn.pressed.connect(_on_next_level_pressed)
+		print("  ✅ Win NextLevelButton 已连接")
+	
+	if has_node("WinPanel/PanelContainer/VBoxContainer/MenuButton"):
+		var menu_btn = $WinPanel/PanelContainer/VBoxContainer/MenuButton
+		menu_btn.pressed.connect(_on_menu_pressed)
+		print("  ✅ Win MenuButton 已连接")
 
 func _on_start_game():
 	if game_started or game_ended:
@@ -195,6 +206,7 @@ func show_win(kills):
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.text = "🏆 WON 🏆"
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(0.2, 1, 0.2)
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
+		$WinPanel/PanelContainer/VBoxContainer/LevelLabel.text = "Level " + str(spawner.current_level if spawner else 1)
 
 func _on_restart_game():
 	print("🔄 重新开始游戏")
@@ -203,6 +215,43 @@ func _on_restart_game():
 		audio_manager.stop_bgm()
 	
 	get_tree().reload_current_scene()
+
+func _on_next_level_prompt():
+	# 空格键显示下一关提示
+	if has_node("WinPanel") and $WinPanel.visible:
+		print("🎯 按空格键继续到下一关")
+
+func _on_next_level_pressed():
+	print("🚀 进入下一关！")
+	if spawner:
+		var lm = get_tree().get_first_node_in_group("level_manager")
+		if lm and lm.has_next_level():
+			lm.start_level(lm.get_next_level())
+			_on_restart_game()
+
+func _on_menu_pressed():
+	print("📋 返回主菜单")
+	# TODO: 显示关卡选择界面
+	if has_node("LevelSelectUI"):
+		$LevelSelectUI.show()
+
+func _add_level_button():
+	var btn = Button.new()
+	btn.name = "LevelButton"
+	btn.text = "🎮 关卡"
+	btn.size = Vector2(80, 40)
+	btn.position = Vector2(620, 10)
+	btn.z_index = 50
+	btn.modulate = Color(1, 1, 1, 0.8)
+	btn.add_theme_font_size_override("font_size", 16)
+	btn.pressed.connect(_on_menu_pressed)
+	add_child(btn)
+	print("  ✅ LevelButton 已添加")
+
+func _setup_level_display():
+	level_manager = get_tree().get_first_node_in_group("level_manager")
+	if level_manager:
+		print("📊 当前关卡: " + str(level_manager.current_level))
 
 func _create_bottom_health_bar():
 	# 底部健康条容器 - 长条形，占据整个屏幕宽度

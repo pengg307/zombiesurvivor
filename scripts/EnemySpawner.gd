@@ -16,7 +16,8 @@ const ROAD_HALF_WIDTH_TOP = 307.0    # 顶部道路半宽
 const ROAD_HALF_WIDTH_BOTTOM = 10.0  # 底部道路半宽
 const PLAYER_Y_CENTER = 460.0        # 玩家Y位置
 
-const WAVE_CONFIG = {
+# 关卡波次配置 - 根据关卡动态调整
+const BASE_WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
 	2: {"zombies": 4, "interval": 2.3, "types": ["basic", "fast"]},
 	3: {"zombies": 6, "interval": 2.0, "types": ["basic", "fast", "tank"]},
@@ -26,7 +27,25 @@ const WAVE_CONFIG = {
 	7: {"zombies": 10, "interval": 1.0, "types": ["basic", "fast", "tank", "explorer"]},
 	8: {"zombies": 10, "interval": 0.8, "types": ["basic", "fast", "tank", "explorer"]},
 	9: {"zombies": 12, "interval": 0.7, "types": ["basic", "fast", "tank", "explorer"]},
-	10: {"zombies": 12, "interval": 0.6, "types": ["basic", "fast", "tank", "explorer"]}
+	10: {"zombies": 12, "interval": 0.6, "types": ["basic", "fast", "tank", "explorer"]},
+	# Level 2+ 额外波次
+	11: {"zombies": 14, "interval": 0.6, "types": ["basic", "fast", "tank", "explorer"]},
+	12: {"zombies": 14, "interval": 0.5, "types": ["basic", "fast", "tank", "explorer"]},
+	13: {"zombies": 16, "interval": 0.5, "types": ["basic", "fast", "tank", "explorer"]},
+	14: {"zombies": 16, "interval": 0.4, "types": ["basic", "fast", "tank", "explorer"]},
+	15: {"zombies": 18, "interval": 0.4, "types": ["basic", "fast", "tank", "explorer"]},
+	# Level 3+ 额外波次
+	16: {"zombies": 18, "interval": 0.35, "types": ["basic", "fast", "tank", "explorer"]},
+	17: {"zombies": 20, "interval": 0.35, "types": ["basic", "fast", "tank", "explorer"]},
+	18: {"zombies": 20, "interval": 0.3, "types": ["basic", "fast", "tank", "explorer"]},
+	19: {"zombies": 22, "interval": 0.3, "types": ["basic", "fast", "tank", "explorer"]},
+	20: {"zombies": 22, "interval": 0.25, "types": ["basic", "fast", "tank", "explorer"]},
+	# Level 4 额外波次
+	21: {"zombies": 24, "interval": 0.25, "types": ["basic", "fast", "tank", "explorer"]},
+	22: {"zombies": 24, "interval": 0.2, "types": ["basic", "fast", "tank", "explorer"]},
+	23: {"zombies": 26, "interval": 0.2, "types": ["basic", "fast", "tank", "explorer"]},
+	24: {"zombies": 26, "interval": 0.15, "types": ["basic", "fast", "tank", "explorer"]},
+	25: {"zombies": 28, "interval": 0.15, "types": ["basic", "fast", "tank", "explorer"]}
 }
 
 const ZOMBIE_WEIGHTS = {
@@ -52,10 +71,15 @@ var safety_timer = 0.0
 var is_safety_mode = true
 const SAFETY_TIME = 3.0
 
+# 关卡相关
+var current_level = 1
+var level_manager = null
+
 signal boss_spawned
 signal game_over_signal
 signal game_won
 signal wave_complete
+signal level_completed
 
 func _ready():
 	add_to_group("spawner")
@@ -63,10 +87,16 @@ func _ready():
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
 	
+	# 获取 LevelManager
+	level_manager = get_tree().get_first_node_in_group("level_manager")
+	if level_manager:
+		current_level = level_manager.current_level
+		print("📊 当前关卡: " + str(current_level))
+	
 	print("")
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
-	print("📍 最大波次: " + str(MAX_WAVES))
+	print("📍 最大波次: " + str(BASE_WAVE_CONFIG.size()))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
 	print("🛣️ 道路透视: 顶部宽=" + str(ROAD_HALF_WIDTH_TOP*2) + " 底部宽=" + str(ROAD_HALF_WIDTH_BOTTOM*2))
@@ -95,8 +125,9 @@ func _on_spawn_timer_timeout():
 		all_zombies_dead = true
 		print("🎉 所有僵尸已清除！当前波次: " + str(wave_number))
 		
-		if wave_number >= MAX_WAVES and not boss_spawned_this_game:
-			print("🏆 完成所有" + str(MAX_WAVES) + "波！")
+		var max_waves = _get_max_waves_for_level()
+		if wave_number >= max_waves and not boss_spawned_this_game:
+			print("🏆 完成所有" + str(max_waves) + "波！")
 			stop()
 			if current_kills >= BOSS_KILLS_REQUIRED:
 				_spawn_boss()
@@ -104,14 +135,14 @@ func _on_spawn_timer_timeout():
 				_trigger_win()
 			return
 	
-	if wave_number >= MAX_WAVES:
+	if wave_number >= _get_max_waves_for_level():
 		print("⏹️ 已达到最大波次，停止生成")
 		spawn_timer.stop()
 		return
 	
-	var config = WAVE_CONFIG[min(wave_number + 1, WAVE_CONFIG.size())]
+	var config = BASE_WAVE_CONFIG[min(wave_number + 1, BASE_WAVE_CONFIG.size())]
 	if config:
-		spawn_timer.wait_time = config.interval
+		spawn_timer.wait_time = config.interval * _get_spawn_interval_mult()
 		_start_next_wave()
 
 func _start_next_wave():
@@ -119,7 +150,7 @@ func _start_next_wave():
 	wave_active = true
 	all_zombies_dead = false
 	
-	var config = WAVE_CONFIG[min(wave_number, WAVE_CONFIG.size())]
+	var config = BASE_WAVE_CONFIG[min(wave_number, BASE_WAVE_CONFIG.size())]
 	zombies_in_wave = config.zombies
 	zombie_count = 0
 	
@@ -245,3 +276,26 @@ func stop():
 	print("⏹️ 生成器停止！")
 	spawn_timer.stop()
 	game_started = false
+
+# 获取当前关卡的最大波次
+func _get_max_waves_for_level() -> int:
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	if not lm:
+		return BASE_WAVE_CONFIG.size()
+	return lm.get_current_config().max_waves
+
+# 获取关卡生成间隔倍率
+func _get_spawn_interval_mult() -> float:
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	if not lm:
+		return 1.0
+	return lm.get_current_config().spawn_interval_mult
+
+# 触发关卡完成
+func trigger_level_complete():
+	print("🏆 关卡 " + str(current_level) + " 完成！")
+	is_game_over = true
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	if lm:
+		lm.complete_level()
+	emit_signal("level_completed", current_level)

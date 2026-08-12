@@ -72,6 +72,14 @@ func _connect_signals_deferred():
 		if spawner.has_signal("boss_spawned"):
 			spawner.boss_spawned.connect(_on_boss_spawned)
 			print("✅ 已连接 boss_spawned")
+		if spawner.has_signal("level_completed"):
+			spawner.level_completed.connect(_on_level_completed)
+			print("✅ 已连接 level_completed")
+	
+	# 连接 LevelManager
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	if lm:
+		print("📊 LevelManager 已连接，当前关卡: " + str(lm.current_level))
 
 func _on_kill_count_changed():
 	if player and weapon_upgrade_sys:
@@ -100,13 +108,19 @@ func _on_boss_spawned():
 	if audio_manager:
 		audio_manager.play_boss_appear()
 
+func _on_level_completed(level: int):
+	print("🎉 关卡 " + str(level) + " 完成！")
+	# 显示下一关提示
+	if ui and ui.has_method("_on_next_level_prompt"):
+		ui._on_next_level_prompt()
+
 func _on_game_won():
 	print("🏆 胜利！")
 	if audio_manager:
 		audio_manager.play_victory()
 	if stats_manager:
 		stats_manager.end_game(true)
+	if spawner:
+		spawner.trigger_level_complete()
 	if ui and ui.has_method("show_win"):
 		ui.show_win(spawner.current_kills if spawner else 0)
-	if spawner:
-		spawner.stop()
