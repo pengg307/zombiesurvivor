@@ -83,8 +83,8 @@ func _update_perspective():
 	
 	if sprite:
 		if is_boss or zombie_type == "boss":
-			# Boss: 基础0.3，透视放大到0.6（原来0.6→1.2，现在减半）
-			sprite.scale = Vector2(0.3, 0.3) * scale_val
+			# Boss: 基础0.6，透视放大到1.2（两倍于之前的0.3→0.6）
+			sprite.scale = Vector2(0.6, 0.6) * scale_val
 		else:
 			# 僵尸: 基础0.9，透视放大到1.5
 			sprite.scale = Vector2(0.9, 0.9) * scale_val
