@@ -109,7 +109,7 @@ func _collect_barrel(player: Node2D):
 	queue_free()
 
 func _spawn_collect_effect():
-	var particles = GPUParticles2D.new()
+	var particles = CPUParticles2D.new()
 	particles.amount = 15
 	particles.lifetime = 0.5
 	particles.emitting = true

@@ -43,12 +43,13 @@ func _start_game():
 	print("🎮 启动游戏！")
 	if settings_manager:
 		settings_manager._apply_audio_settings()
-	if spawner:
-		spawner.start()
-		print("  ✅ 生成器已启动")
 	if audio_manager:
 		audio_manager.play_bgm("normal")
 		print("  ✅ BGM已播放")
+
+	# 注意：不在这里启动生成器！
+	# spawner.start() 由 UIManager._on_start_game()（点击开始按钮）触发，
+	# 这样玩家点击开始按钮之前僵尸不会生成/移动，保证公平。
 
 func _connect_signals_deferred():
 	await get_tree().process_frame

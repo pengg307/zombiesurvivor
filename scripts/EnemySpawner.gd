@@ -11,11 +11,10 @@ const SPAWN_TOP_Y = -450.0
 const SPAWN_BOTTOM_Y = -350.0
 const MAX_WAVES = 10
 
-# 屏幕中心对应世界坐标 (0, 0)
-# 屏幕左边缘 = -360, 右边缘 = 360
-# 屏幕上边缘 = -640, 下边缘 = 640
-const SPAWN_LEFT_X = -360.0
-const SPAWN_RIGHT_X = 360.0
+# 道路透视参数（与Zombie.gd保持一致）
+const ROAD_HALF_WIDTH_TOP = 307.0    # 顶部道路半宽
+const ROAD_HALF_WIDTH_BOTTOM = 10.0  # 底部道路半宽
+const PLAYER_Y_CENTER = 460.0        # 玩家Y位置
 
 const WAVE_CONFIG = {
 	1: {"zombies": 4, "interval": 2.5, "types": ["basic", "fast"]},
@@ -70,7 +69,7 @@ func _ready():
 	print("📍 最大波次: " + str(MAX_WAVES))
 	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
-	print("📏 屏幕范围: X(-360,360) Y(-640,640)")
+	print("🛣️ 道路透视: 顶部宽=" + str(ROAD_HALF_WIDTH_TOP*2) + " 底部宽=" + str(ROAD_HALF_WIDTH_BOTTOM*2))
 	print("⏱️ 安全时间: " + str(SAFETY_TIME) + "秒")
 	print("============================================================")
 
@@ -80,6 +79,12 @@ func _process(delta):
 		if safety_timer >= SAFETY_TIME:
 			is_safety_mode = false
 			print("✅ 安全时间结束，僵尸可以攻击了！")
+
+# 根据Y位置计算道路半宽
+func _get_road_half_width(y_pos: float) -> float:
+	var t = inverse_lerp(PLAYER_Y_CENTER, SPAWN_TOP_Y, y_pos)
+	t = clamp(t, 0.0, 1.0)
+	return lerp(ROAD_HALF_WIDTH_BOTTOM, ROAD_HALF_WIDTH_TOP, t)
 
 func _on_spawn_timer_timeout():
 	if is_game_over:
@@ -160,30 +165,28 @@ func _spawn_zombie(index, config):
 		var zombie = zombie_scene.new()
 		zombie.zombie_type = zombie_type
 		
-		# 计算生成位置，确保在屏幕范围内
-		var x_pos = _get_spawn_x(index, zombies_in_wave)
+		# 生成Y位置
 		var y_pos = randf_range(SPAWN_TOP_Y, SPAWN_BOTTOM_Y)
 		
-		# 确保位置在屏幕范围内
-		x_pos = clamp(x_pos, -360.0, 360.0)
-		y_pos = clamp(y_pos, -640.0, 640.0)
+		# 根据Y位置计算道路宽度，限制生成X在道路范围内
+		var half_width = _get_road_half_width(y_pos)
+		var x_pos = _get_spawn_x(index, zombies_in_wave, half_width)
 		
 		zombie.position = Vector2(x_pos, y_pos)
 		add_child(zombie)
 		
-		# 转换为屏幕坐标显示
 		var screen_x = x_pos + SCREEN_WIDTH / 2.0
 		var screen_y = y_pos + SCREEN_HEIGHT / 2.0
 		zombie_count += 1
-		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 世界=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ")")
+		print("  ✅ 生成" + zombie_type + " #" + str(zombie_count) + " 世界=(" + str(int(x_pos)) + "," + str(int(y_pos)) + ") 屏幕=(" + str(int(screen_x)) + "," + str(int(screen_y)) + ") 道路半宽=" + str(int(half_width)))
 	else:
 		print("  ❌ 加载僵尸场景失败")
 
-func _get_spawn_x(index, total_count):
-	# 在屏幕宽度内均匀分布僵尸
-	var spacing = 720.0 / (total_count + 1)
-	var x = -360.0 + (index + 1) * spacing
-	return clamp(x, -360.0, 360.0)
+func _get_spawn_x(index, total_count, half_width):
+	# 在道路宽度内均匀分布僵尸
+	var spacing = (half_width * 2) / (total_count + 1)
+	var x = -half_width + (index + 1) * spacing
+	return clamp(x, -half_width, half_width)
 
 func add_kill():
 	if is_game_over:
@@ -207,9 +210,10 @@ func _spawn_boss():
 		var boss = boss_scene.new()
 		boss.is_boss = true
 		boss.zombie_type = "boss"
+		# Boss生成在道路中央
 		boss.position = Vector2(0, -500)
 		add_child(boss)
-		print("👹 Boss已生成！")
+		print("👹 Boss已生成！位置=(0, -500)")
 		emit_signal("boss_spawned")
 
 func _trigger_win():

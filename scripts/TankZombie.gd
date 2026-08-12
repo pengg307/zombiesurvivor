@@ -10,6 +10,7 @@ const PLAYER_Y_SCREEN = 1100.0
 var current_health = BASE_HEALTH
 var sprite_node: Sprite2D = null
 var walk_timer = 0.0
+var current_frame = 0
 var health_bar: ProgressBar = null
 var health_bar_bg: ColorRect = null
 var sprite_size = Vector2(80, 80)
@@ -75,8 +76,12 @@ func _on_player_detected(body):
 func _physics_process(delta):
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
-		var target_pos = player.position + Vector2(360, 640) - position
-		var move_dir = target_pos.normalized()
+		# 玩家屏幕坐标 -> 僵尸中心坐标
+		var target_center = player.position - Vector2(360, 640)
+		# 到达玩家Y行后只在X轴移动，收敛到玩家正上方
+		if position.y >= target_center.y - 5.0:
+			target_center.y = position.y
+		var move_dir = (target_center - position).normalized()
 		position += move_dir * BASE_SPEED * delta
 		
 		# 动画
@@ -87,9 +92,8 @@ func _physics_process(delta):
 			if sprite_node.texture:
 				sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 		
-		# 检查到达玩家
-		var screen_pos = position + Vector2(360, 640)
-		if screen_pos.y >= PLAYER_Y_SCREEN:
+		# 接触玩家判定（用全局坐标）
+		if get_global_position().distance_to(player.global_position) <= 50.0:
 			var player_node = get_tree().get_first_node_in_group("player")
 			if player_node:
 				player_node.take_damage(999)

@@ -127,13 +127,10 @@ func _setup_collision():
 
 func _on_zombie_detected(body):
 	if body.is_in_group("zombies") and not game_over:
-		var dist = position.distance_to(body.position + Vector2(360, 640))
-		print("💥 僵尸碰撞检测: 距离=" + str(int(dist)))
-		if dist <= 60.0:  # 碰撞半径
-			print("💀 僵尸碰到玩家！")
-			game_over = true
-			current_health = 0
-			emit_signal("player_died")
+		print("💥 僵尸碰撞检测: " + body.name)
+		game_over = true
+		current_health = 0
+		emit_signal("player_died")
 
 func _add_position_label():
 	var label = Label.new()

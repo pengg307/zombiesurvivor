@@ -11,6 +11,7 @@ const PLAYER_Y_SCREEN = 1100.0
 var current_health = BASE_HEALTH
 var sprite_node: Sprite2D = null
 var walk_timer = 0.0
+var current_frame = 0
 var health_bar: ProgressBar = null
 var health_bar_bg: ColorRect = null
 var sprite_size = Vector2(48, 48)
@@ -74,7 +75,7 @@ func _explode():
 	# 创建爆炸效果
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
-		var distance = position.distance_to(player.position + Vector2(360, 640))
+		var distance = get_global_position().distance_to(player.global_position)
 		if distance < EXPLOSION_RADIUS:
 			player.take_damage(30)
 	
@@ -84,8 +85,12 @@ func _explode():
 func _physics_process(delta):
 	var player = get_tree().get_first_node_in_group("player")
 	if player and not is_exploding:
-		var target_pos = player.position + Vector2(360, 640) - position
-		var move_dir = target_pos.normalized()
+		# 玩家屏幕坐标 -> 僵尸中心坐标
+		var target_center = player.position - Vector2(360, 640)
+		# 到达玩家Y行后只在X轴移动，收敛到玩家正上方
+		if position.y >= target_center.y - 5.0:
+			target_center.y = position.y
+		var move_dir = (target_center - position).normalized()
 		position += move_dir * BASE_SPEED * delta
 		
 		walk_timer += delta
@@ -95,8 +100,7 @@ func _physics_process(delta):
 			if sprite_node.texture:
 				sprite_node.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 		
-		var screen_pos = position + Vector2(360, 640)
-		if screen_pos.y >= PLAYER_Y_SCREEN:
+		if get_global_position().distance_to(player.global_position) <= 50.0:
 			_explode()
 
 func take_damage(damage: float):

@@ -10,20 +10,33 @@ const BOSS_SPEED = 30.0
 const DAMAGE = 10.0
 const COLLISION_RADIUS = 50.0
 const EXPERIENCE_REWARD = 10
-const SAFETY_TIME = 2.0  # 安全时间（秒）
+const SAFETY_TIME = 2.0
+
+# 透视缩放参数
+# 道路宽度分析: 街道图片(512x512)缩放至720x1280后的比例
+# 缩放因子: 720/512 = 1.40625 (X轴), 1280/512 = 2.5 (Y轴)
+const ROAD_WIDTH_TOP = 614.0    # 屏幕顶部(中心y=-576)道路宽度
+const ROAD_WIDTH_BOTTOM = 20.0  # 玩家位置(中心y=460)道路宽度(最小宽度)
+const PLAYER_Y_CENTER = 460.0   # 玩家在中心坐标系中的Y位置
+const SPAWN_Y_TOP = -450.0      # 僵尸生成最远Y
+const SPAWN_Y_BOTTOM = -350.0   # 僵尸生成最近Y
 
 var zombie_type = "basic"
 var is_boss = false
 var current_health = BASE_HEALTH
 var speed = BASE_SPEED
 var dead = false
-var can_attack = false
+var can_attack = true
 var player_node = null
 var player_area = null
 var bullet_area = null
 var sprite: Sprite2D
 var health_bar_fg: ColorRect
-var zombie_kills = 0  # 该僵尸击杀数
+var zombie_kills = 0
+var frame_count = 0
+var current_frame = 0
+var boss_anim_timer = 0.0
+var base_scale = 1.0  # 基础缩放
 
 signal zombie_died
 signal boss_died
@@ -38,33 +51,68 @@ func _ready():
 	current_health = get_max_health()
 	speed = get_speed()
 	
+	# 根据初始位置设置基础缩放
+	_update_perspective()
+	
 	print("✅ Zombie创建: 类型=" + zombie_type + " 健康=" + str(int(current_health)))
 
+# 根据Y位置计算道路半宽（中心坐标系）
+func _get_road_half_width(y_pos: float) -> float:
+	var t = inverse_lerp(PLAYER_Y_CENTER, SPAWN_Y_TOP, y_pos)
+	t = clamp(t, 0.0, 1.0)
+	var width = lerp(ROAD_WIDTH_BOTTOM, ROAD_WIDTH_TOP, t)
+	return width / 2.0
+
+# 根据Y位置计算透视缩放比例
+func _get_perspective_scale(y_pos: float) -> float:
+	var t = inverse_lerp(PLAYER_Y_CENTER, SPAWN_Y_TOP, y_pos)
+	t = clamp(t, 0.0, 1.0)
+	# 远处(顶部)最小缩放0.3，近处(玩家)最大缩放1.0
+	return lerp(1.0, 0.3, t)
+
+# 更新透视缩放和位置
+func _update_perspective():
+	var half_width = _get_road_half_width(position.y)
+	# 限制X位置在道路范围内
+	position.x = clamp(position.x, -half_width, half_width)
+	
+	# 计算并应用缩放
+	var scale_val = _get_perspective_scale(position.y)
+	base_scale = scale_val
+	
+	if sprite:
+		if is_boss or zombie_type == "boss":
+			sprite.scale = Vector2(0.4, 0.4) * scale_val
+		else:
+			sprite.scale = Vector2(0.8, 0.8) * scale_val
+
 func _setup_sprite():
-	if zombie_type == "boss" or is_boss:
-		# Boss使用bigboss.png
+	if is_boss or zombie_type == "boss":
 		sprite = Sprite2D.new()
-		var boss_texture = load("res://assets/downloads/bigboss.png")
+		var boss_texture = load("res://assets/downloads/bbossmove.png")
 		if boss_texture:
 			sprite.texture = boss_texture
-			sprite.scale = Vector2(2, 2)
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, 0, 150, 300)
+			sprite.scale = Vector2(0.4, 0.4)
+			sprite.centered = true
 		add_child(sprite)
 		position = Vector2(0, -300)
 	else:
-		# 普通僵尸使用zombie_front_4frames_game.png
 		sprite = Sprite2D.new()
 		var texture = load("res://assets/downloads/zombie_front_4frames_game.png")
 		if texture:
 			sprite.texture = texture
-			sprite.scale = Vector2(2, 2)
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, 0, 64, 64)
+			sprite.scale = Vector2(0.8, 0.8)
 			sprite.centered = true
 		add_child(sprite)
 
 func _setup_collision():
-	# 创建碰撞体 - 使用更加可靠的检测方法
 	player_area = Area2D.new()
 	player_area.name = "PlayerArea"
-	player_area.collision_layer = 2  # 检测玩家
+	player_area.collision_layer = 2
 	player_area.collision_mask = 1
 	player_area.body_entered.connect(_on_player_detected)
 	add_child(player_area)
@@ -75,11 +123,10 @@ func _setup_collision():
 	player_shape.shape = circle
 	player_area.add_child(player_shape)
 	
-	# 创建子弹检测区域
 	bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
-	bullet_area.collision_layer = 0  # 不检测任何层
-	bullet_area.collision_mask = 4   # 检测子弹层
+	bullet_area.collision_layer = 0
+	bullet_area.collision_mask = 4
 	bullet_area.area_entered.connect(_on_bullet_area_entered)
 	add_child(bullet_area)
 	
@@ -92,18 +139,14 @@ func _setup_collision():
 	print("  ✅ 碰撞体创建成功 (检测玩家层=2, 子弹层=4)")
 
 func _on_player_detected(body):
-	# 只有当僵尸还活着且可以攻击时才检测
 	if body.is_in_group("player") and not dead and can_attack:
-		var player_pos = body.position + Vector2(360, 640)  # 转换为世界坐标
-		var dist = position.distance_to(player_pos)
-		if dist <= COLLISION_RADIUS:
-			# 立即禁用碰撞，防止多次触发
-			_disable_collision()
-			dead = true  # 僵尸碰到玩家后也标记为死亡
-			var player = get_tree().get_first_node_in_group("player")
-			if player:
-				player.take_damage(999)
-			print("💀 僵尸碰到玩家！距离=" + str(int(dist)))
+		_disable_collision()
+		dead = true
+		var player = get_tree().get_first_node_in_group("player")
+		if player:
+			player.take_damage(999)
+			player.emit_signal("player_died")
+		print("💀 僵尸碰到玩家！")
 
 func _on_bullet_area_entered(area):
 	if area.is_in_group("bullets") and not dead:
@@ -120,26 +163,48 @@ func _on_bullet_area_entered(area):
 
 func _disable_collision():
 	if player_area:
-		player_area.monitoring = false
-		player_area.monitorable = false
+		player_area.set_deferred("monitoring", false)
+		player_area.set_deferred("monitorable", false)
 	if bullet_area:
-		bullet_area.monitoring = false
-		bullet_area.monitorable = false
+		bullet_area.set_deferred("monitoring", false)
+		bullet_area.set_deferred("monitorable", false)
 
 func _physics_process(delta):
 	if dead:
 		return
 	
+	frame_count += 1
+	
 	# 移动逻辑
 	var target = get_tree().get_first_node_in_group("player")
 	if target:
-		var target_pos = target.position + Vector2(360, 640)  # 转换为世界坐标
-		var direction = (target_pos - position).normalized()
+		var target_center = target.position - Vector2(360, 640)
+		if position.y >= target_center.y - 5.0:
+			target_center.y = position.y
+		var direction = (target_center - position).normalized()
 		position += direction * speed * delta
 	
-	# 动画
+	# 每帧更新透视缩放
+	_update_perspective()
+	
+	# 动画帧切换
 	if sprite and sprite.texture:
-		frame = (frame + delta * 8) % 4
+		if is_boss or zombie_type == "boss":
+			boss_anim_timer += delta
+			var pulse = 1.0 + 0.1 * sin(boss_anim_timer * 3.0)
+			var max_hp = get_max_health()
+			var hp_ratio = clamp(current_health / max_hp, 0.0, 1.0)
+			var shrink = 0.4 + 0.6 * hp_ratio
+			# Boss缩放 = 基础透视缩放 * 脉动 * 血量缩放
+			base_scale = _get_perspective_scale(position.y)
+			sprite.scale = Vector2(0.4, 0.4) * base_scale * shrink * pulse
+			if frame_count % 8 == 0:
+				current_frame = (current_frame + 1) % 4
+				sprite.region_rect = Rect2(current_frame * 150, 0, 150, 300)
+		else:
+			if frame_count % 5 == 0:
+				current_frame = (current_frame + 1) % 4
+				sprite.region_rect = Rect2(current_frame * 64, 0, 64, 64)
 
 func take_damage(damage: float):
 	if dead:
@@ -155,7 +220,6 @@ func _die():
 	dead = true
 	_disable_collision()
 	
-	# 创建粒子效果
 	_spawn_death_particles()
 	
 	var player = get_tree().get_first_node_in_group("player")
@@ -208,8 +272,6 @@ func _setup_health_bar():
 
 func _spawn_death_particles():
 	var particle = GPUParticles2D.new()
-	particle.process_material = ProcessMaterial.new()
-	particle.process_material.emission_sphere_radius = 20
 	particle.one_shot = true
 	particle.max_particles = 10
 	particle.emitting = true

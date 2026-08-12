@@ -46,6 +46,20 @@ func _process(delta):
 	if player and not game_ended and game_started:
 		_update_health()
 
+func _unhandled_input(event):
+	# 支持用 空格 / 回车 触发 开始/重新开始 按钮
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_SPACE or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+			if has_node("StartPanel") and $StartPanel.visible:
+				get_viewport().set_input_as_handled()
+				_on_start_game()
+			elif has_node("GameOverPanel") and $GameOverPanel.visible:
+				get_viewport().set_input_as_handled()
+				_on_restart_game()
+			elif has_node("WinPanel") and $WinPanel.visible:
+				get_viewport().set_input_as_handled()
+				_on_restart_game()
+
 func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
