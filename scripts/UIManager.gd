@@ -40,6 +40,10 @@ func _ready():
 	print("")
 	print("✅ UIManager初始化完成")
 	print("============================================================")
+	
+	# Headless 模式下自动开始游戏（用于测试）
+	if DisplayServer.get_name() == "headless":
+		call_deferred("_on_start_game")
 
 func _process(delta):
 	# 每帧更新健康条
