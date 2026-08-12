@@ -273,7 +273,7 @@ func _setup_health_bar():
 func _spawn_death_particles():
 	var particle = GPUParticles2D.new()
 	particle.one_shot = true
-	particle.max_particles = 10
+	particle.amount = 10
 	particle.emitting = true
 	particle.lifetime = 0.5
 	position.y -= 20
