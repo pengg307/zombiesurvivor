@@ -265,10 +265,11 @@ func _on_next_level_pressed():
 			_on_restart_game()
 		else:
 			print("  这是最终关卡！游戏完成")
-			var stats_mgr = get_tree().get_first_node_in_group("stats_manager")
-			var kills = stats_mgr.get_current_kills() if stats_mgr else 0
-			show_win(kills)
-			print("  🏆 恭喜通关！")
+			# 显示通关界面
+			if has_node("WinPanel"):
+				$WinPanel/PanelContainer/VBoxContainer/WinLabel.text = "🏆 恭喜通关！🏆"
+				$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(1, 0.8, 0)
+				print("  🎮 游戏完成！")
 
 func _on_menu_pressed():
 	print("📋 返回主菜单 [按钮点击]")
