@@ -274,14 +274,13 @@ func _die():
 		spawner.add_kill(is_boss_kill)
 	
 	if is_boss or zombie_type == "boss":
-		# Boss已处理完，不需要再重复处理
+		# Boss死亡信号
 		emit_signal("boss_died")
-		if player:
-			player.emit_signal("game_won")
 		if stats_mgr:
 			stats_mgr.add_kill(true)
 	
-	if stats_mgr:
+	if stats_mgr and not (is_boss or zombie_type == "boss"):
+		# 普通僵尸击杀统计
 		stats_mgr.add_kill(false)
 	
 	queue_free()
