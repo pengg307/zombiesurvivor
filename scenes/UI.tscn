@@ -174,9 +174,15 @@ layout_mode = 0
 text = "Kills: 0"
 
 [node name="NextLevelButton" type="Button" parent="WinPanel/PanelContainer/VBoxContainer"]
-layout_mode = 0
+layout_mode = 1
+anchor_right = 1.0
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(0, 50)
 text = "🚀 下一关"
 
 [node name="MenuButton" type="Button" parent="WinPanel/PanelContainer/VBoxContainer"]
-layout_mode = 0
+layout_mode = 1
+anchor_right = 1.0
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(0, 50)
 text = "📋 主菜单"
