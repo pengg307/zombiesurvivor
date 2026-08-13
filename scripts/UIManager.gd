@@ -70,6 +70,10 @@ func _unhandled_input(event):
 				get_viewport().set_input_as_handled()
 				_on_next_level_prompt()
 
+			# 记录所有鼠标点击事件
+			if event is InputEventMouseButton and event.pressed:
+			print("🖱️ 鼠标点击: button_mask=" + str(event.button_mask) + " position=" + str(event.position))
+
 func _setup_audio():
 	var am = get_tree().get_first_node_in_group("audio_manager")
 	if am:
