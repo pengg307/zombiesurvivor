@@ -272,11 +272,9 @@ func _die():
 		# 区分Boss和普通僵尸的击杀
 		var is_boss_kill = is_boss or zombie_type == "boss"
 		spawner.add_kill(is_boss_kill)
-
+	
 	if is_boss or zombie_type == "boss":
-		# 记录Boss击杀
-		if spawner:
-			spawner.add_boss_kill()
+		# Boss已处理完，不需要再重复处理
 		emit_signal("boss_died")
 		if player:
 			player.emit_signal("game_won")
