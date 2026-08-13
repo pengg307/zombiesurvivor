@@ -191,7 +191,7 @@ func show_win(kills):
 	game_started = false
 	
 	print("🏆 [WIN] 游戏胜利！")
-	print("  WinPanel.visible = true (将显示)")
+	print("  WinPanel 已显示")
 	
 	if audio_manager:
 		audio_manager.play_victory()
@@ -208,7 +208,21 @@ func show_win(kills):
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(0.2, 1, 0.2)
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 		$WinPanel/PanelContainer/VBoxContainer/LevelLabel.text = "Level " + str(spawner.current_level if spawner else 1)
-		print("  ✅ WinPanel 已显示，关卡: " + str(spawner.current_level if spawner else 1))
+		print("  ✅ 显示按钮: 🚀 下一关 | 📋 主菜单")
+		print("  💡 操作: 点击'下一关'或按空格键继续")
+		
+		# 3秒后自动进入下一关（用于测试）
+		if has_next_level_available():
+			var timer = create_timer(3.0)
+			timer.timeout.connect(_auto_next_level)
+
+func has_next_level_available() -> bool:
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	return lm and lm.has_next_level()
+
+func _auto_next_level():
+	print("⏰ 自动进入下一关...")
+	_on_next_level_pressed()
 
 func _on_restart_game():
 	print("🔄 重新开始游戏")
