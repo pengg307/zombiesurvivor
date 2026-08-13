@@ -80,6 +80,9 @@ func _connect_signals_deferred():
 	var lm = get_tree().get_first_node_in_group("level_manager")
 	if lm:
 		print("📊 LevelManager 已连接，当前关卡: " + str(lm.current_level))
+		if lm.has_signal("level_started"):
+			lm.level_started.connect(_on_level_started)
+			print("✅ 已连接 level_started")
 
 func _on_kill_count_changed():
 	if player and weapon_upgrade_sys:
@@ -113,6 +116,14 @@ func _on_level_completed(level: int):
 	# 显示下一关提示
 	if ui and ui.has_method("_on_next_level_prompt"):
 		ui._on_next_level_prompt()
+
+func _on_level_started(level: int):
+	print("🚀 开始第 " + str(level) + " 关")
+	# 重启EnemySpawner
+	var spawner = get_tree().get_first_node_in_group("spawner")
+	if spawner and spawner.has_method("start"):
+		spawner.start()
+		print("✅ EnemySpawner已重启")
 
 func _on_game_won():
 	print("🏆 胜利！")
