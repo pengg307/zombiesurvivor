@@ -19,9 +19,10 @@ func add_boss_kill():
 	current_kills = 0
 	# 检查是否还需要生成更多Boss
 	if bosses_killed_this_level < required:
-		# 等待当前波次结束再生成下一个Boss
-		print("  🚀 等待当前波次结束后生成下一个Boss...")
-		# 不立即生成，让正常的波次流程处理
+		print("  🚀 立即生成下一个Boss！")
+		_spawn_boss()
+	else:
+		print("  🏆 所有Boss已击杀！")
 const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
 const SCREEN_HEIGHT = 1280.0
