@@ -246,15 +246,19 @@ func _on_next_level_prompt():
 		print("🎯 按空格键继续到下一关")
 
 func _on_next_level_pressed():
-	print("🚀 进入下一关！")
+	print("🚀 进入下一关！[按钮点击]")
 	if spawner:
 		var lm = get_tree().get_first_node_in_group("level_manager")
 		if lm and lm.has_next_level():
+			print("  准备进入第 " + str(lm.get_next_level()) + " 关")
 			lm.start_level(lm.get_next_level())
 			_on_restart_game()
+		else:
+			print("  这是最终关卡！游戏完成")
+			show_win(spawner.total_kills if spawner else 0)
 
 func _on_menu_pressed():
-	print("📋 返回主菜单")
+	print("📋 返回主菜单 [按钮点击]")
 	# TODO: 显示关卡选择界面
 	if has_node("LevelSelectUI"):
 		$LevelSelectUI.show()

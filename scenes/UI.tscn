@@ -88,7 +88,10 @@ layout_mode = 0
 text = "僵尸生存"
 
 [node name="StartButton" type="Button" parent="StartPanel/PanelContainer/VBoxContainer"]
-layout_mode = 0
+layout_mode = 1
+anchor_right = 1.0
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(0, 50)
 text = "开始游戏"
 
 [node name="GameOverPanel" type="Panel" parent="."]
@@ -129,7 +132,10 @@ layout_mode = 0
 text = "Kills: 0"
 
 [node name="RestartButton" type="Button" parent="GameOverPanel/PanelContainer/VBoxContainer"]
-layout_mode = 0
+layout_mode = 1
+anchor_right = 1.0
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(0, 50)
 text = "重新开始"
 
 [node name="WinPanel" type="Panel" parent="."]
