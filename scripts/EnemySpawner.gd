@@ -293,9 +293,11 @@ func _get_spawn_interval_mult() -> float:
 
 # 触发关卡完成
 func trigger_level_complete():
-	print("🏆 关卡 " + str(current_level) + " 完成！")
-	is_game_over = true
+	# 从 LevelManager 获取正确的关卡号
 	var lm = get_tree().get_first_node_in_group("level_manager")
+	var level_num = lm.current_level if lm else current_level
+	print("🏆 关卡 " + str(level_num) + " 完成！")
+	is_game_over = true
 	if lm:
 		lm.complete_level()
-	emit_signal("level_completed", current_level)
+	emit_signal("level_completed", level_num)
