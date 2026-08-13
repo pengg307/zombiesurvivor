@@ -268,13 +268,21 @@ func _on_next_level_pressed():
 			var stats_mgr = get_tree().get_first_node_in_group("stats_manager")
 			var kills = stats_mgr.get_current_kills() if stats_mgr else 0
 			show_win(kills)
+			print("  🏆 恭喜通关！")
 
 func _on_menu_pressed():
 	print("📋 返回主菜单 [按钮点击]")
-	print("  LevelSelectUI exists = " + str(has_node("LevelSelectUI")))
-	# TODO: 显示关卡选择界面
-	if has_node("LevelSelectUI"):
-		$LevelSelectUI.show()
+	# 返回主菜单：显示开始界面
+	get_viewport().set_input_as_handled()
+	if has_node("StartPanel"):
+		$StartPanel.visible = true
+	if has_node("WinPanel"):
+		$WinPanel.visible = false
+	if has_node("GameOverPanel"):
+		$GameOverPanel.visible = false
+	game_ended = false
+	game_started = false
+	print("  ✅ 已返回主菜单")
 
 func _add_level_button():
 	var btn = Button.new()
