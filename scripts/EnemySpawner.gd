@@ -261,9 +261,14 @@ func add_kill():
 	current_kills += 1
 	var bosses_required = get_bosses_required()
 	print("📊 击杀数: " + str(current_kills) + "/" + str(bosses_required))
-
+	
 	if current_kills >= bosses_required and not boss_spawned_this_game:
 		_spawn_boss()
+	
+	# 更新UI显示（如果是Boss击杀）
+	var ui = get_tree().get_first_node_in_group("ui_manager")
+	if ui and ui.has_method("_update_boss_display"):
+		ui._update_boss_display(bosses_killed_this_level, bosses_required)
 
 func _spawn_boss():
 	boss_active = true

@@ -359,6 +359,51 @@ func _setup_level_display():
 	level_manager = get_tree().get_first_node_in_group("level_manager")
 	if level_manager:
 		print("📊 当前关卡: " + str(level_manager.current_level))
+		# 创建Boss目标显示
+		_create_boss_target_display()
+
+func _create_boss_target_display():
+	# Boss目标显示容器
+	var container = Panel.new()
+	container.name = "BossTargetDisplay"
+	container.position = Vector2(10, 70)
+	container.size = Vector2(200, 40)
+	container.modulate = Color(0.8, 0.2, 0.2, 0.7)
+	add_child(container)
+	
+	# Boss图标
+	var boss_icon = Label.new()
+	boss_icon.text = "👹"
+	boss_icon.position = Vector2(5, 5)
+	boss_icon.add_theme_font_size_override("font_size", 20)
+	container.add_child(boss_icon)
+	
+	# 目标数字
+	var target_label = Label.new()
+	target_label.name = "BossTargetLabel"
+	target_label.text = "/ 1"
+	target_label.position = Vector2(35, 8)
+	target_label.add_theme_font_size_override("font_size", 18)
+	container.add_child(target_label)
+	
+	# 击杀计数
+	var kills_label = Label.new()
+	kills_label.name = "BossKillsLabel"
+	kills_label.text = "0"
+	kills_label.position = Vector2(70, 8)
+	kills_label.add_theme_font_size_override("font_size", 18)
+	container.add_child(kills_label)
+	
+	print("  ✅ Boss目标显示已创建")
+
+func _update_boss_display(kills: int, target: int):
+	if has_node("BossTargetDisplay"):
+		var target_label = $BossTargetDisplay/BossTargetLabel
+		var kills_label = $BossTargetDisplay/BossKillsLabel
+		if target_label:
+			target_label.text = "/ " + str(target)
+		if kills_label:
+			kills_label.text = str(kills)
 
 func _create_bottom_health_bar():
 	# 底部健康条容器 - 长条形，占据整个屏幕宽度
