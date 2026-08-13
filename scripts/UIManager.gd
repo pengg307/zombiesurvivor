@@ -103,21 +103,25 @@ func _connect_buttons():
 		var start_btn = $StartPanel/PanelContainer/VBoxContainer/StartButton
 		start_btn.pressed.connect(_on_start_game)
 		print("  ✅ StartButton 已连接")
+		start_btn.pressed.connect(func(): print("🖱️ StartButton 被点击！"))
 	
 	if has_node("GameOverPanel/PanelContainer/VBoxContainer/RestartButton"):
 		var restart_btn = $GameOverPanel/PanelContainer/VBoxContainer/RestartButton
 		restart_btn.pressed.connect(_on_restart_game)
 		print("  ✅ GameOver RestartButton 已连接")
+		restart_btn.pressed.connect(func(): print("🖱️ RestartButton 被点击！"))
 	
 	if has_node("WinPanel/PanelContainer/VBoxContainer/NextLevelButton"):
 		var next_btn = $WinPanel/PanelContainer/VBoxContainer/NextLevelButton
 		next_btn.pressed.connect(_on_next_level_pressed)
 		print("  ✅ Win NextLevelButton 已连接")
+		next_btn.pressed.connect(func(): print("🖱️ NextLevelButton 被点击！"))
 	
 	if has_node("WinPanel/PanelContainer/VBoxContainer/MenuButton"):
 		var menu_btn = $WinPanel/PanelContainer/VBoxContainer/MenuButton
 		menu_btn.pressed.connect(_on_menu_pressed)
 		print("  ✅ Win MenuButton 已连接")
+		menu_btn.pressed.connect(func(): print("🖱️ MenuButton 被点击！"))
 
 func _on_start_game():
 	if game_started or game_ended:
@@ -247,8 +251,10 @@ func _on_next_level_prompt():
 
 func _on_next_level_pressed():
 	print("🚀 进入下一关！[按钮点击]")
+	print("  spawner = " + str(spawner))
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	print("  level_manager = " + str(lm))
 	if spawner:
-		var lm = get_tree().get_first_node_in_group("level_manager")
 		if lm and lm.has_next_level():
 			print("  准备进入第 " + str(lm.get_next_level()) + " 关")
 			lm.start_level(lm.get_next_level())
@@ -259,6 +265,7 @@ func _on_next_level_pressed():
 
 func _on_menu_pressed():
 	print("📋 返回主菜单 [按钮点击]")
+	print("  LevelSelectUI exists = " + str(has_node("LevelSelectUI")))
 	# TODO: 显示关卡选择界面
 	if has_node("LevelSelectUI"):
 		$LevelSelectUI.show()
