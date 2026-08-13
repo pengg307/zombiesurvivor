@@ -162,12 +162,10 @@ func _on_spawn_timer_timeout():
 		
 		var max_waves = _get_max_waves_for_level()
 		# 检查是否完成所有Boss击杀
-		var bosses_required = get_bosses_required()
-		if current_kills >= bosses_required:
-			print("🏆 完成所有" + str(wave_number) + "波！")
+		if bosses_killed_this_level >= bosses_required:
+			print("🏆 完成所有" + str(wave_number) + "波，所有Boss已击杀！")
 			stop()
-			if bosses_killed_this_level >= bosses_required:
-				_trigger_win()
+			_trigger_win()
 			return
 	
 	if wave_number >= _get_max_waves_for_level():
