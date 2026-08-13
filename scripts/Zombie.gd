@@ -270,8 +270,11 @@ func _die():
 	
 	if spawner:
 		spawner.add_kill()
-	
+
 	if is_boss or zombie_type == "boss":
+		# 记录Boss击杀
+		if spawner:
+			spawner.add_boss_kill()
 		emit_signal("boss_died")
 		if player:
 			player.emit_signal("game_won")

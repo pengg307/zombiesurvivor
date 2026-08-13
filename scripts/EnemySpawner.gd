@@ -2,7 +2,17 @@ extends Node2D
 class_name EnemySpawner
 
 const SPAWN_INTERVAL = 2.5
-const BOSS_KILLS_REQUIRED = 5
+# Boss 数量等于关卡号（第1关1个Boss，第2关2个Boss...）
+func get_bosses_required() -> int:
+	return current_level
+
+# Boss 击杀计数
+var bosses_killed_this_level = 0
+
+func add_boss_kill():
+	bosses_killed_this_level += 1
+	var required = get_bosses_required()
+	print("👹 Boss 击杀 " + str(bosses_killed_this_level) + "/" + str(required))
 const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
 const SCREEN_HEIGHT = 1280.0
@@ -97,7 +107,7 @@ func _ready():
 	print("============================================================")
 	print("🎮 EnemySpawner启动！")
 	print("📍 最大波次: " + str(BASE_WAVE_CONFIG.size()))
-	print("👹 Boss: 击杀" + str(BOSS_KILLS_REQUIRED) + "后出现")
+	print("👹 Boss 数量: " + str(get_bosses_required()) + " (等于关卡号)")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
 	print("🛣️ 道路透视: 顶部宽=" + str(ROAD_HALF_WIDTH_TOP*2) + " 底部宽=" + str(ROAD_HALF_WIDTH_BOTTOM*2))
 	print("⏱️ 安全时间: " + str(SAFETY_TIME) + "秒")
@@ -126,12 +136,12 @@ func _on_spawn_timer_timeout():
 		print("🎉 所有僵尸已清除！当前波次: " + str(wave_number))
 		
 		var max_waves = _get_max_waves_for_level()
-		if wave_number >= max_waves and not boss_spawned_this_game:
-			print("🏆 完成所有" + str(max_waves) + "波！")
+		# 检查是否完成所有Boss击杀
+		var bosses_required = get_bosses_required()
+		if current_kills >= bosses_required:
+			print("🏆 完成所有" + str(wave_number) + "波！")
 			stop()
-			if current_kills >= BOSS_KILLS_REQUIRED:
-				_spawn_boss()
-			else:
+			if bosses_killed_this_level >= bosses_required:
 				_trigger_win()
 			return
 	
@@ -227,9 +237,10 @@ func add_kill():
 	if is_game_over:
 		return
 	current_kills += 1
-	print("📊 击杀数: " + str(current_kills) + "/" + str(BOSS_KILLS_REQUIRED))
-	
-	if current_kills >= BOSS_KILLS_REQUIRED and not boss_spawned_this_game:
+	var bosses_required = get_bosses_required()
+	print("📊 击杀数: " + str(current_kills) + "/" + str(bosses_required))
+
+	if current_kills >= bosses_required and not boss_spawned_this_game:
 		_spawn_boss()
 
 func _spawn_boss():
