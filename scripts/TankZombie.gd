@@ -189,10 +189,9 @@ func _spawn_explosion_effect():
 	particles.amount = 30
 	particles.lifetime = 0.6
 	particles.emitting = true
-	# 设置爆炸颜色（橙色到红色渐变）
-	var color = Color(1.0, 0.5, 0.0, 1.0)
-	particles.set_process_material(AreaMaterial.new())
-	particles.process_material.color = color
+	# 设置粒子颜色（橙色爆炸）
+	particles.process_material = ParticleProcessMaterial.new()
+	particles.process_material.color = Color(1.0, 0.5, 0.0, 1.0)
 	particles.process_material.gravity = Vector3(0, -200, 0)
 	particles.process_material.linear_velocity = 150.0
 	particles.process_material.scale_ratio = 0.5
