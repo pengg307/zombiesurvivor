@@ -350,6 +350,7 @@ func trigger_level_complete():
 	if is_game_over:
 		print("  ⚠️ 游戏已结束，跳过重复触发")
 		return
+	print("  ✅ 开始处理关卡完成...")
 	is_game_over = true
 	if lm:
 		lm.complete_level()
@@ -359,6 +360,10 @@ func trigger_level_complete():
 			print("  ⏭️ 3秒后自动进入第 " + str(next_level) + " 关")
 			var timer = get_tree().create_timer(3.0)
 			timer.timeout.connect(_auto_advance_to_next_level.bind(next_level))
+		else:
+			print("  🎮 这是最终关卡！")
+	print("  ✅ trigger_level_complete 完成")
+	emit_signal("level_completed", level_num)
 	emit_signal("level_completed", level_num)
 
 func _auto_advance_to_next_level(next_level: int):
