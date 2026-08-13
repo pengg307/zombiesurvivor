@@ -273,17 +273,76 @@ func _on_next_level_pressed():
 
 func _on_menu_pressed():
 	print("📋 返回主菜单 [按钮点击]")
-	# 返回主菜单：显示开始界面
+	# 显示关卡选择界面
 	get_viewport().set_input_as_handled()
-	if has_node("StartPanel"):
-		$StartPanel.visible = true
 	if has_node("WinPanel"):
 		$WinPanel.visible = false
 	if has_node("GameOverPanel"):
 		$GameOverPanel.visible = false
-	game_ended = false
-	game_started = false
-	print("  ✅ 已返回主菜单")
+	if has_node("StartPanel"):
+		$StartPanel.visible = false
+	
+	# 创建关卡选择界面
+	_show_level_select()
+	print("  ✅ 已显示关卡选择")
+
+func _show_level_select():
+	# 清除旧的关卡选择界面
+	if has_node("LevelSelectContainer"):
+		$LevelSelectContainer.queue_free()
+	
+	var container = VBoxContainer.new()
+	container.name = "LevelSelectContainer"
+	container.position = Vector2(210, 300)
+	container.size = Vector2(300, 400)
+	add_child(container)
+	
+	# 标题
+	var title = Label.new()
+	title.text = "🎮 选择关卡"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	container.add_child(title)
+	
+	# 获取关卡管理器
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	
+	# 创建关卡按钮
+	for level in [1, 2, 3, 4]:
+		var btn = Button.new()
+		btn.text = "第" + str(level) + "关"
+		btn.custom_minimum_size = Vector2(200, 50)
+		
+		# 检查是否解锁
+		if lm and level <= lm.max_unlocked_level:
+			btn.pressed.connect(func(l=level): _select_level(l))
+			btn.modulate = Color(1, 1, 1)
+		else:
+			btn.disabled = true
+			btn.modulate = Color(0.5, 0.5, 0.5)
+		
+		container.add_child(btn)
+	
+	# 返回按钮
+	var back_btn = Button.new()
+	back_btn.text = "← 返回"
+	back_btn.custom_minimum_size = Vector2(200, 40)
+	back_btn.position = Vector2(50, 320)
+	back_btn.pressed.connect(func(): _hide_level_select())
+	container.add_child(back_btn)
+
+func _select_level(level: int):
+	print("🎯 选择第 " + str(level) + " 关")
+	_hide_level_select()
+	
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	if lm:
+		lm.start_level(level)
+		_on_restart_game()
+
+func _hide_level_select():
+	if has_node("LevelSelectContainer"):
+		$LevelSelectContainer.queue_free()
 
 func _add_level_button():
 	var btn = Button.new()
