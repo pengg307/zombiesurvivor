@@ -52,7 +52,9 @@ signal level_changed(new_level: int)
 
 func _ready():
 	add_to_group("level_manager")
+	_load_progress()
 	print("📊 LevelManager 初始化完成")
+	print("   当前关卡: " + str(current_level))
 	print("   最高解锁关卡: " + str(max_unlocked_level))
 
 func get_current_config() -> Dictionary:
@@ -74,6 +76,7 @@ func start_level(level: int):
 	
 	current_level = level
 	max_unlocked_level = max(max_unlocked_level, level)
+	_save_progress()
 	
 	print("🎮 开始第 " + str(level) + " 关: " + LEVEL_CONFIG[level]["name"])
 	print("   " + LEVEL_CONFIG[level]["description"])
@@ -112,4 +115,40 @@ func reset_progress():
 	total_damage_dealt = 0.0
 	max_unlocked_level = 1
 	current_level = 1
+	_save_progress()
 	print("🔄 游戏进度已重置")
+
+func _save_progress():
+	var path = "user://zombie_survivor_save.json"
+	var data = {
+		"current_level": current_level,
+		"max_unlocked_level": max_unlocked_level,
+		"total_kills": total_kills,
+		"total_damage_dealt": total_damage_dealt
+	}
+	var json_str = JSON.stringify(data)
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(json_str)
+		file.close()
+		print("💾 进度已保存: 关卡=" + str(current_level) + ", 最高解锁=" + str(max_unlocked_level))
+	else:
+		print("❌ 无法保存进度到 " + path)
+
+func _load_progress():
+	var path = "user://zombie_survivor_save.json"
+	if FileAccess.file_exists(path):
+		var file = FileAccess.open(path, FileAccess.READ)
+		if file:
+			var json_str = file.get_as_text()
+			file.close()
+			var data = JSON.parse_string(json_str)
+			if data and data is Dictionary:
+				current_level = data.get("current_level", 1)
+				max_unlocked_level = data.get("max_unlocked_level", 1)
+				total_kills = data.get("total_kills", 0)
+				total_damage_dealt = data.get("total_damage_dealt", 0.0)
+				print("📂 进度已加载: 关卡=" + str(current_level) + ", 最高解锁=" + str(max_unlocked_level))
+				return true
+	print("ℹ️ 未找到存档或存档无效")
+	return false
