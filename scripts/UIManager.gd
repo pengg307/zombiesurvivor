@@ -265,7 +265,9 @@ func _on_next_level_pressed():
 			_on_restart_game()
 		else:
 			print("  这是最终关卡！游戏完成")
-			show_win(spawner.total_kills if spawner else 0)
+			var stats_mgr = get_tree().get_first_node_in_group("stats_manager")
+			var kills = stats_mgr.get_current_kills() if stats_mgr else 0
+			show_win(kills)
 
 func _on_menu_pressed():
 	print("📋 返回主菜单 [按钮点击]")
