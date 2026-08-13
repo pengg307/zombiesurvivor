@@ -226,11 +226,7 @@ func show_win(kills):
 		print("  🔓 最高解锁: " + str(lm.max_unlocked_level if lm else 1))
 		print("  ➡️  下一关: " + str(lm.get_next_level() if lm else 1) + ("" if !lm or lm.has_next_level() else " [最终关]"))
 		
-		# 3秒后自动进入下一关（用于测试和演示）
-		if lm and lm.has_next_level():
-			var timer = get_tree().create_timer(3.0)
-			timer.timeout.connect(_auto_next_level)
-			print("  ⏰ 3秒后自动进入下一关")
+		# 注意：自动进入下一关由 EnemySpawner.trigger_level_complete() 处理
 		else:
 			print("  🎮 这是最终关卡！")
 
