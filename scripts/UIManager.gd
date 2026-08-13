@@ -218,7 +218,7 @@ func show_win(kills):
 		
 		# 3秒后自动进入下一关（用于测试和演示）
 		if lm and lm.has_next_level():
-			var timer = create_timer(3.0)
+			var timer = get_tree().create_timer(3.0)
 			timer.timeout.connect(_auto_next_level)
 			print("  ⏰ 3秒后自动进入下一关")
 		else:
