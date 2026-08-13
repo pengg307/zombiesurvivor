@@ -84,6 +84,11 @@ const SAFETY_TIME = 3.0
 # 关卡相关
 var current_level = 1
 var level_manager = null
+	
+# 延迟初始化关卡信息
+func _on_level_changed(new_level: int):
+	current_level = new_level
+	print("📊 EnemySpawner 更新关卡到: " + str(current_level))
 
 signal boss_spawned
 signal game_over_signal
@@ -102,6 +107,8 @@ func _ready():
 	if level_manager:
 		current_level = level_manager.current_level
 		print("📊 当前关卡: " + str(current_level))
+		# 监听关卡变化
+		level_manager.level_changed.connect(_on_level_changed)
 	
 	print("")
 	print("============================================================")
