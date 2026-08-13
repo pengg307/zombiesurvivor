@@ -296,7 +296,10 @@ func trigger_level_complete():
 	# 从 LevelManager 获取正确的关卡号
 	var lm = get_tree().get_first_node_in_group("level_manager")
 	var level_num = lm.current_level if lm else current_level
-	print("🏆 关卡 " + str(level_num) + " 完成！")
+	print("🏆 [触发] 关卡 " + str(level_num) + " 完成！")
+	if is_game_over:
+		print("  ⚠️ 游戏已结束，跳过重复触发")
+		return
 	is_game_over = true
 	if lm:
 		lm.complete_level()
