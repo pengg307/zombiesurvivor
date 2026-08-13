@@ -214,15 +214,17 @@ func show_win(kills):
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.text = "🏆 WON 🏆"
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(0.2, 1, 0.2)
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
-		$WinPanel/PanelContainer/VBoxContainer/LevelLabel.text = "Level " + str(spawner.current_level if spawner else 1)
-		print("  ✅ WinPanel 显示: " + str($WinPanel.visible))
 		
 		# 显示关卡信息
 		var lm = get_tree().get_first_node_in_group("level_manager")
+		var level_num = 1
 		if lm:
-			print("  📊 当前关卡: " + str(lm.current_level) + "/4")
-			print("  🔓 最高解锁: " + str(lm.max_unlocked_level))
-			print("  ➡️  下一关: " + str(lm.get_next_level()) + ("" if lm.has_next_level() else " [最终关]"))
+			level_num = lm.current_level
+		$WinPanel/PanelContainer/VBoxContainer/LevelLabel.text = "Level " + str(level_num)
+		print("  ✅ WinPanel 显示: " + str($WinPanel.visible))
+		print("  📊 当前关卡: " + str(lm.current_level if lm else 1) + "/4")
+		print("  🔓 最高解锁: " + str(lm.max_unlocked_level if lm else 1))
+		print("  ➡️  下一关: " + str(lm.get_next_level() if lm else 1) + ("" if !lm or lm.has_next_level() else " [最终关]"))
 		
 		# 3秒后自动进入下一关（用于测试和演示）
 		if lm and lm.has_next_level():
