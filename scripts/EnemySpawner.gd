@@ -13,6 +13,11 @@ func add_boss_kill():
 	bosses_killed_this_level += 1
 	var required = get_bosses_required()
 	print("👹 Boss 击杀 " + str(bosses_killed_this_level) + "/" + str(required))
+	# 重置生成标志，以便生成下一个Boss
+	boss_spawned_this_game = false
+	# 检查是否还需要生成更多Boss
+	if bosses_killed_this_level < required:
+		_spawn_boss()
 const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
 const SCREEN_HEIGHT = 1280.0
