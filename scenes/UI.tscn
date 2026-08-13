@@ -165,10 +165,18 @@ alignment = 1
 layout_mode = 0
 text = "胜利!"
 
+[node name="LevelLabel" type="Label" parent="WinPanel/PanelContainer/VBoxContainer"]
+layout_mode = 0
+text = "Level 1"
+
 [node name="ScoreLabel" type="Label" parent="WinPanel/PanelContainer/VBoxContainer"]
 layout_mode = 0
 text = "Kills: 0"
 
-[node name="RestartButton" type="Button" parent="WinPanel/PanelContainer/VBoxContainer"]
+[node name="NextLevelButton" type="Button" parent="WinPanel/PanelContainer/VBoxContainer"]
 layout_mode = 0
-text = "重新开始"
+text = "🚀 下一关"
+
+[node name="MenuButton" type="Button" parent="WinPanel/PanelContainer/VBoxContainer"]
+layout_mode = 0
+text = "📋 主菜单"

@@ -191,6 +191,7 @@ func show_win(kills):
 	game_started = false
 	
 	print("🏆 [WIN] 游戏胜利！")
+	print("  WinPanel.visible = true (将显示)")
 	
 	if audio_manager:
 		audio_manager.play_victory()
@@ -207,6 +208,7 @@ func show_win(kills):
 		$WinPanel/PanelContainer/VBoxContainer/WinLabel.modulate = Color(0.2, 1, 0.2)
 		$WinPanel/PanelContainer/VBoxContainer/ScoreLabel.text = "Kills: " + str(kills)
 		$WinPanel/PanelContainer/VBoxContainer/LevelLabel.text = "Level " + str(spawner.current_level if spawner else 1)
+		print("  ✅ WinPanel 已显示，关卡: " + str(spawner.current_level if spawner else 1))
 
 func _on_restart_game():
 	print("🔄 重新开始游戏")
