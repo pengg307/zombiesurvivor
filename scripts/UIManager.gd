@@ -232,10 +232,6 @@ func has_next_level_available() -> bool:
 	var lm = get_tree().get_first_node_in_group("level_manager")
 	return lm and lm.has_next_level()
 
-func _auto_next_level():
-	print("⏰ 自动进入下一关...")
-	_on_next_level_pressed()
-
 func _on_restart_game():
 	print("🔄 重新开始游戏")
 	
