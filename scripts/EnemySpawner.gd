@@ -296,6 +296,8 @@ func _trigger_win():
 	if player:
 		player.emit_signal("game_won")
 	emit_signal("game_won")
+	# 触发关卡完成（只在这里触发，避免重复）
+	trigger_level_complete()
 
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
