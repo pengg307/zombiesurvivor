@@ -120,7 +120,8 @@ func _on_game_won():
 		audio_manager.play_victory()
 	if stats_manager:
 		stats_manager.end_game(true)
-	if spawner:
+	# 只在第一次调用时触发关卡完成
+	if spawner and not spawner.is_game_over:
 		spawner.trigger_level_complete()
 	if ui and ui.has_method("show_win"):
 		ui.show_win(spawner.current_kills if spawner else 0)
