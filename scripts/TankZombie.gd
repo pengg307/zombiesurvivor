@@ -186,13 +186,21 @@ func _spawn_power_up():
 func _spawn_explosion_effect():
 	var particles = GPUParticles2D.new()
 	particles.one_shot = true
-	particles.amount = 20
-	particles.lifetime = 0.8
+	particles.amount = 30
+	particles.lifetime = 0.6
 	particles.emitting = true
+	# 设置爆炸颜色（橙色到红色渐变）
+	var color = Color(1.0, 0.5, 0.0, 1.0)
+	particles.set_process_material(AreaMaterial.new())
+	particles.process_material.color = color
+	particles.process_material.gravity = Vector3(0, -200, 0)
+	particles.process_material.linear_velocity = 150.0
+	particles.process_material.scale_ratio = 0.5
 	get_parent().add_child(particles)
 	
-	var timer = get_tree().create_timer(0.8)
+	var timer = get_tree().create_timer(0.6)
 	timer.timeout.connect(func(): particles.queue_free())
+	print("💥 Tank爆炸特效！")
 
 func _create_health_bar():
 	health_bar_bg = ColorRect.new()

@@ -134,9 +134,6 @@ func _ready():
 	print("📍 最大波次: " + str(BASE_WAVE_CONFIG.size()))
 	print("👹 Boss 数量: " + str(get_bosses_required()) + " (等于关卡号)")
 	print("📐 坐标系: 中心(0,0) = 屏幕(360,640)")
-	print("🛣️ 道路透视: 顶部宽=" + str(ROAD_HALF_WIDTH_TOP*2) + " 底部宽=" + str(ROAD_HALF_WIDTH_BOTTOM*2))
-	print("⏱️ 安全时间: " + str(SAFETY_TIME) + "秒")
-	print("============================================================")
 
 func _process(delta):
 	if is_safety_mode and game_started:
