@@ -90,6 +90,13 @@ func _on_level_changed(new_level: int):
 	current_level = new_level
 	print("📊 EnemySpawner 更新关卡到: " + str(current_level))
 
+func _check_level_manager():
+	level_manager = get_tree().get_first_node_in_group("level_manager")
+	if level_manager:
+		current_level = level_manager.current_level
+		print("📊 EnemySpawner 延迟初始化关卡: " + str(current_level))
+		level_manager.level_changed.connect(_on_level_changed)
+
 signal boss_spawned
 signal game_over_signal
 signal game_won
@@ -102,13 +109,19 @@ func _ready():
 	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
 	
-	# 获取 LevelManager
-	level_manager = get_tree().get_first_node_in_group("level_manager")
+	# 延迟获取 LevelManager，确保已初始化
+	if not level_manager:
+		level_manager = get_tree().get_first_node_in_group("level_manager")
 	if level_manager:
 		current_level = level_manager.current_level
 		print("📊 当前关卡: " + str(current_level))
 		# 监听关卡变化
 		level_manager.level_changed.connect(_on_level_changed)
+	
+	# 如果 LevelManager 还没就绪，延迟初始化
+	if not level_manager:
+		var timer = get_tree().create_timer(0.5)
+		timer.timeout.connect(_check_level_manager)
 	
 	print("")
 	print("============================================================")
