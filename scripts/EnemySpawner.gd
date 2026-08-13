@@ -22,7 +22,9 @@ func add_boss_kill():
 		print("  🚀 立即生成下一个Boss！")
 		_spawn_boss()
 	else:
-		print("  🏆 所有Boss已击杀！")
+		print("  🏆 所有Boss已击杀！触发胜利...")
+		# 立即触发胜利
+		_trigger_win()
 const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
 const SCREEN_HEIGHT = 1280.0
