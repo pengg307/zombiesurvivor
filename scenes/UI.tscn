@@ -13,6 +13,7 @@ anchor_bottom = 1.0
 grow_x = 2.0
 grow_y = 2.0
 modulate = Color(1, 1, 1, 0)
+mouse_filter = 2
 
 [node name="TopPanel" type="HBoxContainer" parent="Panel"]
 layout_mode = 0
