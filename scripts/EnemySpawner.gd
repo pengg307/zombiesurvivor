@@ -255,20 +255,27 @@ func _get_spawn_x(index, total_count, half_width):
 	var x = -half_width + (index + 1) * spacing
 	return clamp(x, -half_width, half_width)
 
-func add_kill():
+func add_kill(is_boss: bool = false):
 	if is_game_over:
 		return
-	current_kills += 1
-	var bosses_required = get_bosses_required()
-	print("📊 击杀数: " + str(current_kills) + "/" + str(bosses_required))
+	if is_boss:
+		# Boss击杀单独计数
+		add_boss_kill()
+	else:
+		# 普通僵尸击杀
+		current_kills += 1
+		var bosses_required = get_bosses_required()
+		print("📊 普通击杀: " + str(current_kills))
+		
+		# 检查是否需要生成Boss（当普通击杀达到阈值时）
+		# 每生成一个Boss需要击杀一定数量的普通僵尸
+		if current_kills >= bosses_required * 5 and not boss_spawned_this_game:
+			_spawn_boss()
 	
-	if current_kills >= bosses_required and not boss_spawned_this_game:
-		_spawn_boss()
-	
-	# 更新UI显示（如果是Boss击杀）
+	# 更新UI显示
 	var ui = get_tree().get_first_node_in_group("ui_manager")
 	if ui and ui.has_method("_update_boss_display"):
-		ui._update_boss_display(bosses_killed_this_level, bosses_required)
+		ui._update_boss_display(bosses_killed_this_level, get_bosses_required())
 
 func _spawn_boss():
 	boss_active = true

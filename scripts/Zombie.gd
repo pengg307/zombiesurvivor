@@ -269,7 +269,9 @@ func _die():
 		print("💀 Zombie死亡: 类型=" + zombie_type + " 玩家击杀=" + str(player.kills))
 	
 	if spawner:
-		spawner.add_kill()
+		# 区分Boss和普通僵尸的击杀
+		var is_boss_kill = is_boss or zombie_type == "boss"
+		spawner.add_kill(is_boss_kill)
 
 	if is_boss or zombie_type == "boss":
 		# 记录Boss击杀
