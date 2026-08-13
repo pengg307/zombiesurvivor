@@ -227,7 +227,7 @@ func show_win(kills):
 		print("  ➡️  下一关: " + str(lm.get_next_level() if lm else 1) + ("" if !lm or lm.has_next_level() else " [最终关]"))
 		
 		# 注意：自动进入下一关由 EnemySpawner.trigger_level_complete() 处理
-		else:
+		if !lm or !lm.has_next_level():
 			print("  🎮 这是最终关卡！")
 
 func _auto_next_level():
