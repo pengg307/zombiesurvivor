@@ -93,7 +93,10 @@ var level_manager = null
 # 延迟初始化关卡信息
 func _on_level_changed(new_level: int):
 	current_level = new_level
-	print("📊 EnemySpawner 更新关卡到: " + str(current_level))
+	wave_number = 0  # 重置波次计数
+	boss_spawned_this_game = false  # 重置Boss生成标志
+	bosses_killed_this_level = 0  # 重置Boss击杀计数
+	print("📊 EnemySpawner 更新关卡到: " + str(current_level) + "，已重置生成状态")
 
 func _check_level_manager():
 	level_manager = get_tree().get_first_node_in_group("level_manager")
