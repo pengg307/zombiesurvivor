@@ -314,4 +314,18 @@ func trigger_level_complete():
 	is_game_over = true
 	if lm:
 		lm.complete_level()
+		# 自动进入下一关
+		if lm.has_next_level():
+			var next_level = lm.get_next_level()
+			print("  ⏭️ 3秒后自动进入第 " + str(next_level) + " 关")
+			var timer = get_tree().create_timer(3.0)
+			timer.timeout.connect(_auto_advance_to_next_level.bind(next_level))
 	emit_signal("level_completed", level_num)
+
+func _auto_advance_to_next_level(next_level: int):
+	print("  🚀 自动进入第 " + str(next_level) + " 关")
+	var lm = get_tree().get_first_node_in_group("level_manager")
+	if lm:
+		lm.start_level(next_level)
+		# 重启游戏
+		get_tree().reload_current_scene()
