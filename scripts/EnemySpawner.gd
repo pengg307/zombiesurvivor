@@ -15,8 +15,11 @@ func add_boss_kill():
 	print("👹 Boss 击杀 " + str(bosses_killed_this_level) + "/" + str(required))
 	# 重置生成标志，以便生成下一个Boss
 	boss_spawned_this_game = false
+	# 重置普通击杀计数，要求下一个Boss需要新的击杀数
+	current_kills = 0
 	# 检查是否还需要生成更多Boss
 	if bosses_killed_this_level < required:
+		print("  🚀 立即生成下一个Boss！")
 		_spawn_boss()
 const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
@@ -163,11 +166,14 @@ func _on_spawn_timer_timeout():
 		var max_waves = _get_max_waves_for_level()
 		# 检查是否完成所有Boss击杀
 		var bosses_required = get_bosses_required()
+		print("  📊 检查: bosses_killed=" + str(bosses_killed_this_level) + " required=" + str(bosses_required))
 		if bosses_killed_this_level >= bosses_required:
 			print("🏆 完成所有" + str(wave_number) + "波，所有Boss已击杀！")
 			stop()
 			_trigger_win()
 			return
+		else:
+			print("  ⏭️ 还需要击杀 " + str(bosses_required - bosses_killed_this_level) + " 个Boss")
 	
 	if wave_number >= _get_max_waves_for_level():
 		print("⏹️ 已达到最大波次，停止生成")
