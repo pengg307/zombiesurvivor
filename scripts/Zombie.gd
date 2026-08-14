@@ -148,20 +148,21 @@ func _setup_collision():
 	player_area.collision_layer = 2
 	player_area.collision_mask = 1
 	player_area.body_entered.connect(_on_player_detected)
-	add_child(player_area)
+	# 使用call_deferred避免物理查询冲突
+	call_deferred("add_child", player_area)
 	
 	var player_shape = CollisionShape2D.new()
 	var circle = CircleShape2D.new()
 	circle.radius = COLLISION_RADIUS
 	player_shape.shape = circle
-	player_area.add_child(player_shape)
+	player_area.call_deferred("add_child", player_shape)
 	
 	bullet_area = Area2D.new()
 	bullet_area.name = "BulletArea"
 	bullet_area.collision_layer = 0
 	bullet_area.collision_mask = 4
 	bullet_area.area_entered.connect(_on_bullet_area_entered)
-	add_child(bullet_area)
+	call_deferred("add_child", bullet_area)
 	
 	var bullet_shape = CollisionShape2D.new()
 	var circle2 = CircleShape2D.new()
