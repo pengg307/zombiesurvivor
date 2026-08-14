@@ -165,6 +165,9 @@ func _on_spawn_timer_timeout():
 		# 检查是否完成所有Boss击杀
 		var bosses_required = get_bosses_required()
 		print("  📊 检查: bosses_killed=" + str(bosses_killed_this_level) + " required=" + str(bosses_required))
+		# 如果游戏已结束，不再处理
+		if is_game_over:
+			return
 		if bosses_killed_this_level >= bosses_required:
 			print("🏆 完成所有" + str(wave_number) + "波，所有Boss已击杀！")
 			stop()
@@ -312,15 +315,16 @@ func _spawn_boss():
 func _trigger_win():
 	if is_game_over:
 		return
-	# 先触发关卡完成（设置is_game_over之前）
-	trigger_level_complete()
-	# 现在设置游戏结束状态
 	is_game_over = true
+	# 停止生成器，防止继续生成僵尸
+	stop()
 	print("🏆 玩家胜利！")
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
 		player.emit_signal("game_won")
 	emit_signal("game_won")
+	# 触发关卡完成
+	trigger_level_complete()
 
 func start():
 	print("🎮 [EnemySpawner] 开始生成！")
