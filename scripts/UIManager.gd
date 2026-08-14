@@ -68,7 +68,7 @@ func _unhandled_input(event):
 				_on_restart_game()
 			elif has_node("WinPanel") and $WinPanel.visible:
 				get_viewport().set_input_as_handled()
-				_on_next_level_prompt()
+				_on_next_level_pressed()
 
 	# 记录所有鼠标点击事件
 	if event is InputEventMouseButton and event.pressed:
@@ -246,7 +246,7 @@ func _on_restart_game():
 	
 	get_tree().reload_current_scene()
 
-func _on_next_level_prompt():
+func _on_next_level_pressed():
 	# 空格键显示下一关提示
 	if has_node("WinPanel") and $WinPanel.visible:
 		print("🎯 按空格键继续到下一关")
