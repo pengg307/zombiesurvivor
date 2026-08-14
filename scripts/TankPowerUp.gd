@@ -46,7 +46,6 @@ func _setup_collision():
 	circle.radius = 25.0
 	shape.shape = circle
 	add_child(shape)
-	
 	body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body):
