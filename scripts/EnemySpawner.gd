@@ -362,11 +362,9 @@ func trigger_level_complete():
 	var lm = get_tree().get_first_node_in_group("level_manager")
 	var level_num = lm.current_level if lm else current_level
 	print("🏆 [触发] 关卡 " + str(level_num) + " 完成！")
-	if is_game_over:
-		print("  ⚠️ 游戏已结束，跳过重复触发")
-		return
+	# 注意：is_game_over 可能已经被 _trigger_win() 设置为 true
+	# 这里不检查 is_game_over，而是直接处理关卡完成逻辑
 	print("  ✅ 开始处理关卡完成...")
-	is_game_over = true
 	if lm:
 		lm.complete_level()
 		# 自动进入下一关
