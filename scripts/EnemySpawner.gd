@@ -379,7 +379,6 @@ func trigger_level_complete():
 			print("  🎮 这是最终关卡！")
 	print("  ✅ trigger_level_complete 完成")
 	emit_signal("level_completed", level_num)
-	emit_signal("level_completed", level_num)
 
 func _auto_advance_to_next_level(next_level: int):
 	print("  🚀 自动进入第 " + str(next_level) + " 关")
