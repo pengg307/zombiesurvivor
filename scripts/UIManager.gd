@@ -234,6 +234,33 @@ func _auto_next_level():
 	print("⏰ 自动进入下一关...")
 	_on_next_level_pressed()
 
+# 显示关卡开始闪烁
+func show_level_flash(level: int):
+	print("🎯 显示关卡闪烁: 第 " + str(level) + " 关")
+	# 创建或复用关卡闪烁节点
+	if not has_node("LevelFlash"):
+		var flash = Panel.new()
+		flash.name = "LevelFlash"
+		flash.position = Vector2(0, 0)
+		flash.size = Vector2(720, 1280)
+		flash.modulate = Color(0, 0, 0, 0)
+		add_child(flash)
+	
+	var flash_node = $LevelFlash
+	var label = Label.new()
+	label.name = "LevelLabel"
+	label.text = "第 " + str(level) + " 关"
+	label.position = Vector2(200, 500)
+	label.font_size = 48
+	flash_node.add_child(label)
+	
+	# 显示动画
+	var tween = create_tween()
+	tween.tween_property(flash_node, "modulate:a", 1.0, 0.3)
+	tween.tween_interval(1.0)
+	tween.tween_property(flash_node, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(func(): flash_node.queue_free())
+
 func has_next_level_available() -> bool:
 	var lm = get_tree().get_first_node_in_group("level_manager")
 	return lm and lm.has_next_level()
