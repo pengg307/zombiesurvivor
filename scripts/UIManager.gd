@@ -252,8 +252,10 @@ func show_level_flash(level: int):
 	label.name = "LevelLabel"
 	label.text = "第 " + str(level) + " 关"
 	label.position = Vector2(180, 550)
-	# 使用主题字体大小
-	label.add_theme_font_size_override("font", get_theme_font("title", "EditorFonts"))
+	# 创建主题覆盖来设置字体大小
+	var theme_override = Theme.new()
+	theme_override.add_theme_font_size_override("font_size", "Label", 36)
+	label.theme = theme_override
 	flash_node.add_child(label)
 	
 	# 显示动画
