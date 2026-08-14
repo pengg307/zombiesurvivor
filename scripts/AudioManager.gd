@@ -58,7 +58,7 @@ func play_sound(sound_name: String):
 			_load_and_play(player, SOUND_PATHS[sound_name])
 
 func play_bgm(bgm_name: String):
-	if not music_enabled:
+	if not music_enabled or not bgm_player:
 		return
 	if bgm_name in BGM_PATHS:
 		var stream = load(BGM_PATHS[bgm_name])
