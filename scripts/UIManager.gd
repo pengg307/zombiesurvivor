@@ -247,11 +247,6 @@ func _on_restart_game():
 	get_tree().reload_current_scene()
 
 func _on_next_level_pressed():
-	# 空格键显示下一关提示
-	if has_node("WinPanel") and $WinPanel.visible:
-		print("🎯 按空格键继续到下一关")
-
-func _on_next_level_pressed():
 	print("🚀 进入下一关！[按钮点击]")
 	print("  spawner = " + str(spawner))
 	var lm = get_tree().get_first_node_in_group("level_manager")
