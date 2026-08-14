@@ -45,7 +45,8 @@ func _setup_collision():
 	var circle = CircleShape2D.new()
 	circle.radius = 25.0
 	shape.shape = circle
-	add_child(shape)
+	# 使用call_deferred避免在物理查询刷新期间修改碰撞状态
+	call_deferred("add_child", shape)
 	body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body):
