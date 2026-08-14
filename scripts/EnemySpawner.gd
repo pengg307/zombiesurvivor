@@ -13,17 +13,11 @@ func add_boss_kill():
 	bosses_killed_this_level += 1
 	var required = get_bosses_required()
 	print("👹 Boss 击杀 " + str(bosses_killed_this_level) + "/" + str(required))
-	# 重置生成标志，以便生成下一个Boss
-	boss_spawned_this_game = false
-	# 重置普通击杀计数，要求下一个Boss需要新的击杀数
+	# 重置普通击杀计数
 	current_kills = 0
-	# 检查是否还需要生成更多Boss
-	if bosses_killed_this_level < required:
-		print("  🚀 立即生成下一个Boss！")
-		_spawn_boss()
-	else:
+	# 检查是否所有Boss都已击杀
+	if bosses_killed_this_level >= required:
 		print("  🏆 所有Boss已击杀！触发胜利...")
-		# 立即触发胜利
 		_trigger_win()
 const SQUARE_SPACING = 100.0
 const SCREEN_WIDTH = 720.0
@@ -290,22 +284,29 @@ func add_kill(is_boss: bool = false):
 		ui._update_boss_display(bosses_killed_this_level, get_bosses_required())
 
 func _spawn_boss():
-	boss_active = true
+	# 一次性生成所有剩余的Boss
+	var bosses_required = get_bosses_required()
+	var bosses_to_spawn = bosses_required - bosses_killed_this_level
 	boss_spawned_this_game = true
+	boss_active = true
+	
 	print("")
 	print("👹 ========================================")
-	print("👹 Boss即将出现！")
+	print("👹 生成 " + str(bosses_to_spawn) + " 个Boss！")
 	print("👹 ========================================")
 	
 	var boss_scene = load("res://scripts/Zombie.gd")
 	if boss_scene:
-		var boss = boss_scene.new()
-		boss.is_boss = true
-		boss.zombie_type = "boss"
-		# Boss生成在道路中央
-		boss.position = Vector2(0, -500)
-		add_child(boss)
-		print("👹 Boss已生成！位置=(0, -500)")
+		for i in range(bosses_to_spawn):
+			var boss = boss_scene.new()
+			boss.is_boss = true
+			boss.zombie_type = "boss"
+			# Boss分散在顶部不同位置
+			var offset = (i - bosses_to_spawn / 2.0) * 120
+			boss.position = Vector2(offset, -500)
+			add_child(boss)
+			print("👹 Boss #" + str(i + 1) + " 已生成！位置=(" + str(int(offset)) + ", -500)")
+		
 		emit_signal("boss_spawned")
 
 func _trigger_win():
