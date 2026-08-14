@@ -193,7 +193,7 @@ func _spawn_explosion_effect():
 	particles.process_material = ParticleProcessMaterial.new()
 	particles.process_material.color = Color(1.0, 0.5, 0.0, 1.0)
 	particles.process_material.gravity = Vector3(0, -200, 0)
-	particles.process_material.linear_velocity = Vector3(0, 150, 0)
+	# 注意: linear_velocity 在2D粒子中可能不支持，跳过
 	particles.process_material.scale_ratio = 0.5
 	get_parent().add_child(particles)
 	
