@@ -2,21 +2,21 @@ extends Node
 class_name AudioManager
 
 const SOUND_PATHS = {
-	"shoot": "res://assets/audio/shoot.wav",
-	"hit": "res://assets/audio/hit.wav",
-	"explode": "res://assets/audio/explode.wav",
-	"levelup": "res://assets/audio/levelup.wav",
-	"pickup": "res://assets/audio/pickup.wav",
-	"boss_appear": "res://assets/audio/boss_appear.wav",
-	"gameover": "res://assets/audio/gameover.wav",
-	"victory": "res://assets/audio/victory.wav",
-	"grenade_throw": "res://assets/audio/grenade_throw.wav",
-	"grenade_explode": "res://assets/audio/grenade_explode.wav"
+	"shoot": "res://assets/audio/sfx/shoot.wav",
+	"hit": "res://assets/audio/sfx/hit.wav",
+	"explode": "res://assets/audio/sfx/explosion.wav",
+	"levelup": "res://assets/audio/sfx/upgrade.wav",
+	"pickup": "res://assets/audio/sfx/upgrade.wav",
+	"boss_appear": "res://assets/audio/sfx/boss.wav",
+	"gameover": "res://assets/audio/sfx/game_over.wav",
+	"victory": "res://assets/audio/sfx/victory.wav",
+	"grenade_throw": "res://assets/audio/sfx/grenade.wav",
+	"grenade_explode": "res://assets/audio/sfx/explosion.wav"
 }
 
 const BGM_PATHS = {
-	"normal": "res://assets/audio/bgm_normal.ogg",
-	"boss": "res://assets/audio/bgm_boss.ogg"
+	"normal": "res://assets/audio/sfx/bgm.wav",
+	"boss": "res://assets/audio/sfx/boss.wav"
 }
 
 var sound_effects = {}
