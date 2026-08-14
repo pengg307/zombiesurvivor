@@ -19,6 +19,7 @@ var health_label = null
 var current_level_label = null
 
 func _ready():
+	add_to_group("ui_manager")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	print("")
