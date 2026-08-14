@@ -379,11 +379,5 @@ func trigger_level_complete():
 	emit_signal("level_completed", level_num)
 
 func _auto_advance_to_next_level(next_level: int):
-	print("  🚀 自动进入第 " + str(next_level) + " 关")
-	# 删除存档，确保每局游戏从第1关重新开始
-	var save_path = "user://zombie_survivor_save.json"
-	if FileAccess.file_exists(save_path):
-	 FileAccess.open(save_path, FileAccess.WRITE).close()
-		print("  🗑️ 已删除存档，确保从第1关开始")
 	# 重启游戏
 	get_tree().reload_current_scene()
