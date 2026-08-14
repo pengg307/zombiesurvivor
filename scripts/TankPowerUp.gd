@@ -61,11 +61,13 @@ func _on_body_entered(body):
 		queue_free()
 
 func _spawn_collect_effect():
-	var particles = GPUParticles2D.new()
+	# 使用CPUParticles2D避免GPU pipeline错误
+	var particles = CPUParticles2D.new()
 	particles.one_shot = true
 	particles.amount = 15
 	particles.lifetime = 0.5
 	particles.emitting = true
+	particles.color = Color(1.0, 0.8, 0.2, 1.0)  # 金色收集效果
 	get_parent().add_child(particles)
 	
 	var timer = get_tree().create_timer(0.5)

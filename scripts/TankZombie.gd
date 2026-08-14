@@ -184,16 +184,14 @@ func _spawn_power_up():
 		print("🎁 火力增强包已生成！位置=(" + str(int(position.x)) + "," + str(int(position.y)) + ")")
 
 func _spawn_explosion_effect():
-	var particles = GPUParticles2D.new()
+	# 使用CPUParticles2D替代GPUParticles2D，避免GPU pipeline错误
+	var particles = CPUParticles2D.new()
 	particles.one_shot = true
 	particles.amount = 30
 	particles.lifetime = 0.6
 	particles.emitting = true
-	# 设置粒子颜色（橙色爆炸）
-	particles.process_material = ParticleProcessMaterial.new()
-	particles.process_material.color = Color(1.0, 0.5, 0.0, 1.0)
-	particles.process_material.gravity = Vector3(0, -200, 0)
-	# 注意: 2D粒子不支持linear_velocity和scale_ratio，跳过
+	particles.color = Color(1.0, 0.5, 0.0, 1.0)  # 橙色爆炸
+	particles.gravity = Vector2(0, -200)
 	get_parent().add_child(particles)
 	
 	var timer = get_tree().create_timer(0.6)

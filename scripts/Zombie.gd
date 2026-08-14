@@ -307,11 +307,13 @@ func _setup_health_bar():
 	add_child(health_bar_fg)
 
 func _spawn_death_particles():
-	var particle = GPUParticles2D.new()
+	# 使用CPUParticles2D避免GPU pipeline错误
+	var particle = CPUParticles2D.new()
 	particle.one_shot = true
 	particle.amount = 10
-	particle.emitting = true
 	particle.lifetime = 0.5
+	particle.emitting = true
+	particle.color = Color(1.0, 0.2, 0.2, 1.0)  # 红色死亡效果
 	position.y -= 20
 	add_child(particle)
 	await get_tree().create_timer(0.5).timeout
