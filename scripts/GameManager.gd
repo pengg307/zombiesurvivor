@@ -119,6 +119,10 @@ func _on_level_completed(level: int):
 
 func _on_level_started(level: int):
 	print("🚀 开始第 " + str(level) + " 关")
+	# 显示关卡闪烁效果
+	var ui = get_tree().get_first_node_in_group("ui_manager")
+	if ui and ui.has_method("show_level_flash"):
+		ui.show_level_flash(level)
 	# 重启EnemySpawner
 	var spawner = get_tree().get_first_node_in_group("spawner")
 	if spawner and spawner.has_method("start"):
